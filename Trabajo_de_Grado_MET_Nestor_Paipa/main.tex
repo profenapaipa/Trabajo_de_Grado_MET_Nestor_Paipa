@@ -2205,15 +2205,23 @@ El diseño mecánico, electrónico y lógico de los cubos fue desarrollado por e
 \end{figure}
 %%% Explicar las vistas de la figura anterior.
 %%%%%% ******* %%%%%%% Diagrama Electrónico
-El núcleo de procesamiento de cada cubo es ESP32 con 
-Bluetooth para recibir comunicarse con el \textit{Master}. Los periféricos de salida
+El núcleo de procesamiento de cada cubo es un microcontrolador ESP32,
+que se conecta por WiFi como estación a la red inalámbrica generada por
+el \textit{Master} para recibir sus instrucciones. Los periféricos de salida
 conectados al microcontrolador son tres: un diodo LED de tipo RGB capaz
 de producir cualquier combinación de color mediante la modulación
 independiente de sus tres canales (rojo, verde y azul, con valores entre
 0 y 255 en cada canal), un motor de vibración de tipo moneda con
 regulación de intensidad por modulación de ancho de pulso (PWM), y un
 altavoz piezoeléctrico o buzzer con capacidad de emitir tonos de
-frecuencia y duración controladas programáticamente. La alimentación del
+frecuencia y duración controladas programáticamente. En la implementación
+actual, el LED y el motor de vibración reciben sus parámetros de
+operación a través del mensaje enviado por el \textit{Master}; el
+componente sonoro está definido a nivel de interfaz, pero el protocolo de
+comunicación entre el \textit{Master} y el cubo todavía no incorpora un
+campo para transportarlo, por lo que la reproducción física del buzzer a
+partir de una instrucción remota no puede darse por demostrada de extremo
+a extremo en el estado actual del desarrollo. La alimentación del
 cubo se realiza mediante batería de litio recargable de [X] mAh,
 
 %%%%%% ******* %%%%%%% Expicar Código + Diagrama de código "Algorithm"
@@ -2228,20 +2236,25 @@ cubo se realiza mediante batería de litio recargable de [X] mAh,
 La base de los cubos es una unidad central de control y comunicación que
 actúa como intermediario entre la interfaz del docente y cada uno de los
 cubos desplegados en el tablero. Electrónicamente, está construida sobre
-un microcontrolador de mayor capacidad de procesamiento que los cubos
-individuales [\textbf{modelo base, p.ej. Raspberry Pi Zero o ESP32 con
-mayor RAM}], al que se conectan un módulo de comunicación inalámbrica
-hacia los cubos y otro módulo de conexión hacia el dispositivo del
-docente (computadora portátil o tableta con la interfaz de control). La
+un microcontrolador ESP32 —el mismo tipo de microcontrolador empleado en
+los cubos individuales—, que opera de forma simultánea en dos roles de
+red: como punto de acceso WiFi propio, al que se conectan los cubos, y
+como estación conectada a la red WiFi del laboratorio, dentro de la cual
+se ejecuta el backend en el computador del docente. La
 base también incorpora el módulo de carga simultánea para todos los
 cubos mediante puertos USB individuales, con indicación visual del estado
 de carga de cada dispositivo.
- 
-El hardware de la base incluye un módulo \textbf{[protocolo de
-comunicación: Bluetooth Low Energy, WiFi o ZigBee]} configurado como
-punto de acceso de la red local del sistema, al que se conectan tanto los
-cubos como el dispositivo del docente. Esta arquitectura de red local
-cerrada evita dependencias de la conectividad del centro educativo y
+
+El hardware de la base emplea el módulo WiFi integrado del propio ESP32,
+configurado de forma simultánea como punto de acceso de una red local
+propia para los cubos y como cliente de la red inalámbrica del
+laboratorio para comunicarse con el backend. La comunicación entre la
+base y los cubos se establece mediante conexiones directas por WiFi, y la
+comunicación entre la base y el backend mediante peticiones HTTP,
+complementadas con un mecanismo de descubrimiento automático que permite
+a la base localizar al backend dentro de la red sin necesidad de
+configurar manualmente direcciones IP en cada sesión. Esta arquitectura
+de red local evita dependencias de la conectividad del centro educativo y
 garantiza latencias de comunicación inferiores a [X] ms entre la
 instrucción del docente y la activación del cubo, lo que resulta
 fundamental para que la señal reguladora llegue al aprendiz en el
