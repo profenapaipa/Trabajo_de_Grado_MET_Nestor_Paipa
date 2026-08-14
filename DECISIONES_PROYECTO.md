@@ -18,7 +18,7 @@ Este archivo contiene **únicamente decisiones ya tomadas** por el autor y confi
 - El tercer estado oficial es **ACTUAR**. Los tres estados iniciales de esta primera fase son **PAUSAR, PENSAR, ACTUAR**.
 - La carpeta de código `src/core/agents/actions/elegir/` ya fue renombrada a `actions/actuar/` (commit `775c7b6`). Es un cambio puramente nominal: cero referencias externas a esa carpeta existían antes del cambio (confirmado por búsqueda exhaustiva), por lo que no hubo riesgo de romper nada.
 - Los archivos internos `fe1.ts`, `fe2.ts` y `fe3.ts` conservaron sus nombres — no se renombraron a `fa1.ts`/`fa2.ts`/`fa3.ts`.
-- En `main.tex`, la normalización Elegir → Actuar **todavía no se ha ejecutado** (ver Fase 9 en `PENDIENTES_TESIS.md`). El texto de la tesis sigue usando mayoritariamente "Elegir" fuera de las subsecciones ya corregidas de la Fase 7.
+- En `main.tex`, la normalización Elegir → Actuar **ya se ejecutó y se verificó** (Fase 9, commit `4dbcfd4`): 8 sustituciones de texto + 5 identificadores TikZ renombrados. Quedan intactas, a la espera de la Fase 12, las 5 ocurrencias dentro de los dos guiones experimentales.
 
 ## Prototipo — hardware confirmado
 

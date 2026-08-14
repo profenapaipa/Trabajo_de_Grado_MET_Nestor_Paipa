@@ -51,7 +51,7 @@ Debe mostrar `OK - Status 200` tanto para `localhost` como para la IP de red, y 
 ## 2. Inicio de sesión diario (cada vez)
 
 ### 2.1. Abrir el proyecto en VS Code
-Abre la carpeta `juego-escalera-vista-main` en VS Code.
+Abre la carpeta `Desarrollo_cubos_juego_escalera` en VS Code.
 
 ### 2.2. Iniciar el backend
 Abre una terminal (Terminal → New Terminal):
