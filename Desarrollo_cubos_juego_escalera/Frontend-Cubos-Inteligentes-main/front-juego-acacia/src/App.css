@@ -1,0 +1,52 @@
+/* ── Reset Vite defaults ─────────────────────────────── */
+#root {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+/* ── Cube action animations ──────────────────────────── */
+@keyframes pausar-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(0, 0, 200, 0.3), 0 0 0 0 rgba(0, 0, 200, 0.3); }
+  50%       { box-shadow: 0 0 20px rgba(0, 0, 255, 0.9), 0 0 0 6px rgba(0, 0, 255, 0); }
+}
+
+@keyframes pensar-breathe {
+  0%, 100% { transform: scale(0.95); box-shadow: 0 0 4px  rgba(255, 255, 80, 0.3); }
+  50%       { transform: scale(1.05); box-shadow: 0 0 22px rgba(255, 255, 80, 1);   }
+}
+
+@keyframes actuar-glow {
+  0%   { box-shadow: 0 0 2px  rgba(0, 255, 80, 0.2); }
+  25%  { box-shadow: 0 0 28px rgba(0, 255, 80, 1);   }
+  100% { box-shadow: 0 0 12px rgba(0, 255, 80, 0.6); }
+}
+
+@keyframes vib-pausar {
+  0%, 100% { transform: scaleX(1);    }
+  50%       { transform: scaleX(0.92); }
+}
+
+@keyframes vib-pensar {
+  0%        { transform: translateX(0);    }
+  25%       { transform: translateX(-1px); }
+  75%       { transform: translateX(1px);  }
+  100%      { transform: translateX(0);    }
+}
+
+@keyframes vib-actuar {
+  0%, 100% { transform: translateX(0);    }
+  20%       { transform: translateX(-2px); }
+  40%       { transform: translateX(2px);  }
+  60%       { transform: translateX(-1px); }
+  80%       { transform: translateX(1px);  }
+}
+
+.cube-pausar { animation: pausar-pulse 2s ease-in-out infinite; }
+.cube-pensar { animation: pensar-breathe 2s ease-in-out infinite; }
+.cube-actuar { animation: actuar-glow 0.8s ease-out forwards; }
+
+.vib-pausar { animation: vib-pausar 2s ease-in-out infinite; }
+.vib-pensar { animation: vib-pensar 0.6s ease-in-out infinite; }
+.vib-actuar { animation: vib-actuar 0.3s ease-in-out infinite; }

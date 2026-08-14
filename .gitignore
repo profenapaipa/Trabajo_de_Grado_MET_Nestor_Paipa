@@ -1,0 +1,73 @@
+# =========================
+# LaTeX - archivos generados
+# =========================
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.bcf
+*.run.xml
+*.nav
+*.snm
+*.vrb
+
+# =========================
+# Node / Frontend / Backend
+# =========================
+node_modules/
+dist/
+build/
+.cache/
+.npm/
+*.tsbuildinfo
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# =========================
+# VS Code
+# =========================
+.vscode/
+
+# =========================
+# Variables de entorno
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Sistema operativo
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Archivos temporales
+# =========================
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+# Configuración local de Claude Code
+**/.claude/settings.local.json
