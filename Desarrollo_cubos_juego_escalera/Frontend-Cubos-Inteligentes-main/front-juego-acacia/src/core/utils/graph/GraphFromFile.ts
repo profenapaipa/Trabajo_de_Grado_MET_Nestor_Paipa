@@ -3,7 +3,7 @@ import { loadDataFromFile, loadGraphStates } from '../../utils/LoadCSVData';
 import sourcesPath from '@/assets/GraphData/SGrafo.csv?url';
 import targetsPath from '@/assets/GraphData/TGrafo.csv?url';
 
-import { Graph } from './Graph';
+import { Graph } from './graph';
 
 export async function createGraph() {
     //Carga los sources y targets de los archivos independientes

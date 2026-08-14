@@ -150,5 +150,5 @@ function Cube({
   )
 }
 
-export { CubeAction }
+export type { CubeAction }
 export default Cube

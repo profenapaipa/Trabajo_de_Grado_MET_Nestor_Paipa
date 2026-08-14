@@ -85,7 +85,7 @@
 //import { FibonacciHeap } from '@tyriar/fibonacci-heap';
 //import deepEqual from 'deep-equal';
 
-import { Graph } from './graph/Graph';
+import { Graph } from './graph/graph';
 
 export function Dijkstra(graph: Graph, source: number): Record<number, number | null> {
   const dist: Record<number, number> = {};
