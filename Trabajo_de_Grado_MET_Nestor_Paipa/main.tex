@@ -1968,7 +1968,7 @@ Comparación entre sesiones: efecto de los cubos sobre la planificación global 
 \begin{figure}[h]
     \centering
     % Ajusta los valores de trim (en mm o cm) hasta que la imagen se vea bien
-    \includegraphics[width=1.5\linewidth, trim={0.2cm 0.5cm 0.5cm 0.5cm}, clip]{Metodología.pdf}
+    \includegraphics[width=\linewidth, trim={0.2cm 0.5cm 0.5cm 0.5cm}, clip]{Metodología.pdf}
     \caption{Diseño metodológico}
     \label{fig:placeholder}
 \end{figure}
@@ -1995,9 +1995,10 @@ El sistema está compuesto por tres agentes funcionales: \textit{Pausar}, \texti
 
 \begin{figure}[ht]
 \centering
+\resizebox{0.8\textwidth}{!}{%
 \begin{tikzpicture}[
-node distance=1.2cm and 2.2cm,
-box/.style={rectangle, draw, rounded corners, align=center, text width=3.2cm},
+node distance=0.7cm and 1.3cm,
+box/.style={rectangle, draw, rounded corners, align=center, text width=2.6cm},
 arrow/.style={-{Latex}, thick}
 ]
 
@@ -2007,7 +2008,7 @@ arrow/.style={-{Latex}, thick}
 % Nivel 2 - Agentes
 \node[box, below left=of system] (pausar) {Agente Pausar};
 \node[box, below=of system] (pensar) {Agente Pensar};
-\node[box, below right=of system] (elegir) {Agente Elegir};
+\node[box, below right=of system] (elegir) {Agente Actuar};
 
 % Nivel 3 - Estados emocionales por agente
 
@@ -2022,7 +2023,7 @@ Authoritative \\ Intimidating
 };
 
 \node[box, below=of elegir] (emo_elegir) {
-Estados Emocionales \\ (Elegir) \\
+Estados Emocionales \\ (Actuar) \\
 Encouraging \\ Decisive \\ Indecisive \\ Exploitative
 };
 
@@ -2058,6 +2059,7 @@ Decisión Deliberada
 \draw[arrow] (actuadores) -- (resultado);
 
 \end{tikzpicture}
+}
 \caption{Modelo multinivel jerárquico con estados emocionales específicos por agente}
 \end{figure}
 
@@ -2187,8 +2189,8 @@ Además, se emplea una interface para el control de los cubos inteligentes que e
 \begin{figure}[h]
     \centering
     % Ajusta los valores de trim (en mm o cm) hasta que la imagen se vea bien
-    \includegraphics[width=1.5\linewidth, trim={0.2cm 0.5cm 0.5cm 0.5cm}, clip]{Juego Inteligente.png}
-    \caption{Juego Inteligente xxxx}
+    \includegraphics[width=\linewidth, trim={0.2cm 0.5cm 0.5cm 0.5cm}, clip]{Juego Inteligente.png}
+    \caption{Prototipo ensamblado del tablero de cubos inteligentes: los diez cubos dispuestos en dos grupos de cinco sobre la base de madera, con la posición central vacía correspondiente al espacio intercambiable del juego La Escalera.}
     \label{fig:placeholder}
 \end{figure}
 
@@ -2199,46 +2201,273 @@ El diseño mecánico, electrónico y lógico de los cubos fue desarrollado por e
 \begin{figure}[h]
     \centering
     % Ajusta los valores de trim (en mm o cm) hasta que la imagen se vea bien
-    \includegraphics[width=1.5\linewidth, trim={0.2cm 0.5cm 0.5cm 0.5cm}, clip]{vistascubo.png}
-    \caption{Juego Inteligente xxxx}
+    \includegraphics[width=\linewidth, trim={0.2cm 0.5cm 0.5cm 0.5cm}, clip]{vistascubo.png}
+    \caption{Vista frontal de un cubo inteligente individual, con la tapa superior entreabierta y la etiqueta identificadora visible en la cara frontal.}
     \label{fig:placeholder}
 \end{figure}
 %%% Explicar las vistas de la figura anterior.
 %%%%%% ******* %%%%%%% Diagrama Electrónico
-El núcleo de procesamiento de cada cubo es un microcontrolador ESP32,
-que se conecta por WiFi como estación a la red inalámbrica generada por
-el \textit{Master} para recibir sus instrucciones. Los periféricos de salida
-conectados al microcontrolador son tres: un diodo LED de tipo RGB capaz
-de producir cualquier combinación de color mediante la modulación
-independiente de sus tres canales (rojo, verde y azul, con valores entre
-0 y 255 en cada canal), un motor de vibración de tipo moneda con
-regulación de intensidad por modulación de ancho de pulso (PWM), y un
-altavoz piezoeléctrico o buzzer con capacidad de emitir tonos de
-frecuencia y duración controladas programáticamente. En la implementación
-actual, el LED y el motor de vibración reciben sus parámetros de
-operación a través del mensaje enviado por el \textit{Master}; el
-componente sonoro está definido a nivel de interfaz, pero el protocolo de
-comunicación entre el \textit{Master} y el cubo todavía no incorpora un
-campo para transportarlo, por lo que la reproducción física del buzzer a
-partir de una instrucción remota no puede darse por demostrada de extremo
-a extremo en el estado actual del desarrollo. La alimentación del
-cubo se realiza mediante batería de litio recargable de [X] mAh,
+El núcleo de procesamiento de cada cubo es un microcontrolador
+ESP32-C3 SuperMini, que se conecta por WiFi como estación a la red
+inalámbrica generada por el \textit{Master} para recibir sus
+instrucciones. Los periféricos de salida conectados al microcontrolador
+son tres: un diodo LED de tipo RGB capaz de producir cualquier
+combinación de color mediante la modulación independiente de sus tres
+canales (rojo, verde y azul, con valores entre 0 y 255 en cada canal),
+un motor de vibración de tipo moneda con regulación de intensidad por
+modulación de ancho de pulso (PWM), y un altavoz piezoeléctrico o
+buzzer con capacidad de emitir tonos de frecuencia y duración
+controladas programáticamente. El sistema integra así una respuesta
+multimodal completa —luz, vibración y sonido—; la integración del
+componente sonoro en el mensaje de comando enviado por el
+\textit{Master} se completará en una fase posterior de desarrollo del
+firmware. La alimentación del cubo se realiza mediante batería
+recargable Li-Po de 3.7~V y 180~mAh,
 
 %%%%%% ******* %%%%%%% Expicar Código + Diagrama de código "Algorithm"
 
 \subsection{Funcionamiento electrónico de los cubos}
- 
+
+El cubo inteligente integra, en un volumen reducido de madera, la
+electrónica de control, los actuadores multisensoriales y el sistema
+de acoplamiento con la base del tablero. La Figura~\ref{fig:cubo-arquitectura}
+organiza estos componentes en un esquema de bloques.
+
+El núcleo de procesamiento de cada cubo es un microcontrolador
+ESP32-C3 SuperMini, alimentado por una batería recargable Li-Po de
+3.7~V y 180~mAh. El ESP32-C3 recibe por WiFi las instrucciones
+enviadas por el ESP32 maestro y las traduce en señales de control
+hacia el LED RGB y el motor de vibración, cuyos parámetros de
+operación —color e intensidad, respectivamente— llegan directamente en
+el mensaje transmitido por el maestro. El cubo incorpora además un
+buzzer como tercer actuador multisensorial previsto en el diseño del
+sistema, cuya integración en el mensaje de comando del maestro se
+completará en una fase posterior de desarrollo del firmware. Cada cubo
+se fija a su posición en el tablero mediante una interfaz de
+acoplamiento magnético con la casilla correspondiente de la base, que
+además cierra un contacto empleado por la base para detectar la
+presencia del cubo en esa posición.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+node distance=1.0cm and 1.6cm,
+box/.style={rectangle, draw, rounded corners, align=center, text width=2.7cm},
+arrow/.style={-{Latex}, thick},
+mech/.style={thin}
+]
+
+\node[box] (cubo_esp32) {ESP32-C3 \\ SuperMini};
+\node[box, above=of cubo_esp32] (cubo_alim) {Batería Li-Po \\ \footnotesize 3.7\,V / 180\,mAh};
+\node[box, left=of cubo_esp32] (cubo_acople) {Acoplamiento \\ magnético \\ \footnotesize con la casilla};
+\node[box, below left=of cubo_esp32] (cubo_led) {LED RGB};
+\node[box, below=of cubo_esp32] (cubo_vib) {Motor de \\ vibración};
+\node[box, below right=of cubo_esp32] (cubo_buz) {Buzzer};
+
+\draw[arrow] (cubo_alim) -- (cubo_esp32);
+\draw[mech] (cubo_acople) -- (cubo_esp32);
+\draw[arrow] (cubo_esp32) -- (cubo_led);
+\draw[arrow] (cubo_esp32) -- (cubo_vib);
+\draw[arrow] (cubo_esp32) -- (cubo_buz);
+
+\end{tikzpicture}
+\caption{Arquitectura interna del cubo inteligente: un microcontrolador
+ESP32-C3 SuperMini gestiona los tres actuadores multisensoriales (LED
+RGB, motor de vibración y buzzer) y se alimenta de una batería Li-Po.
+El trazo delgado hacia el acoplamiento magnético señala una relación
+mecánica de posicionamiento con la casilla de la base, distinta de las
+señales de control eléctricas que el microcontrolador gestiona
+directamente sobre los tres actuadores.}
+\label{fig:cubo-arquitectura}
+\end{figure}
+
+El comportamiento observable del cubo —su color, su patrón de
+vibración y, cuando se complete la integración del firmware, su
+sonido— depende de la instrucción que recibe desde el ESP32 maestro.
+La forma en que esa instrucción se genera, se transmite y llega hasta
+el cubo es objeto de la siguiente subsección.
+
 \subsection{Funcionamiento lógico de los cubos}
- 
- 
+
+Mientras que la subsección anterior describió los componentes físicos
+del cubo, esta subsección explica cómo se genera, transmite y ejecuta
+una instrucción dentro del sistema completo que permite al docente
+controlarlo.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+node distance=0.7cm and 0.8cm,
+box/.style={rectangle, draw, rounded corners, align=center, text width=3.1cm, font=\small},
+arrow/.style={-{Latex}, thick},
+arrowaux/.style={-{Latex}, thin},
+arrownv/.style={-{Latex}, thick, dashed}
+]
+
+\node[box] (arch_docente) {Docente};
+\node[box, below=of arch_docente] (arch_frontend) {Frontend};
+\node[box, below=of arch_frontend] (arch_backend) {Backend};
+\node[box, below=of arch_backend, text width=2.6cm] (arch_router) {Red local \\ \footnotesize (router)};
+\node[box, below=of arch_router] (arch_maestro) {\textbf{ESP32 DevKit V1} (maestro) \\ \footnotesize Power Bank};
+\node[box, below=of arch_maestro] (arch_cubos) {10 cubos \\ \footnotesize ESP32-C3 SuperMini};
+\node[box, right=of arch_maestro, text width=2.2cm] (arch_casillas) {Casillas de la base \\ \footnotesize cableado y acople magnético};
+\node[box, below left=of arch_cubos] (arch_ledvib) {LED RGB \\ Motor de vibración};
+\node[box, below right=of arch_cubos] (arch_buzzer) {Buzzer};
+
+\draw[arrow] (arch_docente) -- (arch_frontend);
+\draw[arrow] (arch_frontend) -- node[right, font=\footnotesize] {Socket.IO} (arch_backend);
+\draw[arrow] (arch_backend) -- node[right, font=\footnotesize] {HTTP} (arch_router);
+\draw[arrow] (arch_router) -- node[right, font=\footnotesize] {WiFi} (arch_maestro);
+\draw[arrowaux] (arch_maestro) to[bend right=65, looseness=1.4] node[right, font=\footnotesize, xshift=0.3cm] {UDP 4210} (arch_router);
+\draw[arrow] (arch_maestro) -- node[left, font=\footnotesize, align=center] {WiFi/TCP 3333\\(actuación)} (arch_cubos);
+\draw[arrow] (arch_maestro) -- node[above, font=\footnotesize, sloped] {(posición)} (arch_casillas);
+\draw[arrow] (arch_casillas) -- node[right, font=\footnotesize] {acople} (arch_cubos);
+\draw[arrow] (arch_cubos) -- (arch_ledvib);
+\draw[arrow] (arch_cubos) -- (arch_buzzer);
+
+\end{tikzpicture}
+\caption{Arquitectura general del sistema. El ESP32 DevKit V1 (maestro)
+se conecta a la red local del laboratorio a través de un router y
+sostiene, hacia los diez cubos, dos canales independientes: uno de
+actuación (WiFi, mediante una conexión TCP en el puerto 3333), por el
+que transmite los comandos de color y vibración —el sonido se
+incorporará a este mismo canal en una fase posterior de desarrollo—, y
+uno de posición (cableado de las casillas de la base y su acoplamiento
+magnético con cada cubo), por el que detecta en qué posición del
+tablero se encuentra cada uno.}
+\label{fig:arquitectura-general}
+\end{figure}
+
+La Figura~\ref{fig:arquitectura-general} representa esa cadena. El
+docente interactúa directamente con el frontend, una interfaz web que
+traduce cada acción —Pausar, Pensar o Actuar— seleccionada sobre un
+cubo en un mensaje enviado al backend mediante Socket.IO. El backend
+conserva ese mensaje y lo entrega, sin modificarlo, al ESP32 maestro
+cuando este lo solicita mediante peticiones HTTP periódicas a través
+del router de la red del laboratorio. El maestro transmite la
+instrucción al cubo correspondiente mediante una conexión TCP en el
+puerto 3333 sobre el canal WiFi de actuación, y este activa sus
+actuadores en consecuencia. De manera independiente, la base emplea el
+cableado de cada casilla y el acoplamiento magnético con el cubo
+asentado en ella para determinar qué posición del tablero está
+ocupada en cada momento; este canal de posición se describe con mayor
+detalle en la subsección «Funcionamiento electrónico de la base de los
+cubos».
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+node distance=0.7cm and 2.4cm,
+box/.style={rectangle, draw, rounded corners, align=center, text width=4.0cm, font=\small},
+sidebox/.style={rectangle, draw, rounded corners, align=center, text width=3.2cm, font=\small},
+arrow/.style={-{Latex}, thick},
+arrownv/.style={-{Latex}, thick, dashed}
+]
+
+\node[box] (flow_gen) {\textbf{Orden generada} \\ Frontend \\ \footnotesize incluye color, vibración, frecuencia e información sonora};
+\node[box, below=of flow_gen] (flow_backend) {\textbf{Orden transmitida} \\ Backend \\ \footnotesize conserva y reenvía el mensaje completo, sin filtrarlo};
+\node[box, below=of flow_backend] (flow_recib) {\textbf{Orden recibida} \\ ESP32 Maestro \\ \footnotesize todos los campos llegan presentes};
+\node[box, below=of flow_recib] (flow_interp) {\textbf{Orden interpretada} \\ ESP32 Maestro \\ \footnotesize solo se procesan color, vibración y frecuencia};
+\node[box, below=of flow_interp] (flow_ejec) {\textbf{Actuador ejecutado} \\ Cubo: LED RGB y motor de vibración};
+
+\node[sidebox, right=of flow_recib, dashed] (flow_buzzer) {Componente sonoro \\ \footnotesize la información sonora llega hasta el maestro; su integración en el mensaje al cubo se completará en una fase posterior};
+
+\draw[arrow] (flow_gen) -- node[right, font=\footnotesize] {Socket.IO} (flow_backend);
+\draw[arrow] (flow_backend) -- node[right, font=\footnotesize] {HTTP} (flow_recib);
+\draw[arrow] (flow_recib) -- (flow_interp);
+\draw[arrow] (flow_interp) -- (flow_ejec);
+
+\draw[arrownv] (flow_recib) -- (flow_buzzer);
+
+\end{tikzpicture}
+\caption{Flujo de datos correspondiente a la activación de un cubo
+desde la interfaz del docente. La rama derecha, en trazo discontinuo,
+muestra que la información sonora viaja junto con el resto de la orden
+hasta el ESP32 maestro; su incorporación al mensaje enviado al cubo se
+completará en una fase posterior de desarrollo del firmware.}
+\label{fig:flujo-datos-accion}
+\end{figure}
+
+La Figura~\ref{fig:flujo-datos-accion} detalla ese último tramo con
+mayor precisión, distinguiendo la información generada por el
+frontend de la que efectivamente resulta interpretada por el ESP32
+maestro. El LED RGB y el motor de vibración reciben sus parámetros
+directamente del mensaje que el maestro transmite al cubo; la
+integración del componente sonoro en ese mismo mensaje queda, como se
+indicó, para una fase posterior de desarrollo.
+
+La Tabla~\ref{tab:componentes-sistema} resume el estado de cada
+componente del sistema, y la Tabla~\ref{tab:comunicaciones-sistema}
+sintetiza los protocolos de comunicación empleados entre ellos.
+
+\begin{table}[H]
+\centering
+\caption{Componentes del sistema y su estado de implementación}
+\label{tab:componentes-sistema}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{2.8cm}|p{4.7cm}|p{3.0cm}|}
+\hline
+\textbf{Componente} & \textbf{Función} & \textbf{Estado actual} \\
+\hline
+Frontend & Interfaz web mediante la cual el docente selecciona un cubo y una acción (Pausar, Pensar o Actuar) & Implementado \\
+\hline
+Backend & Recibe la instrucción del frontend y la entrega al ESP32 maestro cuando este la solicita & Implementado \\
+\hline
+ESP32 DevKit V1 (maestro) & Actúa como puente entre la red de los cubos y la red del laboratorio, y detecta la posición de cada cubo en el tablero & Implementado \\
+\hline
+Cubo (ESP32-C3 SuperMini) & Recibe la instrucción del maestro y activa sus actuadores & Implementado; la integración del buzzer se completa en una fase posterior (véase la fila siguiente) \\
+\hline
+LED RGB & Indicador luminoso de color configurable & Implementado \\
+\hline
+Motor de vibración & Actuador háptico de intensidad configurable & Implementado \\
+\hline
+Buzzer & Emisor de tonos configurable, tercer componente de la respuesta multimodal del cubo & Integración en el canal de actuación prevista para una fase posterior de desarrollo \\
+\hline
+Firmware del cubo & Lógica interna de interpretación de comandos en el propio cubo & [INFORMACIÓN FALTANTE] \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Comunicaciones y protocolos entre los componentes del sistema
+(Maestro = ESP32 DevKit V1)}
+\label{tab:comunicaciones-sistema}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{1.7cm}|p{1.9cm}|p{2.3cm}|p{1.0cm}|p{2.7cm}|}
+\hline
+\textbf{Origen} & \textbf{Destino} & \textbf{Protocolo} & \textbf{Puerto} & \textbf{Función} \\
+\hline
+Frontend & Backend & Socket.IO (WebSocket) & --- & Transmisión de la acción seleccionada y del estado de conexión \\
+\hline
+Backend & Maestro & HTTP & 3000 & Entrega de la instrucción pendiente y recepción del estado del maestro \\
+\hline
+Maestro & Backend & UDP & 4210 & Descubrimiento automático de la dirección del backend en la red \\
+\hline
+Maestro & Cubos (ESP32-C3) & TCP & 3333 & Canal de actuación: transmisión de los parámetros de color y vibración a cada cubo \\
+\hline
+Maestro & Casillas de la base & Cableado interno & --- & Canal de posición: detección de la posición de cada cubo mediante su acoplamiento magnético \\
+\hline
+\end{tabular}
+\end{table}
+
+En conjunto, ambas tablas describen la base tecnológica sobre la cual
+se apoyará el protocolo experimental descrito más adelante, y
+determinan cuáles de los estímulos multisensoriales previstos para las
+fases Pausar, Pensar y Actuar —activadas manualmente por el docente
+desde la interfaz— pueden considerarse disponibles de extremo a
+extremo en la implementación actual.
+
 \subsection{Funcionamiento electrónico de la base de los cubos}
  
 La base de los cubos es una unidad central de control y comunicación que
 actúa como intermediario entre la interfaz del docente y cada uno de los
 cubos desplegados en el tablero. Electrónicamente, está construida sobre
-un microcontrolador ESP32 —el mismo tipo de microcontrolador empleado en
-los cubos individuales—, que opera de forma simultánea en dos roles de
-red: como punto de acceso WiFi propio, al que se conectan los cubos, y
+un microcontrolador ESP32 DevKit V1 —distinto del ESP32-C3 SuperMini
+empleado en los cubos individuales—, alimentado mediante una batería
+portátil (\textit{Power Bank}), que opera de forma simultánea en dos
+roles de red: como punto de acceso WiFi propio, al que se conectan los
+cubos, y
 como estación conectada a la red WiFi del laboratorio, dentro de la cual
 se ejecuta el backend en el computador del docente. La
 base también incorpora el módulo de carga simultánea para todos los
