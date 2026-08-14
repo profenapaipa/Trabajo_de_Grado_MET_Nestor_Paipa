@@ -18,11 +18,13 @@ Carpeta madre del proyecto de tesis de maestría "Uso de EEG para explorar la in
 Antes de modificar cualquier archivo de este proyecto, en cualquier sesión futura:
 
 1. Leer `README.md` (este archivo).
-2. Leer `DECISIONES_PROYECTO.md` — no volver a discutir ni contradecir por inferencia lo que ya está ahí consolidado.
-3. Leer `PENDIENTES_TESIS.md` — identificar qué está realmente abierto y con qué prioridad.
-4. Leer `ESTADO_PROYECTO.md` — identificar la fase actual y su estado exacto.
+2. Leer `ESTADO_PROYECTO.md` — identificar la fase actual y su estado exacto.
+3. Leer `DECISIONES_PROYECTO.md` — no volver a discutir ni contradecir por inferencia lo que ya está ahí consolidado.
+4. Leer `PENDIENTES_TESIS.md` — identificar qué está realmente abierto y con qué prioridad.
 5. Verificar el estado de Git (`git status`, `git log`) antes de asumir qué está o no confirmado.
 6. Determinar exactamente qué fase está autorizada a ejecutarse en la sesión actual — nunca asumirlo del historial de chat.
 7. No ejecutar fases posteriores a la autorizada, ni ampliar el alcance por iniciativa propia.
+
+La ruta maestra del proyecto utiliza las **fases 0–18** establecidas en `ESTADO_PROYECTO.md`. No se debe inventar una numeración de fases distinta en ninguna sesión futura.
 
 Cuando exista una contradicción entre estos archivos de control y la evidencia primaria (código, firmware, el propio `main.tex`, el manual, o los artículos citados), **detente y señala la contradicción explícitamente** — no la resuelvas por inferencia.

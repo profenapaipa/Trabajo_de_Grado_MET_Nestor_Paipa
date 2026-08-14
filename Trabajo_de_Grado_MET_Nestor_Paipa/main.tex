@@ -361,7 +361,7 @@ Trastorno del Espectro Autista nivel 1.
     del Espectro Autista nivel 1 durante la 
     resolución del juego La Escalera, 
     articulando el ciclo regulador 
-    Pausar-Pensar-Elegir con los principios 
+    Pausar-Pensar-Actuar con los principios
     del andamiaje pedagógico.
 
     \item Analizar la actividad cortical y el 
@@ -437,7 +437,7 @@ docente desde una interfaz remota. Estos cubos funcionan como
 actuadores físicos del juicio pedagógico: el docente observa 
 la sesión, evalúa el estado cognitivo y emocional del estudiante, 
 y activa la fase correspondiente del ciclo regulador 
-(Pausar, Pensar, Elegir), que se materializa en el cubo mediante 
+(Pausar, Pensar, Actuar), que se materializa en el cubo mediante
 tres canales de salida simultáneos: luz LED de color específico, 
 vibración háptica de patrón regulado e indicación sonora de 
 frecuencia predefinida.
@@ -1986,7 +1986,7 @@ Se propone un sistema multiagente fundamentado en:
     \item Enfoque de resolución de problemas matemáticos.
 \end{itemize}
 
-El sistema está compuesto por tres agentes funcionales: \textit{Pausar}, \textit{Pensar} y \textit{Elegir}. Cada agente interviene sobre dimensiones conductuales, cognitivas y emocionales.
+El sistema está compuesto por tres agentes funcionales: \textit{Pausar}, \textit{Pensar} y \textit{Actuar}. Cada agente interviene sobre dimensiones conductuales, cognitivas y emocionales.
 
 
 \subsection{Guión experimental TEA Nivel 1}
@@ -2008,7 +2008,7 @@ arrow/.style={-{Latex}, thick}
 % Nivel 2 - Agentes
 \node[box, below left=of system] (pausar) {Agente Pausar};
 \node[box, below=of system] (pensar) {Agente Pensar};
-\node[box, below right=of system] (elegir) {Agente Actuar};
+\node[box, below right=of system] (actuar) {Agente Actuar};
 
 % Nivel 3 - Estados emocionales por agente
 
@@ -2022,7 +2022,7 @@ Estados Emocionales \\ (Pensar) \\
 Authoritative \\ Intimidating
 };
 
-\node[box, below=of elegir] (emo_elegir) {
+\node[box, below=of actuar] (emo_actuar) {
 Estados Emocionales \\ (Actuar) \\
 Encouraging \\ Decisive \\ Indecisive \\ Exploitative
 };
@@ -2046,15 +2046,15 @@ Decisión Deliberada
 % Flechas
 \draw[arrow] (system) -- (pausar);
 \draw[arrow] (system) -- (pensar);
-\draw[arrow] (system) -- (elegir);
+\draw[arrow] (system) -- (actuar);
 
 \draw[arrow] (pausar) -- (emo_pausar);
 \draw[arrow] (pensar) -- (emo_pensar);
-\draw[arrow] (elegir) -- (emo_elegir);
+\draw[arrow] (actuar) -- (emo_actuar);
 
 \draw[arrow] (emo_pausar) -- (actuadores);
 \draw[arrow] (emo_pensar) -- (actuadores);
-\draw[arrow] (emo_elegir) -- (actuadores);
+\draw[arrow] (emo_actuar) -- (actuadores);
 
 \draw[arrow] (actuadores) -- (resultado);
 
@@ -2083,11 +2083,11 @@ Decisión Deliberada
 \hline
 Protective & Pausar & Azúl suave & 20\% & Grave continuo & Regulación emocional \\
 Discouraging & Pausar & Azul intermitente & 10\% & Descendente & Inhibición leve \\
-Authoritative & Pausar/Elegir & Azul intenso & 35\% & Pulso firme & Control estructural \\
+Authoritative & Pausar/Actuar & Azul intenso & 35\% & Pulso firme & Control estructural \\
 Indecisive & Pensar & Amarillo tenue & 30\% & Bajo repetitivo & Exploración estratégica \\
 Exploitative & Pensar & Naranja & 45\% & Medio sostenido & Evaluación de opciones \\
-Encouraging & Pensar/Elegir & Verde-turquesa & 70\% & Arpegio & Refuerzo positivo \\
-Decisive & Elegir & Verde brillante & 80\% & Ascendente & Confirmación deliberada \\
+Encouraging & Pensar/Actuar & Verde-turquesa & 70\% & Arpegio & Refuerzo positivo \\
+Decisive & Actuar & Verde brillante & 80\% & Ascendente & Confirmación deliberada \\
 Intimidating & Pausar & Rojo tenue & 50\% & Grave abrupto & Alerta inhibitoria \\
 \hline
 \end{tabular}
@@ -2174,7 +2174,7 @@ El flujo operativo del sistema sigue la secuencia:
 \begin{enumerate}
     \item Detección de intento impulsivo y activación del agente Pausar.
     \item Estabilización cognitiva y activación del agente Pensar.
-    \item Confirmación deliberada y activación del agente Elegir.
+    \item Confirmación deliberada y activación del agente Actuar.
 \end{enumerate}
 
 
@@ -2540,7 +2540,7 @@ el desarrollo del juego del estudiante. Cuando, según su criterio pedagógico,
 identifica una situación que requiere mediación (señales de impulsividad
 inminente, bloqueo en la planificación o necesidad de confirmación de una
 decisión tomada), selecciona en la pantalla la fase del ciclo
-(\textit{Pausar}, \textit{Pensar} o \textit{Elegir/Actuar}), el estado
+(\textit{Pausar}, \textit{Pensar} o \textit{Actuar}), el estado
 emocional correspondiente, y el cubo que debe activarse. La activación se
 confirma con un toque o clic, y el cubo emite inmediatamente la señal
 multisensorial configurada. El docente puede interrumpir la activación en

@@ -35,6 +35,7 @@ Este archivo contiene **únicamente decisiones ya tomadas** por el autor y confi
 - **Canal 2 — Actuación**: WiFi (el maestro opera simultáneamente como punto de acceso hacia los cubos y como estación hacia la red del laboratorio) con una conexión TCP en el puerto 3333 hacia el ESP32-C3 de cada cubo, por la que se transmiten los parámetros de color y vibración.
 - Ambos canales están verificados en el mismo archivo de firmware, **coexisten** y no son contradictorios entre sí — el canal de posición no sustituye al canal de actuación.
 - **El autor confirmó que `Maestro___Wifi_copy_20260813194508.ino` es el firmware actualmente instalado en el ESP32 maestro físico.** Por tanto, TCP 3333 queda documentado de forma definitiva como el canal de actuación maestro→cubos — deja de ser una incertidumbre histórica.
+- Esta arquitectura híbrida (canal de posición + canal de actuación) y el hardware confirmado (ESP32-C3 SuperMini, ESP32 DevKit V1, Power Bank, batería 3.7V/180mAh) ya están redactados en `main.tex` y quedaron registrados en el commit `d4202a8` (cierre de la Fase 7, 2026-08-14).
 
 ## Arquitectura de red
 
