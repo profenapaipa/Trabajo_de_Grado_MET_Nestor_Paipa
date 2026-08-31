@@ -1,0 +1,1279 @@
+\begin{thebibliography}{}
+
+\bibitem [\protect \citeauthoryear {%
+{American Psychiatric Association}%
+}{%
+{American Psychiatric Association}%
+}{%
+{\protect \APACyear {2022}}%
+}]{%
+APA2022}
+\APACinsertmetastar {%
+APA2022}%
+\begin{APACrefauthors}%
+{American Psychiatric Association}.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYear{2022}.
+\newblock
+\APACrefbtitle {Diagnostic and Statistical Manual of Mental Disorders}
+  {Diagnostic and statistical manual of mental disorders}\ (\PrintOrdinal{5th,
+  Text Revision}\ \BEd).
+\newblock
+\APACaddressPublisher{Washington, DC}{American Psychiatric Publishing}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Asperger%
+}{%
+Asperger%
+}{%
+{\protect \APACyear {1944}}%
+}]{%
+asperger1944autistic}
+\APACinsertmetastar {%
+asperger1944autistic}%
+\begin{APACrefauthors}%
+Asperger, H.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{1944}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Die Autistischen Psychopathen im Kindesalter} {Die
+  autistischen psychopathen im kindesalter}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Archiv für Psychiatrie und
+  Nervenkrankheiten}{117}{}{76--136}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Baddeley%
+}{%
+Baddeley%
+}{%
+{\protect \APACyear {2000}}%
+}]{%
+Baddeley2000}
+\APACinsertmetastar {%
+Baddeley2000}%
+\begin{APACrefauthors}%
+Baddeley, A.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2000}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {The episodic buffer: a new component of working memory?}
+  {The episodic buffer: a new component of working memory?}{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Trends in Cognitive Sciences}{4}{11}{417--423}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Barkley%
+}{%
+Barkley%
+}{%
+{\protect \APACyear {1997}}%
+}]{%
+Barkley1997}
+\APACinsertmetastar {%
+Barkley1997}%
+\begin{APACrefauthors}%
+Barkley, R\BPBI A.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{1997}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Behavioral inhibition, sustained attention, and
+  executive functions: Constructing a unifying theory of ADHD} {Behavioral
+  inhibition, sustained attention, and executive functions: Constructing a
+  unifying theory of adhd}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Psychological Bulletin}{121}{1}{65--94}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Baron-Cohen%
+}{%
+Baron-Cohen%
+}{%
+{\protect \APACyear {2000}}%
+}]{%
+BaronCohen2000}
+\APACinsertmetastar {%
+BaronCohen2000}%
+\begin{APACrefauthors}%
+Baron-Cohen, S.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2000}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Theory of mind and autism} {Theory of mind and
+  autism}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Current Opinion in Neurobiology}{10}{2}{259--263}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Bear%
+, Connors%
+\BCBL {}\ \BBA {} Paradiso%
+}{%
+Bear%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2016}}%
+}]{%
+Bear2016}
+\APACinsertmetastar {%
+Bear2016}%
+\begin{APACrefauthors}%
+Bear, M\BPBI F.%
+, Connors, B\BPBI W.%
+\BCBL {}\ \BBA {} Paradiso, M\BPBI A.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYear{2016}.
+\newblock
+\APACrefbtitle {Neuroscience: Exploring the Brain} {Neuroscience: Exploring the
+  brain}\ (\PrintOrdinal{4}\ \BEd).
+\newblock
+\APACaddressPublisher{Philadelphia}{Wolters Kluwer}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Bettelheim%
+}{%
+Bettelheim%
+}{%
+{\protect \APACyear {1967}}%
+}]{%
+Bettelheim1967}
+\APACinsertmetastar {%
+Bettelheim1967}%
+\begin{APACrefauthors}%
+Bettelheim, B.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYear{1967}.
+\newblock
+\APACrefbtitle {The Empty Fortress: Infantile Autism and the Birth of the Self}
+  {The empty fortress: Infantile autism and the birth of the self}.
+\newblock
+\APACaddressPublisher{New York}{Free Press}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Bleuler%
+}{%
+Bleuler%
+}{%
+{\protect \APACyear {1911}}%
+}]{%
+Bleuler1911}
+\APACinsertmetastar {%
+Bleuler1911}%
+\begin{APACrefauthors}%
+Bleuler, E.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYear{1911}.
+\newblock
+\APACrefbtitle {Dementia Praecox oder Gruppe der Schizophrenien} {Dementia
+  praecox oder gruppe der schizophrenien}.
+\newblock
+\APACaddressPublisher{Leipzig}{Deuticke}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+{Centro Internacional sobre el Envejecimiento}%
+}{%
+{Centro Internacional sobre el Envejecimiento}%
+}{%
+{\protect \APACyear {2023}}%
+}]{%
+cenie_lobulo}
+\APACinsertmetastar {%
+cenie_lobulo}%
+\begin{APACrefauthors}%
+{Centro Internacional sobre el Envejecimiento}.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2023}{}{}.
+\newblock
+\APACrefbtitle {Lóbulo cerebral.} {Lóbulo cerebral.}
+\newblock
+\begin{APACrefURL} \url{https://cenie.eu/es/lobulo-cerebral} \end{APACrefURL}
+\newblock
+\APACrefnote{Consultado el 24 de abril de 2026}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Coben%
+, Clarke%
+, Hudspeth%
+\BCBL {}\ \BBA {} Barry%
+}{%
+Coben%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2008}}%
+}]{%
+Coben2008}
+\APACinsertmetastar {%
+Coben2008}%
+\begin{APACrefauthors}%
+Coben, R.%
+, Clarke, A\BPBI R.%
+, Hudspeth, W.%
+\BCBL {}\ \BBA {} Barry, R\BPBI J.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2008}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {EEG power and coherence in autistic spectrum disorder}
+  {Eeg power and coherence in autistic spectrum disorder}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Clinical Neurophysiology}{119}{5}{1002--1009}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Courchesne%
+\ \BBA {} Pierce%
+}{%
+Courchesne%
+\ \BBA {} Pierce%
+}{%
+{\protect \APACyear {2007}}%
+}]{%
+Courchesne2007}
+\APACinsertmetastar {%
+Courchesne2007}%
+\begin{APACrefauthors}%
+Courchesne, E.%
+\BCBT {}\ \BBA {} Pierce, K.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2007}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Brain overgrowth in autism during a critical time in
+  development} {Brain overgrowth in autism during a critical time in
+  development}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Current Opinion in Neurobiology}{17}{4}{489--495}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Cárdenas%
+}{%
+Cárdenas%
+}{%
+{\protect \APACyear {2017}}%
+}]{%
+Cardenas2017}
+\APACinsertmetastar {%
+Cardenas2017}%
+\begin{APACrefauthors}%
+Cárdenas, P.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYear{2017}.
+\unskip\
+\newblock
+\APACrefbtitle {Una exploración de la incidencia de los patrones corporales en
+  la determinación de estados de aprendizaje matemático con el juego La
+  Escalera} {Una exploración de la incidencia de los patrones corporales en la
+  determinación de estados de aprendizaje matemático con el juego la
+  escalera}\ \APACtypeAddressSchool {Trabajo de grado}{}{}.
+\unskip\
+\newblock
+\APACaddressSchool {Bogotá, Colombia}{Universidad Distrital Francisco José de
+  Caldas}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Delorme%
+\ \BBA {} Makeig%
+}{%
+Delorme%
+\ \BBA {} Makeig%
+}{%
+{\protect \APACyear {2004}}%
+}]{%
+Delorme2004}
+\APACinsertmetastar {%
+Delorme2004}%
+\begin{APACrefauthors}%
+Delorme, A.%
+\BCBT {}\ \BBA {} Makeig, S.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2004}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {EEGLAB: An open source toolbox for analysis of
+  single-trial EEG dynamics including independent component analysis} {Eeglab:
+  An open source toolbox for analysis of single-trial eeg dynamics including
+  independent component analysis}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Journal of Neuroscience Methods}{134}{1}{9--21}.
+\newblock
+\begin{APACrefDOI} \doi{10.1016/j.jneumeth.2003.10.009} \end{APACrefDOI}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Diamond%
+}{%
+Diamond%
+}{%
+{\protect \APACyear {2013}}%
+}]{%
+Diamond2013}
+\APACinsertmetastar {%
+Diamond2013}%
+\begin{APACrefauthors}%
+Diamond, A.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2013}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Executive functions} {Executive functions}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Annual Review of Psychology}{64}{}{135--168}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Ecker%
+, Bookheimer%
+\BCBL {}\ \BBA {} Murphy%
+}{%
+Ecker%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2015}}%
+}]{%
+Ecker2015}
+\APACinsertmetastar {%
+Ecker2015}%
+\begin{APACrefauthors}%
+Ecker, C.%
+, Bookheimer, S\BPBI Y.%
+\BCBL {}\ \BBA {} Murphy, D\BPBI G\BPBI M.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2015}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Neuroimaging in autism spectrum disorder: Brain
+  structure and function across the lifespan} {Neuroimaging in autism spectrum
+  disorder: Brain structure and function across the lifespan}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{The Lancet Neurology}{14}{11}{1121--1134}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Falkenstein%
+}{%
+Falkenstein%
+}{%
+{\protect \APACyear {2000}}%
+}]{%
+Falkenstein2000}
+\APACinsertmetastar {%
+Falkenstein2000}%
+\begin{APACrefauthors}%
+Falkenstein, M.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2000}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {ERP components on reaction errors and their functional
+  significance} {Erp components on reaction errors and their functional
+  significance}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Biological Psychology}{51}{2-3}{87--107}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Frith%
+}{%
+Frith%
+}{%
+{\protect \APACyear {2003}}%
+}]{%
+Frith2003}
+\APACinsertmetastar {%
+Frith2003}%
+\begin{APACrefauthors}%
+Frith, U.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYear{2003}.
+\newblock
+\APACrefbtitle {Autism: Explaining the Enigma} {Autism: Explaining the enigma}.
+\newblock
+\APACaddressPublisher{}{Blackwell}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Geurts%
+, Corbett%
+\BCBL {}\ \BBA {} Solomon%
+}{%
+Geurts%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2009}}%
+}]{%
+Geurts2009}
+\APACinsertmetastar {%
+Geurts2009}%
+\begin{APACrefauthors}%
+Geurts, H\BPBI M.%
+, Corbett, B.%
+\BCBL {}\ \BBA {} Solomon, M.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2009}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {The paradox of cognitive flexibility in autism} {The
+  paradox of cognitive flexibility in autism}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Trends in Cognitive Sciences}{13}{2}{74--82}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Gross%
+}{%
+Gross%
+}{%
+{\protect \APACyear {1998}}%
+}]{%
+Gross1998}
+\APACinsertmetastar {%
+Gross1998}%
+\begin{APACrefauthors}%
+Gross, J\BPBI J.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{1998}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {The emerging field of emotion regulation: An integrative
+  review} {The emerging field of emotion regulation: An integrative
+  review}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Review of General Psychology}{2}{3}{271--299}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Happe%
+\ \BBA {} Frith%
+}{%
+Happe%
+\ \BBA {} Frith%
+}{%
+{\protect \APACyear {2020}}%
+}]{%
+Happe2020}
+\APACinsertmetastar {%
+Happe2020}%
+\begin{APACrefauthors}%
+Happe, F.%
+\BCBT {}\ \BBA {} Frith, U.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2020}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Annual Research Review: Looking back to look forward –
+  changes in the concept of autism} {Annual research review: Looking back to
+  look forward – changes in the concept of autism}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Journal of Child Psychology and
+  Psychiatry}{61}{3}{218--232}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Happé%
+\ \BBA {} Frith%
+}{%
+Happé%
+\ \BBA {} Frith%
+}{%
+{\protect \APACyear {2006}}%
+}]{%
+Happe2006}
+\APACinsertmetastar {%
+Happe2006}%
+\begin{APACrefauthors}%
+Happé, F.%
+\BCBT {}\ \BBA {} Frith, U.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2006}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Weak coherence account in autism} {Weak coherence
+  account in autism}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Journal of Autism and Developmental
+  Disorders}{36}{1}{5--25}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Hill%
+}{%
+Hill%
+}{%
+{\protect \APACyear {2004}}%
+}]{%
+Hill2004}
+\APACinsertmetastar {%
+Hill2004}%
+\begin{APACrefauthors}%
+Hill, E.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2004}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Executive dysfunction in autism} {Executive dysfunction
+  in autism}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Trends in Cognitive Sciences}{8}{1}{26--32}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Hirota%
+\ \BBA {} King%
+}{%
+Hirota%
+\ \BBA {} King%
+}{%
+{\protect \APACyear {2023}}%
+}]{%
+Hirota2023}
+\APACinsertmetastar {%
+Hirota2023}%
+\begin{APACrefauthors}%
+Hirota, T.%
+\BCBT {}\ \BBA {} King, B\BPBI H.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2023}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Autism spectrum disorder: A review} {Autism spectrum
+  disorder: A review}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{JAMA}{329}{2}{157--168}.
+\newblock
+\begin{APACrefDOI} \doi{10.1001/jama.2022.23661} \end{APACrefDOI}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Johnsonbaugh%
+}{%
+Johnsonbaugh%
+}{%
+{\protect \APACyear {2005}}%
+}]{%
+Johnsonbaugh2005}
+\APACinsertmetastar {%
+Johnsonbaugh2005}%
+\begin{APACrefauthors}%
+Johnsonbaugh, R.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYear{2005}.
+\newblock
+\APACrefbtitle {Matem\'aticas Discretas} {Matem\'aticas discretas}\
+  (\PrintOrdinal{6}\ \BEd).
+\newblock
+\APACaddressPublisher{M\'exico}{Pearson Educaci\'on}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Just%
+, Keller%
+, Malave%
+, Kana%
+\BCBL {}\ \BBA {} Varma%
+}{%
+Just%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2012}}%
+}]{%
+Just2012}
+\APACinsertmetastar {%
+Just2012}%
+\begin{APACrefauthors}%
+Just, M\BPBI A.%
+, Keller, T\BPBI A.%
+, Malave, V\BPBI L.%
+, Kana, R\BPBI K.%
+\BCBL {}\ \BBA {} Varma, S.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2012}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Autism as a neural systems disorder: A theory of
+  frontal-posterior underconnectivity} {Autism as a neural systems disorder: A
+  theory of frontal-posterior underconnectivity}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Neuroscience and Biobehavioral
+  Reviews}{36}{4}{1292--1313}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Kana%
+, Wadsworth%
+\BCBL {}\ \BBA {} Travers%
+}{%
+Kana%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2011}}%
+}]{%
+Kana2011}
+\APACinsertmetastar {%
+Kana2011}%
+\begin{APACrefauthors}%
+Kana, R\BPBI K.%
+, Wadsworth, H\BPBI M.%
+\BCBL {}\ \BBA {} Travers, B\BPBI G.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2011}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {A systems level analysis of the mirror neuron hypothesis
+  and imitation impairments in autism spectrum disorders} {A systems level
+  analysis of the mirror neuron hypothesis and imitation impairments in autism
+  spectrum disorders}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Neuroscience and Biobehavioral
+  Reviews}{35}{3}{894--902}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Kandel%
+, Schwartz%
+\BCBL {}\ \BBA {} Jessell%
+}{%
+Kandel%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2000}}%
+}]{%
+Kandel2000}
+\APACinsertmetastar {%
+Kandel2000}%
+\begin{APACrefauthors}%
+Kandel, E\BPBI R.%
+, Schwartz, J\BPBI H.%
+\BCBL {}\ \BBA {} Jessell, T\BPBI M.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYear{2000}.
+\newblock
+\APACrefbtitle {Principles of Neural Science} {Principles of neural science}\
+  (\PrintOrdinal{4}\ \BEd).
+\newblock
+\APACaddressPublisher{New York}{McGraw-Hill}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Kanner%
+}{%
+Kanner%
+}{%
+{\protect \APACyear {1943}}%
+}]{%
+kanner1943autistic}
+\APACinsertmetastar {%
+kanner1943autistic}%
+\begin{APACrefauthors}%
+Kanner, L.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{1943}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Autistic disturbances of affective contact} {Autistic
+  disturbances of affective contact}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Nervous Child}{2}{3}{217--250}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Klimesch%
+}{%
+Klimesch%
+}{%
+{\protect \APACyear {1999}}%
+}]{%
+Klimesch1999}
+\APACinsertmetastar {%
+Klimesch1999}%
+\begin{APACrefauthors}%
+Klimesch, W.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{1999}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {EEG alpha and theta oscillations reflect cognitive and
+  memory performance: A review and analysis} {Eeg alpha and theta oscillations
+  reflect cognitive and memory performance: A review and analysis}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Brain Research Reviews}{29}{2--3}{169--195}.
+\newblock
+\begin{APACrefDOI} \doi{10.1016/S0165-0173(98)00056-3} \end{APACrefDOI}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Kopp%
+, Rist%
+\BCBL {}\ \BBA {} Mattler%
+}{%
+Kopp%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {1996}}%
+}]{%
+Kopp1996}
+\APACinsertmetastar {%
+Kopp1996}%
+\begin{APACrefauthors}%
+Kopp, B.%
+, Rist, F.%
+\BCBL {}\ \BBA {} Mattler, U.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{1996}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {N200 in the flanker task as a neurobehavioral tool for
+  investigating executive control} {N200 in the flanker task as a
+  neurobehavioral tool for investigating executive control}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Psychophysiology}{33}{3}{282--294}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Li{\'e}vano~Chaparro%
+\ \BBA {} Molina~Mongu{\'i}%
+}{%
+Li{\'e}vano~Chaparro%
+\ \BBA {} Molina~Mongu{\'i}%
+}{%
+{\protect \APACyear {2022}}%
+}]{%
+LievanoMolina2022}
+\APACinsertmetastar {%
+LievanoMolina2022}%
+\begin{APACrefauthors}%
+Li{\'e}vano~Chaparro, L\BPBI P.%
+\BCBT {}\ \BBA {} Molina~Mongu{\'i}, R\BPBI R.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYear{2022}.
+\unskip\
+\newblock
+\APACrefbtitle {An{\'a}lisis de las trayectorias de aprendizaje del juego {La
+  Escalera}} {An{\'a}lisis de las trayectorias de aprendizaje del juego {La
+  Escalera}}\ \APACtypeAddressSchool {Trabajo de Grado, Maestr{\'i}a en
+  Educaci{\'o}n en Tecnolog{\'i}a}{}{}.
+\unskip\
+\newblock
+\APACaddressSchool {Bogot{\'a}, Colombia}{Universidad Distrital Francisco
+  Jos{\'e} de Caldas}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Lord%
+, Elsabbagh%
+, Baird%
+\BCBL {}\ \BBA {} Veenstra-VanderWeele%
+}{%
+Lord%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2018}}%
+}]{%
+Lord2018}
+\APACinsertmetastar {%
+Lord2018}%
+\begin{APACrefauthors}%
+Lord, C.%
+, Elsabbagh, M.%
+, Baird, G.%
+\BCBL {}\ \BBA {} Veenstra-VanderWeele, J.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2018}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Autism spectrum disorder} {Autism spectrum
+  disorder}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{The Lancet}{392}{}{508--520}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Luck%
+}{%
+Luck%
+}{%
+{\protect \APACyear {2014}}%
+}]{%
+Luck2014}
+\APACinsertmetastar {%
+Luck2014}%
+\begin{APACrefauthors}%
+Luck, S\BPBI J.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYear{2014}.
+\newblock
+\APACrefbtitle {An Introduction to the Event-Related Potential Technique} {An
+  introduction to the event-related potential technique}.
+\newblock
+\APACaddressPublisher{}{MIT Press}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Mazefsky%
+\ \protect \BOthers {.}}{%
+Mazefsky%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2013}}%
+}]{%
+Mazefsky2013}
+\APACinsertmetastar {%
+Mazefsky2013}%
+\begin{APACrefauthors}%
+Mazefsky, C\BPBI A.%
+, Herrington, J.%
+, Siegel, M.%
+, Scarpa, A.%
+, Maddox, B\BPBI B.%
+, Scahill, L.%
+\BCBL {}\ \BBA {} White, S\BPBI W.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2013}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {The role of emotion regulation in autism spectrum
+  disorder} {The role of emotion regulation in autism spectrum
+  disorder}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Journal of the American Academy of Child and Adolescent
+  Psychiatry}{52}{7}{679--688}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Miyake%
+\ \protect \BOthers {.}}{%
+Miyake%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2000}}%
+}]{%
+Miyake2000}
+\APACinsertmetastar {%
+Miyake2000}%
+\begin{APACrefauthors}%
+Miyake, A.%
+, Friedman, N\BPBI P.%
+, Emerson, M\BPBI J.%
+, Witzki, A\BPBI H.%
+, Howerter, A.%
+\BCBL {}\ \BBA {} Wager, T\BPBI D.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2000}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {The unity and diversity of executive functions and their
+  contributions to complex "Frontal Lobe" tasks} {The unity and diversity of
+  executive functions and their contributions to complex "frontal lobe"
+  tasks}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Cognitive Psychology}{41}{1}{49--100}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Palomá%
+}{%
+Palomá%
+}{%
+{\protect \APACyear {2017}}%
+}]{%
+Natalia2017}
+\APACinsertmetastar {%
+Natalia2017}%
+\begin{APACrefauthors}%
+Palomá, N.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYear{2017}.
+\unskip\
+\newblock
+\APACrefbtitle {Una trayectoria real del juego La Escalera vinculada a
+  hipótesis que potencian el aprendizaje de las funciones desde poblaciones
+  diversas} {Una trayectoria real del juego la escalera vinculada a hipótesis
+  que potencian el aprendizaje de las funciones desde poblaciones diversas}\
+  \APACtypeAddressSchool {Trabajo de grado}{}{}.
+\unskip\
+\newblock
+\APACaddressSchool {Bogotá, Colombia}{Universidad Distrital Francisco José de
+  Caldas}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Pea%
+}{%
+Pea%
+}{%
+{\protect \APACyear {2004}}%
+}]{%
+Pea2004}
+\APACinsertmetastar {%
+Pea2004}%
+\begin{APACrefauthors}%
+Pea, R\BPBI D.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2004}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {The Social and Technological Dimensions of Scaffolding
+  and Related Theoretical Concepts for Learning, Education, and Human Activity}
+  {The social and technological dimensions of scaffolding and related
+  theoretical concepts for learning, education, and human activity}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{The Journal of the Learning Sciences}{13}{3}{423--451}.
+\newblock
+\begin{APACrefDOI} \doi{10.1207/s15327809jls1303_6} \end{APACrefDOI}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Pfurtscheller%
+\ \BBA {} Lopes~da Silva%
+}{%
+Pfurtscheller%
+\ \BBA {} Lopes~da Silva%
+}{%
+{\protect \APACyear {1999}}%
+}]{%
+Pfurtscheller1999}
+\APACinsertmetastar {%
+Pfurtscheller1999}%
+\begin{APACrefauthors}%
+Pfurtscheller, G.%
+\BCBT {}\ \BBA {} Lopes~da Silva, F\BPBI H.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{1999}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Event-related EEG/MEG synchronization and
+  desynchronization: Basic principles} {Event-related eeg/meg synchronization
+  and desynchronization: Basic principles}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Clinical Neurophysiology}{110}{11}{1842--1857}.
+\newblock
+\begin{APACrefDOI} \doi{10.1016/S1388-2457(99)00141-8} \end{APACrefDOI}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Páez%
+\ \BBA {} González%
+}{%
+Páez%
+\ \BBA {} González%
+}{%
+{\protect \APACyear {2022}}%
+}]{%
+PaezGonzalez2022}
+\APACinsertmetastar {%
+PaezGonzalez2022}%
+\begin{APACrefauthors}%
+Páez, J.%
+\BCBT {}\ \BBA {} González, E.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2022}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Human-Robot Scaffolding: An Architecture to Foster
+  Problem-solving Skills} {Human-robot scaffolding: An architecture to foster
+  problem-solving skills}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{ACM Transactions on Human-Robot
+  Interaction}{11}{3}{1--17}.
+\newblock
+\begin{APACrefDOI} \doi{10.1145/3526109} \end{APACrefDOI}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Rodríguez%
+\ \BBA {} López%
+}{%
+Rodríguez%
+\ \BBA {} López%
+}{%
+{\protect \APACyear {2017}}%
+}]{%
+RodriguezLopez2017}
+\APACinsertmetastar {%
+RodriguezLopez2017}%
+\begin{APACrefauthors}%
+Rodríguez, S.%
+\BCBT {}\ \BBA {} López, J.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYear{2017}.
+\unskip\
+\newblock
+\APACrefbtitle {El juego La Escalera como dispositivo para la formulación de
+  patrones aritmético s} {El juego la escalera como dispositivo para la
+  formulación de patrones aritmético s}\ \APACtypeAddressSchool {Trabajo de
+  grado}{}{}.
+\unskip\
+\newblock
+\APACaddressSchool {Bogotá, Colombia}{Universidad Distrital Francisco José de
+  Caldas}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Rutter%
+}{%
+Rutter%
+}{%
+{\protect \APACyear {1978}}%
+}]{%
+Rutter1978}
+\APACinsertmetastar {%
+Rutter1978}%
+\begin{APACrefauthors}%
+Rutter, M.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{1978}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Diagnosis and definition of childhood autism} {Diagnosis
+  and definition of childhood autism}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Journal of Autism and Childhood
+  Schizophrenia}{8}{2}{139--161}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Samson%
+, Hardan%
+, Podell%
+, Phillips%
+\BCBL {}\ \BBA {} Gross%
+}{%
+Samson%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2014}}%
+}]{%
+Samson2014}
+\APACinsertmetastar {%
+Samson2014}%
+\begin{APACrefauthors}%
+Samson, A\BPBI C.%
+, Hardan, A\BPBI Y.%
+, Podell, R\BPBI W.%
+, Phillips, J\BPBI M.%
+\BCBL {}\ \BBA {} Gross, J\BPBI J.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2014}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Emotion regulation in autism spectrum disorder} {Emotion
+  regulation in autism spectrum disorder}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Autism Research}{7}{1}{92--102}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Sukhareva%
+}{%
+Sukhareva%
+}{%
+{\protect \APACyear {1926}}%
+}]{%
+Sukhareva1926}
+\APACinsertmetastar {%
+Sukhareva1926}%
+\begin{APACrefauthors}%
+Sukhareva, G.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{1926}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Die schizoiden Psychopathien im Kindesalter} {Die
+  schizoiden psychopathien im kindesalter}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Monatsschrift für Psychiatrie und
+  Neurologie}{60}{}{235--261}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Uddin%
+, Supekar%
+\BCBL {}\ \BBA {} Menon%
+}{%
+Uddin%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2013}}%
+}]{%
+Uddin2013}
+\APACinsertmetastar {%
+Uddin2013}%
+\begin{APACrefauthors}%
+Uddin, L\BPBI Q.%
+, Supekar, K.%
+\BCBL {}\ \BBA {} Menon, V.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2013}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Reconceptualizing functional brain connectivity in
+  autism from a developmental perspective} {Reconceptualizing functional brain
+  connectivity in autism from a developmental perspective}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Frontiers in Human Neuroscience}{7}{}{458}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Uhlhaas%
+\ \BBA {} Singer%
+}{%
+Uhlhaas%
+\ \BBA {} Singer%
+}{%
+{\protect \APACyear {2006}}%
+}]{%
+Uhlhaas2006}
+\APACinsertmetastar {%
+Uhlhaas2006}%
+\begin{APACrefauthors}%
+Uhlhaas, P\BPBI J.%
+\BCBT {}\ \BBA {} Singer, W.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2006}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Neural synchrony in brain disorders: relevance for
+  cognitive dysfunctions and pathophysiology} {Neural synchrony in brain
+  disorders: relevance for cognitive dysfunctions and pathophysiology}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Neuron}{52}{1}{155--168}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Williams%
+, Goldstein%
+\BCBL {}\ \BBA {} Minshew%
+}{%
+Williams%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2006}}%
+}]{%
+Williams2006}
+\APACinsertmetastar {%
+Williams2006}%
+\begin{APACrefauthors}%
+Williams, D.%
+, Goldstein, G.%
+\BCBL {}\ \BBA {} Minshew, N.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2006}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Neuropsychologic functioning in children with autism}
+  {Neuropsychologic functioning in children with autism}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Journal of the International Neuropsychological
+  Society}{12}{}{1--12}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Wing%
+}{%
+Wing%
+}{%
+{\protect \APACyear {1997}}%
+}]{%
+Wing1997}
+\APACinsertmetastar {%
+Wing1997}%
+\begin{APACrefauthors}%
+Wing, L.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{1997}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {The autistic spectrum} {The autistic spectrum}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{The Lancet}{350}{}{1761--1766}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Wood%
+, Bruner%
+\BCBL {}\ \BBA {} Ross%
+}{%
+Wood%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {1976}}%
+}]{%
+Wood1976}
+\APACinsertmetastar {%
+Wood1976}%
+\begin{APACrefauthors}%
+Wood, D.%
+, Bruner, J.%
+\BCBL {}\ \BBA {} Ross, G.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{1976}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {The role of tutoring in problem solving} {The role of
+  tutoring in problem solving}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Journal of Child Psychology and
+  Psychiatry}{17}{}{89--100}.
+\PrintBackRefs{\CurrentBib}
+
+\end{thebibliography}

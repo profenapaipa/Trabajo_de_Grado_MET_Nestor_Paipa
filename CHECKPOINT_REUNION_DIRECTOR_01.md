@@ -24,7 +24,7 @@ d4202a8  Consolida arquitectura tecnológica y control del proyecto
 Verificado con `git status`/`git diff --name-only` en el momento de generar este checkpoint:
 
 - **Modificados, sin commitear**: `DECISIONES_PROYECTO.md` (línea de nomenclatura actualizada; nota sobre la arquitectura híbrida y el commit `d4202a8`), `PENDIENTES_TESIS.md` (registro de los hallazgos de la Fase 12: labels duplicados con causa raíz, "Participantes" duplicada y vacía, Figura 4.1 heredada de un estudio con TDAH).
-- **Nuevos, sin trackear**: `ACTA_DECISIONES_REUNION_TESIS.md`, `INFORME_AVANCE_REUNION_TESIS.md` (este paquete de reunión). El checkpoint actual (`CHECKPOINT_REUNION_DIRECTOR_01.md`) se añadirá también como no trackeado inmediatamente después de guardarse.
+- **Nuevos, sin trackear**: `INFORME_AVANCE_REUNION_TESIS.md`, `PRESENTACION_REUNION_DIRECTOR.md` (fuente única de las 15 diapositivas, incluidas las tablas de decisiones — sustituye a `ACTA_DECISIONES_REUNION_TESIS.md`, retirada por decisión del autor de unificar todo en el PowerPoint). El checkpoint actual (`CHECKPOINT_REUNION_DIRECTOR_01.md`) se añadirá también como no trackeado inmediatamente después de guardarse.
 - `main.tex`/`main.pdf`: **sin cambios pendientes** — ya incluidos en `db924a3`.
 
 ## Estado GitHub
@@ -51,7 +51,7 @@ Remote `origin`: `https://github.com/profenapaipa/Trabajo_de_Grado_MET_Nestor_Pa
 
 - Control: `README.md`, `ESTADO_PROYECTO.md`, `DECISIONES_PROYECTO.md`, `PENDIENTES_TESIS.md`.
 - Tesis: `Trabajo_de_Grado_MET_Nestor_Paipa/main.tex`, `main.pdf` (79 páginas).
-- Paquete de esta reunión: `INFORME_AVANCE_REUNION_TESIS.md`, `ACTA_DECISIONES_REUNION_TESIS.md` (plantilla vacía), este checkpoint, y la presentación (Artifact HTML, publicada fuera del repositorio — ver nota abajo).
+- Paquete de esta reunión: `INFORME_AVANCE_REUNION_TESIS.md` (respaldo escrito detallado), `PRESENTACION_REUNION_DIRECTOR.md` (fuente única para generar el PowerPoint, con las tablas de decisiones integradas en las diapositivas 13-14), este checkpoint.
 
 ## Decisiones pendientes
 
@@ -59,11 +59,11 @@ Las 8 preguntas de `INFORME_AVANCE_REUNION_TESIS.md` (sección 10): diseño de i
 
 ## Documentos generados para la reunión
 
-1. `INFORME_AVANCE_REUNION_TESIS.md` — creado.
-2. `ACTA_DECISIONES_REUNION_TESIS.md` — creado, plantilla vacía.
+1. `INFORME_AVANCE_REUNION_TESIS.md` — creado (respaldo escrito).
+2. `PRESENTACION_REUNION_DIRECTOR.md` — creado; fuente única de las 15 diapositivas, para entregar como contexto a Claude Escritorio y obtener el `.pptx`. Las diapositivas 13 y 14 contienen las tablas de las 8 decisiones con su contexto, columna "Decisión tomada" vacía a propósito.
 3. `CHECKPOINT_REUNION_DIRECTOR_01.md` — este documento.
-4. Presentación de 14 diapositivas (Artifact HTML) — publicada en esta sesión. **Nota**: la presentación vive como Artifact, no como archivo dentro del repositorio; si se quiere versionar junto con los demás documentos, debe descargarse su HTML y añadirse al repositorio en una sesión futura, con autorización explícita.
+4. Presentación HTML de 14 diapositivas (Artifact, sesión anterior) — **superada** por `PRESENTACION_REUNION_DIRECTOR.md`; ya no incluye la tabla de decisiones integrada, así que el `.pptx` a generar debe partir del nuevo archivo `.md`, no del Artifact.
 
 ## Nota de cierre
 
-Ningún `git add`, `commit` ni `push` se ejecutó en esta sesión sobre los 3 documentos nuevos. La Fase 12 permanece 🔴 BLOQUEADA y la Fase 10 en 🟡 PARCIAL, como exige el encargo, hasta que exista una decisión registrada en `ACTA_DECISIONES_REUNION_TESIS.md`.
+Ningún `git add`, `commit` ni `push` se ejecutó en esta sesión sobre los documentos nuevos. `ACTA_DECISIONES_REUNION_TESIS.md` fue retirado (nunca estuvo commiteado) por decisión explícita del autor de unificar todo en el PowerPoint. La Fase 12 permanece 🔴 BLOQUEADA y la Fase 10 en 🟡 PARCIAL hasta que exista una decisión registrada en las diapositivas 13-14 de `PRESENTACION_REUNION_DIRECTOR.md`.
