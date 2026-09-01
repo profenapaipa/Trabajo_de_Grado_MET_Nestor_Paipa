@@ -298,16 +298,37 @@ población con TEA nivel 1 y a las limitaciones
 prácticas de los sistemas autónomos de 
 reconocimiento del estado del aprendiz 
 \cite{PaezGonzalez2022}. La distribución 
-de la agentividad entre el cubo como 
-ejecutor sensorial y el docente como agente 
-interpretativo permite una mediación más 
-ajustada al ritmo real del aprendiz, sin 
-los problemas de artificialización del 
-entorno ni de generación de ansiedad 
-que los sistemas autónomos han reportado 
+de la agentividad entre el cubo como
+ejecutor sensorial y el docente como agente
+interpretativo permite una mediación más
+ajustada al ritmo real del aprendiz, sin
+los problemas de artificialización del
+entorno ni de generación de ansiedad
+que los sistemas autónomos han reportado
 en investigaciones previas.
 
-Desde el punto de vista pedagógico, el 
+El punto de partida tecnológico de esta investigación es el
+prototipo físico de cubos inteligentes desarrollado por el
+módulo INNOVA del proyecto ACACIA (Red CADEP ACACIA,
+cofinanciado por el programa Erasmus+), un proyecto de
+cooperación entre la Universidad NOVA de Lisboa y la
+Universidad Distrital Francisco José de Caldas
+\citep{ACACIA2025}. De ese proyecto se recibieron los diez
+cubos ensamblados, la base ``Maestro'' y una primera versión
+del backend y del frontend, capaz de enviar a un cubo una
+señal individual de color, sin conexión todavía entre esa
+interfaz y el hardware físico del tablero. A partir de esa
+línea base, el aporte propio de la presente investigación
+consiste en el diseño y la implementación del protocolo de
+interacción Mago de Oz con el ciclo Pausar-Pensar-Actuar, la
+arquitectura híbrida de dos canales (posición y actuación)
+que conecta efectivamente la interfaz con el hardware, y la
+adaptación completa del sistema al estudio del control
+inhibitorio en un niño con TEA nivel 1 mediante EEG,
+ninguno de los cuales forma parte de la entrega original del
+proyecto ACACIA.
+
+Desde el punto de vista pedagógico, el
 estudio aporta evidencia preliminar sobre 
 el uso de herramientas multisensoriales 
 como mediadoras del control inhibitorio
@@ -503,23 +524,39 @@ claramente delimitado, requerir decisiones sucesivas donde la
 respuesta impulsiva conduzca a errores recuperables, y no 
 depender de conocimiento previo especializado que introduzca 
 variabilidad irrelevante \cite{PaezGonzalez2022, Diamond2013}. 
-El juego La Escalera satisface estas condiciones y ha sido 
-utilizado en investigaciones previas como dispositivo para 
-estudiar el pensamiento matemático, la formulación de patrones 
-y la resolución de problemas en contextos educativos colombianos 
+El juego La Escalera satisface estas condiciones y ha sido
+utilizado en investigaciones previas como dispositivo para
+estudiar el pensamiento matemático, la formulación de patrones
+y la resolución de problemas en contextos educativos colombianos
 \cite{Cardenas2017, RodriguezLopez2017, Natalia2017}.
+
+El antecedente más lejano de La Escalera es un juego de peones
+de solitario dado a conocer por Édouard Lucas en 1883, en su
+obra \textit{Récréations Mathématiques}, tal como documentan
+Liévano Chaparro y Molina Monguí \citep{LievanoMolina2022}.
+En la Universidad Distrital Francisco José de Caldas, ese
+juego de transformación fue retomado y adaptado en distintos
+trabajos de grado de la Maestría en Educación en Tecnología
+\cite{Cardenas2017, RodriguezLopez2017, Natalia2017,
+LievanoMolina2022}, entre los cuales Liévano Chaparro y Molina
+Monguí desarrollaron la versión física de once posiciones
+numeradas (Figura~\ref{fig:juego-peones-original}) sobre la que
+se fundamenta el juego utilizado en la presente investigación.
 
 \begin{figure}[h]
     \centering
-        \caption{Explicación Juego}
+    \includegraphics[width=0.65\textwidth]{juego-peones-original.png}
+    \caption{Versión física del juego La Escalera, de once posiciones numeradas (cinco fichas rojas y cinco azules con una posición central vacía), sobre la que se fundamenta el modelo matemático del espacio del problema. Fuente: \cite{LievanoMolina2022}.}
+    \label{fig:juego-peones-original}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+        \caption{Reglas del juego La Escalera y comparación de las tres reglas de movimiento, tal como se presentan al jugador en la interfaz. Elaboración propia.}
 \includegraphics[width=0.50\textwidth]{juego.png}
-\begin{flushleft}
-\footnotesize
-\textit{Nota.} Elaboración propia.
-\end{flushleft}
 \label{juegoreglas}
 \end{figure}
-La Escalera es un problema de transformación con espacio de 
+La Escalera es un problema de transformación con espacio de
 estados bien definido. El tablero consiste en una fila lineal 
 de once posiciones: cinco fichas de un color ocupan las 
 posiciones del extremo izquierdo, cinco fichas de un segundo 
@@ -534,7 +571,7 @@ sobre una ficha del color contrario si la posición después de
 esa ficha está vacía. En ambos casos el movimiento es 
 unidireccional: las fichas del grupo izquierdo solo avanzan 
 hacia la derecha, y las del grupo derecho solo avanzan hacia 
-la izquierda. No se permiten retrocesos \cite{PaezGonzalez2022}.
+la izquierda. No se permiten retrocesos \cite{PaezGonzalez2022, LievanoMolina2022}.
 
 Desde el punto de vista matemático, el espacio de estados del 
 juego puede representarse como un grafo dirigido en el que cada 
@@ -557,17 +594,37 @@ movimientos redundantes, mayor evidencia de dificultad para
 inhibir la respuesta impulsiva y sostener una estrategia 
 deliberada \cite{Diamond2013, Hill2004}.
 
+La versión digital del juego utilizada como referente para la
+presente investigación fue programada originalmente en
+Processing y migrada a p5.js para su publicación en línea por
+Liévano Chaparro y Molina Monguí, junto con el modelo
+computacional del espacio del problema y las métricas de
+buclicidad y ramificación descritas en la
+Sección~\ref{sec:fundamento_ecuaciones}
+\cite{LievanoMolina2022}. En el capítulo de trabajos futuros de
+esa investigación, los propios autores propusieron
+explícitamente ``implementar el juego físico con conexión a la
+interfaz gráfica, la base de datos, el sistema de análisis de
+datos y el grafo como apoyo visual de las rutas y posibles
+decisiones'' \citep{LievanoMolina2022}. La integración de los
+cubos inteligentes del proyecto ACACIA con esa misma interfaz,
+descrita en el Capítulo~4 de este documento, constituye una
+respuesta directa a esa línea de trabajo futuro.
+
 \begin{figure}[h]
     \centering
-        \caption{Espacio del problema. xxxxxx}
-\includegraphics[width=0.50\textwidth]{Grafo.png}
-\begin{flushleft}
-\footnotesize
-\textit{Nota.} Elaboración propia.
-\end{flushleft}
-\label{MWM1}
+    \includegraphics[width=0.6\textwidth]{interfaz-original-la-escalera.png}
+    \caption{Interfaz gráfica original del juego La Escalera, programada en Processing y migrada a p5.js para su publicación en línea. Fuente: \cite{LievanoMolina2022}.}
+    \label{fig:interfaz-original}
 \end{figure}
-Esta característica convierte a La Escalera en un escenario 
+
+\begin{figure}[h]
+    \centering
+        \caption{Espacio del problema del juego La Escalera: grafo no dirigido de los estados posibles del tablero, con el estado inicial, el estado meta y los puntos críticos señalados, generado siguiendo la metodología de graficación del espacio del problema propuesta por \cite{LievanoMolina2022}.}
+\includegraphics[width=0.50\textwidth]{Grafo.png}
+\label{fig:espacio-problema-propio}
+\end{figure}
+Esta característica convierte a La Escalera en un escenario
 especialmente adecuado para el estudio del control inhibitorio 
 en estudiantes con TEA nivel 1. Cada vez que el aprendiz 
 enfrenta la decisión de mover una ficha, debe evaluar si ese 
@@ -607,13 +664,9 @@ contextos de demanda cognitiva \cite{APA2022, Happe2020}.
 
 \begin{figure}[h]
     \centering
-        \caption{Explicación del grafo en función de lo que paso con ese sujeto. Revisar la tesis de Rafael y Lina xxxxxx}
+        \caption{Grafo del espacio del problema del juego La Escalera, generado computacionalmente con la metodología de \cite{LievanoMolina2022} (disposición de fuerzas entre nodos). El trazado en verde resalta una ruta de ejemplo dentro del grafo y el área en cian resalta una región de estados densamente conectados. Al tratarse de un modelo del espacio del problema y no del registro de una sesión real, no corresponde todavía a la trayectoria de un participante del estudio.}
 \includegraphics[width=0.80\textwidth]{GJRTI.pdf}
-\begin{flushleft}
-\footnotesize
-\textit{Nota.} Elaboración propia.
-\end{flushleft}
-\label{MWM1}
+\label{fig:grafo-fuerzas-propio}
 \end{figure}
 
 La combinación del juego La Escalera como tarea cognitiva 
@@ -2298,7 +2351,7 @@ Además, se emplea una interface para el control de los cubos inteligentes que e
 
  
 \subsection{Descripción técnica de los cubos inteligentes}
-El diseño mecánico, electrónico y lógico de los cubos fue desarrollado por el módulo INNOVA del Centro ACACIA de la Universidad..... xxx.
+El diseño mecánico, electrónico y lógico de los cubos fue desarrollado por el módulo INNOVA del proyecto ACACIA (561754-EPP-1-2015-1-CO-EPPKA2-CBHE-JP), cofinanciado por el programa Erasmus+ y ejecutado conjuntamente por la Universidad NOVA de Lisboa y la Universidad Distrital Francisco José de Caldas \citep{ACACIA2025}. El hardware descrito a continuación —la base ``Maestro'', el ensamble en madera de cada cubo y sus componentes electrónicos internos— corresponde a esa entrega original; las secciones posteriores de este capítulo (arquitectura híbrida, protocolo Pausar-Pensar-Actuar, canal de posición y canal de actuación) describen la adaptación y el desarrollo propios de la presente investigación sobre esa base física.
 %%%%%% ******* %%%%%%% Foto Cubo Frente, Isométrica, Destapado, Encendido.
 \begin{figure}[h]
     \centering

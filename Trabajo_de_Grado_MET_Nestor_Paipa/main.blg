@@ -15,47 +15,47 @@ Reallocating 'wiz_functions' (item size: 4) to 9000 items.
 Reallocating 'singl_function' (item size: 4) to 100 items.
 Database file #1: bibliografia.bib
 Warning--entry type for "cenie_lobulo" isn't style-file defined
---line 572 of file bibliografia.bib
+--line 581 of file bibliografia.bib
 apacite.bst [2013/07/21 v6.03 APA bibliography style]
-You've used 48 entries,
+You've used 49 entries,
             6951 wiz_defined-function locations,
-            1606 strings with 18565 characters,
-and the built_in function-call counts, 88871 in all, are:
-= -- 11043
-> -- 695
-< -- 4263
-+ -- 4305
-- -- 100
-* -- 5697
-:= -- 16232
-add.period$ -- 196
-call.type$ -- 48
-change.case$ -- 816
+            1613 strings with 19051 characters,
+and the built_in function-call counts, 90179 in all, are:
+= -- 11202
+> -- 705
+< -- 4310
++ -- 4340
+- -- 104
+* -- 5772
+:= -- 16444
+add.period$ -- 201
+call.type$ -- 49
+change.case$ -- 833
 chr.to.int$ -- 0
-cite$ -- 96
-duplicate$ -- 2303
-empty$ -- 3533
-format.name$ -- 1144
-if$ -- 16969
+cite$ -- 98
+duplicate$ -- 2339
+empty$ -- 3605
+format.name$ -- 1158
+if$ -- 17243
 int.to.chr$ -- 0
-int.to.str$ -- 144
+int.to.str$ -- 147
 missing$ -- 0
-newline$ -- 1186
-num.names$ -- 384
-pop$ -- 1352
+newline$ -- 1210
+num.names$ -- 392
+pop$ -- 1398
 preamble$ -- 1
-purify$ -- 192
+purify$ -- 196
 quote$ -- 0
-skip$ -- 6004
+skip$ -- 6091
 stack$ -- 0
-substring$ -- 4658
-swap$ -- 1413
-text.length$ -- 98
+substring$ -- 4697
+swap$ -- 1433
+text.length$ -- 101
 text.prefix$ -- 0
 top$ -- 1
-type$ -- 4168
+type$ -- 4248
 warning$ -- 0
-while$ -- 389
+while$ -- 394
 width$ -- 0
-write$ -- 1441
+write$ -- 1467
 (There was 1 warning)

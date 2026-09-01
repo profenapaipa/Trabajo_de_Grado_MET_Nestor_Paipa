@@ -1004,6 +1004,37 @@ Pfurtscheller, G.%
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
+{Proyecto ACACIA}%
+}{%
+{Proyecto ACACIA}%
+}{%
+{\protect \APACyear {2025}}%
+}]{%
+ACACIA2025}
+\APACinsertmetastar {%
+ACACIA2025}%
+\begin{APACrefauthors}%
+{Proyecto ACACIA}.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2025}{}{}.
+\newblock
+\APACrefbtitle {Manual de Cubos Inteligentes} {Manual de cubos inteligentes}\
+  \APACbVolEdTR{}{\BTR{}}.
+\newblock
+\APACaddressInstitution{Bogot{\'a}, Colombia}{Red CADEP ACACIA -- Universidad
+  Distrital Francisco Jos{\'e} de Caldas}.
+\newblock
+\APACrefnote{Resultado del proyecto ACACIA
+  (561754-EPP-1-2015-1-CO-EPPKA2-CBHE-JP), cofinanciado por el programa
+  Erasmus+. Producto: M{\'o}dulo INNOVA. Equipo de trabajo: Jo{\~a}o Sarraipa
+  (Universidad NOVA de Lisboa); John P{\'a}ez, Jennifer L{\'o}pez, Rafael Fino
+  (Universidad Distrital Francisco Jos{\'e} de Caldas); dise{\~n}o: Karen
+  Rold{\'a}n Pi{\~n}eros}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
 Páez%
 \ \BBA {} González%
 }{%
