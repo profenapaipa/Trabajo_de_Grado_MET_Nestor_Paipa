@@ -8,8 +8,12 @@ import socket from './client-socket/sockets'
 import {
   Activity, Hand, Grid2X2, Shuffle,
   Wifi, WifiOff, Send,
-  Pause, Lightbulb, Zap, Box, TriangleAlert,
+  Pause, Lightbulb, Zap, Box, TriangleAlert, Download, ClipboardList,
 } from 'lucide-react'
+import {
+  type EventoCubo, type DecisionOperador,
+  toCsvEventosCubo, toCsvDecisionesOperador, downloadFile, nowIso,
+} from './core/control/bitacoraControl'
 
 // ─── Web Audio helpers ────────────────────────────────────────────────────────
 function playTone(freq: number, duration: number) {
@@ -92,18 +96,49 @@ function App() {
   // tracks the action assigned to each cube id
   const [cubeActions,    setCubeActions]    = useState<Record<number, CubeAction>>({})
   const [esclavos,       setEsclavos]       = useState<number[]>([])
+  const [pares,          setPares]          = useState(5)
+  const [operatorId,     setOperatorId]     = useState('')
+  const [cuboEvents,     setCuboEvents]     = useState<EventoCubo[]>([])
+  const [operatorEvents, setOperatorEvents] = useState<DecisionOperador[]>([])
 
   const actionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const warnTimer   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const esclavosRef  = useRef<number[]>([])
+  const paresRef      = useRef(pares)
+  const operatorIdRef = useRef(operatorId)
+  useEffect(() => { paresRef.current = pares }, [pares])
+  useEffect(() => { operatorIdRef.current = operatorId }, [operatorId])
+
+  function logCuboEvent(entry: Omit<EventoCubo, 'timestamp' | 'pares'>) {
+    setCuboEvents(prev => [...prev, { timestamp: nowIso(), pares: paresRef.current, ...entry }])
+  }
+  function logOperatorEvent(entry: Omit<DecisionOperador, 'timestamp' | 'pares' | 'operadorId'>) {
+    setOperatorEvents(prev => [...prev, { timestamp: nowIso(), pares: paresRef.current, operadorId: operatorIdRef.current || '(sin asignar)', ...entry }])
+  }
 
   useEffect(() => {
-    socket.on('disconnect', () => setIsBaseConnected(false))
-    socket.on('baseStatus', (data: { connected: boolean }) => setIsBaseConnected(data.connected))
+    socket.on('disconnect', () => {
+      setIsBaseConnected(false)
+      logCuboEvent({ tipo: 'base_desconectada', detalle: 'Conexión con el backend perdida (evento disconnect)' })
+    })
+    socket.on('baseStatus', (data: { connected: boolean }) => {
+      setIsBaseConnected(data.connected)
+      logCuboEvent({
+        tipo: data.connected ? 'base_conectada' : 'base_desconectada',
+        detalle: data.connected ? 'La base física reporta conexión activa' : 'La base física reporta desconexión',
+      })
+    })
     socket.on('actualizarPosiciones', (data: { posiciones: number[] }) => {
+      logCuboEvent({ tipo: 'posiciones', detalle: 'Actualización de posiciones reportada por la base', posiciones: [...data.posiciones] })
       SimDataReceived([...data.posiciones])
     })
     socket.on('esclavosConectados', (data: { esclavos: number[] }) => {
-      setEsclavos(data.esclavos ?? [])
+      const nuevos = data.esclavos ?? []
+      const antes = esclavosRef.current
+      for (const id of nuevos) if (!antes.includes(id)) logCuboEvent({ tipo: 'esclavo_conectado', detalle: `Cubo esclavo #${id} conectado` })
+      for (const id of antes) if (!nuevos.includes(id)) logCuboEvent({ tipo: 'esclavo_desconectado', detalle: `Cubo esclavo #${id} desconectado` })
+      esclavosRef.current = nuevos
+      setEsclavos(nuevos)
     })
     return () => {
       socket.off('disconnect'); socket.off('baseStatus')
@@ -175,7 +210,13 @@ function App() {
     if (a === 'pausar') playTone(250, 0.5)
     if (a === 'pensar') playBipBip(600)
     if (a === 'actuar') playAscending(600, 1000, 0.5)
+    logOperatorEvent({ cuboId: selectedCubeId, fase: a, detalle: `Operador envió ${a.toUpperCase()} al cubo #${selectedCubeId}` })
   }
+
+  function exportCuboEventsCsv() { downloadFile(`bitacora-cubos-control-${Date.now()}.csv`, toCsvEventosCubo(cuboEvents), 'text/csv;charset=utf-8') }
+  function exportCuboEventsJson() { downloadFile(`bitacora-cubos-control-${Date.now()}.json`, JSON.stringify(cuboEvents, null, 2), 'application/json') }
+  function exportOperatorEventsCsv() { downloadFile(`bitacora-operador-control-${Date.now()}.csv`, toCsvDecisionesOperador(operatorEvents), 'text/csv;charset=utf-8') }
+  function exportOperatorEventsJson() { downloadFile(`bitacora-operador-control-${Date.now()}.json`, JSON.stringify(operatorEvents, null, 2), 'application/json') }
 
   // ── Derived display values ──────────────────────────────────────────────────
   const moveCount    = path.length - 1
@@ -227,7 +268,7 @@ function App() {
       display: 'flex',
       flexDirection: 'column',
       background: 'radial-gradient(ellipse at top left, #3d1a00 0%, #1c0c00 45%, #080400 100%)',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
+      fontFamily: "'Manrope', 'Segoe UI', sans-serif",
       color: '#fff',
     }}>
       <div style={{
@@ -274,6 +315,35 @@ function App() {
             </button>
           </div>
         </header>
+
+        {/* ── Sesión: pares en juego + identificador de operador ── */}
+        <div style={{ ...card, flexShrink: 0, display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+          <div>
+            <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em' }}>NIVEL · PARES DE CUBOS EN USO</span>
+            <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+              {[1, 2, 3, 4, 5].map(n => (
+                <button key={n} onClick={() => setPares(n)} style={{
+                  width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer',
+                  background: pares === n ? '#d97706' : 'rgba(255,255,255,0.07)',
+                  border: `1px solid ${pares === n ? '#d97706' : 'rgba(255,255,255,0.12)'}`,
+                  color: '#fff', fontWeight: 700, fontSize: '13px',
+                }}>{n}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em' }}>IDENTIFICADOR DE OPERADOR</span>
+            <div style={{ marginTop: '6px' }}>
+              <input value={operatorId} onChange={e => setOperatorId(e.target.value)} placeholder="sin asignar" style={{
+                background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '6px', padding: '6px 10px', color: '#fff', fontSize: '13px', width: '160px',
+              }} />
+            </div>
+          </div>
+          <div style={{ color: '#555', fontSize: '11px', flex: 1, minWidth: '200px' }}>
+            El nivel etiqueta cada evento de la bitácora; no cambia qué cubos físicos responden. Identificador libre — no hay identificadores de persona asignados todavía (ver DECISIONES_PROYECTO.md).
+          </div>
+        </div>
 
         {/* ── Esclavos conectados ── */}
         <div style={{ ...card, flexShrink: 0 }}>
@@ -438,7 +508,7 @@ function App() {
         </div>
 
         {/* ── Bottom panels ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', flex: 1, minHeight: 0 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', flexShrink: 0 }}>
 
           {/* Vibración */}
           <div style={{ ...card, display: 'flex', flexDirection: 'column' }}>
@@ -522,6 +592,49 @@ function App() {
             />
           </div>
 
+        </div>
+
+        {/* ── Bitácoras (independientes: cubos vs. operador) ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '12px', flexShrink: 0 }}>
+          <div style={card}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+              <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <ClipboardList size={12} /> BITÁCORA DE EVENTOS DE LOS CUBOS · {cuboEvents.length}
+              </span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button onClick={exportCuboEventsCsv} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '4px 8px', color: '#fff', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> CSV</button>
+                <button onClick={exportCuboEventsJson} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '4px 8px', color: '#fff', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> JSON</button>
+              </div>
+            </div>
+            <div style={{ maxHeight: '160px', overflowY: 'auto', fontSize: '10px', fontFamily: 'monospace' }}>
+              {cuboEvents.length === 0 && <div style={{ color: '#555' }}>Sin eventos todavía — reportados por el hardware físico.</div>}
+              {[...cuboEvents].reverse().map((ev, i) => (
+                <div key={i} style={{ padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', color: '#aaa' }}>
+                  <span style={{ color: '#666' }}>{ev.timestamp}</span> · <span style={{ color: '#d97706' }}>{ev.tipo}</span> · {ev.detalle}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={card}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+              <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <ClipboardList size={12} /> BITÁCORA DEL OPERADOR (DECISIONES) · {operatorEvents.length}
+              </span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button onClick={exportOperatorEventsCsv} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '4px 8px', color: '#fff', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> CSV</button>
+                <button onClick={exportOperatorEventsJson} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '4px 8px', color: '#fff', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> JSON</button>
+              </div>
+            </div>
+            <div style={{ maxHeight: '160px', overflowY: 'auto', fontSize: '10px', fontFamily: 'monospace' }}>
+              {operatorEvents.length === 0 && <div style={{ color: '#555' }}>Sin decisiones todavía — cada envío de Pausar/Pensar/Actuar queda aquí.</div>}
+              {[...operatorEvents].reverse().map((ev, i) => (
+                <div key={i} style={{ padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', color: '#aaa' }}>
+                  <span style={{ color: '#666' }}>{ev.timestamp}</span> · <span style={{ color: '#d97706' }}>{ev.operadorId}</span> · {ev.detalle}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
