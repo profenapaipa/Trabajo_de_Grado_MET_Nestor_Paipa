@@ -90,6 +90,13 @@ Este archivo contiene **únicamente decisiones ya tomadas** por el autor y confi
 - El sistema debe soportar ambos roles por separado: identificador de operador en cada evento confirmado, y una vista de observación de solo lectura, sin controles de confirmación. Es un requisito del protocolo, no una preferencia de interfaz — no debe simplificarse a un solo rol aunque el código quede más limpio.
 - Los identificadores de las personas que ocuparán estos roles todavía no se han asignado; no deben inventarse.
 
+## Material de referencia (línea base) — NO MODIFICAR
+
+- La carpeta `Versión1ACACIA-Cubos-inteligentes-main/` contiene la entrega original del proyecto ACACIA (firmware del maestro y de los cubos, backend y frontend) tal como fue recibida, más el protocolo EEG en `graficasEEG-AlphaTRP-main_GITHUB/` (incluido `liang2018.pdf`, el artículo de referencia de ese protocolo).
+- **Esta carpeta no debe modificarse bajo ninguna circunstancia**: ni el código, ni la estructura de subcarpetas, ni los nombres de archivo. Ninguna sesión debe editar, renombrar, mover ni "limpiar" nada dentro de ella, tampoco para corregir errores de compilación, normalizar nomenclatura o cualquier otro fin.
+- Su propósito es servir de evidencia verificable de la línea base real entregada, para poder distinguir con precisión, contra el código, qué es aporte propio de esta investigación y qué no. Confirmado (2026-09-01): el canal de posición (GPIO) y el canal de actuación (WiFi/TCP 3333) ya estaban funcionales de extremo a extremo en esta entrega original, incluida la conexión con la interfaz (`actualizarPosiciones`/`comandoCubo` vía Socket.IO); no son, por tanto, aporte propio. El aporte propio confirmado contra esta línea base es: descubrimiento automático de red, seguimiento de estado de conexión, protocolo de interacción Mago de Oz con sus criterios PPA, y toda la adaptación al estudio EEG/TEA nivel 1. El esquema de tres agentes de sugerencia de movimiento (`pausar`/`pensar`/`elegir`, basado en Dijkstra) también viene de esta entrega original y sigue sin usarse en la aplicación actual.
+- Cualquier verificación futura contra el código debe leerse desde esta carpeta, nunca desde memoria de sesiones anteriores.
+
 ## Regla editorial
 
 - La tesis debe presentarse como un documento académico consolidado de la propuesta y el desarrollo tecnológico, no como un diario de depuración.

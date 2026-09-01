@@ -17,45 +17,45 @@ Database file #1: bibliografia.bib
 Warning--entry type for "cenie_lobulo" isn't style-file defined
 --line 581 of file bibliografia.bib
 apacite.bst [2013/07/21 v6.03 APA bibliography style]
-You've used 49 entries,
+You've used 50 entries,
             6951 wiz_defined-function locations,
-            1613 strings with 19051 characters,
-and the built_in function-call counts, 90179 in all, are:
-= -- 11202
-> -- 705
-< -- 4310
-+ -- 4340
-- -- 104
-* -- 5772
-:= -- 16444
-add.period$ -- 201
-call.type$ -- 49
-change.case$ -- 833
+            1621 strings with 19329 characters,
+and the built_in function-call counts, 92713 in all, are:
+= -- 11493
+> -- 728
+< -- 4466
++ -- 4497
+- -- 106
+* -- 5961
+:= -- 16969
+add.period$ -- 205
+call.type$ -- 50
+change.case$ -- 850
 chr.to.int$ -- 0
-cite$ -- 98
-duplicate$ -- 2339
-empty$ -- 3605
-format.name$ -- 1158
-if$ -- 17243
+cite$ -- 100
+duplicate$ -- 2403
+empty$ -- 3686
+format.name$ -- 1199
+if$ -- 17678
 int.to.chr$ -- 0
-int.to.str$ -- 147
+int.to.str$ -- 150
 missing$ -- 0
-newline$ -- 1210
-num.names$ -- 392
-pop$ -- 1398
+newline$ -- 1240
+num.names$ -- 400
+pop$ -- 1425
 preamble$ -- 1
-purify$ -- 196
+purify$ -- 200
 quote$ -- 0
-skip$ -- 6091
+skip$ -- 6228
 stack$ -- 0
-substring$ -- 4697
-swap$ -- 1433
-text.length$ -- 101
+substring$ -- 4859
+swap$ -- 1471
+text.length$ -- 103
 text.prefix$ -- 0
 top$ -- 1
-type$ -- 4248
+type$ -- 4328
 warning$ -- 0
-while$ -- 394
+while$ -- 408
 width$ -- 0
-write$ -- 1467
+write$ -- 1508
 (There was 1 warning)

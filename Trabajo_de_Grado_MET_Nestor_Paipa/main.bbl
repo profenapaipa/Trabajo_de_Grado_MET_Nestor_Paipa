@@ -775,6 +775,40 @@ Kopp, B.%
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
+Liang%
+, Liu%
+, Qiu%
+\BCBL {}\ \BBA {} Zhang%
+}{%
+Liang%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2018}}%
+}]{%
+Liang2018}
+\APACinsertmetastar {%
+Liang2018}%
+\begin{APACrefauthors}%
+Liang, Y.%
+, Liu, X.%
+, Qiu, L.%
+\BCBL {}\ \BBA {} Zhang, S.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2018}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {An {EEG} Study of a Confusing State Induced by
+  Information Insufficiency during Mathematical Problem-Solving and Reasoning}
+  {An {EEG} study of a confusing state induced by information insufficiency
+  during mathematical problem-solving and reasoning}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Computational Intelligence and
+  Neuroscience}{2018}{}{1943565}.
+\newblock
+\begin{APACrefDOI} \doi{10.1155/2018/1943565} \end{APACrefDOI}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
 Li{\'e}vano~Chaparro%
 \ \BBA {} Molina~Mongu{\'i}%
 }{%

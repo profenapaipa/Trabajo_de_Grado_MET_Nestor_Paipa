@@ -281,8 +281,8 @@ lo que complementa los datos conductuales con
 evidencia neurofisiológica sobre el estado 
 funcional de las redes ejecutivas durante 
 la tarea \cite{Luck2014, Klimesch1999}. 
-Al ser un estudio exploratorio con dos 
-participantes, su aporte no es la generalización 
+Al ser un estudio exploratorio de caso único con un
+solo participante, su aporte no es la generalización
 estadística sino la identificación de patrones 
 de activación diferencial que orienten el 
 diseño de investigaciones posteriores con 
@@ -313,20 +313,16 @@ módulo INNOVA del proyecto ACACIA (Red CADEP ACACIA,
 cofinanciado por el programa Erasmus+), un proyecto de
 cooperación entre la Universidad NOVA de Lisboa y la
 Universidad Distrital Francisco José de Caldas
-\citep{ACACIA2025}. De ese proyecto se recibieron los diez
-cubos ensamblados, la base ``Maestro'' y una primera versión
-del backend y del frontend, capaz de enviar a un cubo una
-señal individual de color, sin conexión todavía entre esa
-interfaz y el hardware físico del tablero. A partir de esa
-línea base, el aporte propio de la presente investigación
-consiste en el diseño y la implementación del protocolo de
-interacción Mago de Oz con el ciclo Pausar-Pensar-Actuar, la
-arquitectura híbrida de dos canales (posición y actuación)
-que conecta efectivamente la interfaz con el hardware, y la
-adaptación completa del sistema al estudio del control
-inhibitorio en un niño con TEA nivel 1 mediante EEG,
-ninguno de los cuales forma parte de la entrega original del
-proyecto ACACIA.
+\citep{ACACIA2025}. La subsección «Descripción técnica de los
+cubos inteligentes» distingue, con evidencia verificable y no
+solo por declaración, qué corresponde a esa entrega original y
+qué es aporte propio de la presente investigación; en síntesis,
+lo propio es el mecanismo de descubrimiento automático de la
+red, el seguimiento del estado de conexión del sistema, el
+protocolo de interacción Mago de Oz con sus criterios
+operacionales de activación del ciclo Pausar-Pensar-Actuar, y
+la adaptación completa del sistema al estudio del control
+inhibitorio en un niño con TEA nivel 1 mediante EEG.
 
 Desde el punto de vista pedagógico, el
 estudio aporta evidencia preliminar sobre 
@@ -1897,7 +1893,7 @@ involuntarios.
 \centering
 \fbox{\parbox{0.82\textwidth}{%
     \textcolor{red}{\textbf{[INSERTAR AQUÍ]} Gráfica de buclicidad
-    por intento ($B_i$) para ambos participantes. Eje $x$: número
+    por intento ($B_i$) para el participante. Eje $x$: número
     de intento; eje $y$: valor $B_i$. Comparar sesión sin mediación
     (línea/color A) vs. sesión con cubos (línea/color B).}
 }}
@@ -1972,7 +1968,7 @@ de resultados de esta tesis.
 \centering
 \fbox{\parbox{0.82\textwidth}{%
     \textcolor{red}{\textbf{[INSERTAR AQUÍ]} Gráfica de ramificación
-    por intento para ambos participantes. Dispersión de $C_m$
+    por intento para el participante. Dispersión de $C_m$
     (eje $y$) vs. número de movimiento en el intento (eje $x$).
     Sesión sin mediación vs. sesión con cubos. Incluir línea
     de tendencia o curva suavizada si es posible.}
@@ -2351,7 +2347,24 @@ Además, se emplea una interface para el control de los cubos inteligentes que e
 
  
 \subsection{Descripción técnica de los cubos inteligentes}
-El diseño mecánico, electrónico y lógico de los cubos fue desarrollado por el módulo INNOVA del proyecto ACACIA (561754-EPP-1-2015-1-CO-EPPKA2-CBHE-JP), cofinanciado por el programa Erasmus+ y ejecutado conjuntamente por la Universidad NOVA de Lisboa y la Universidad Distrital Francisco José de Caldas \citep{ACACIA2025}. El hardware descrito a continuación —la base ``Maestro'', el ensamble en madera de cada cubo y sus componentes electrónicos internos— corresponde a esa entrega original; las secciones posteriores de este capítulo (arquitectura híbrida, protocolo Pausar-Pensar-Actuar, canal de posición y canal de actuación) describen la adaptación y el desarrollo propios de la presente investigación sobre esa base física.
+El diseño mecánico, electrónico y de firmware de los cubos, así como una primera versión de software de control, fueron desarrollados por el módulo INNOVA del proyecto ACACIA (561754-EPP-1-2015-1-CO-EPPKA2-CBHE-JP), cofinanciado por el programa Erasmus+ y ejecutado conjuntamente por la Universidad NOVA de Lisboa y la Universidad Distrital Francisco José de Caldas \citep{ACACIA2025}. Esa entrega original —firmware del maestro y de los cubos, backend y frontend— se conserva sin modificaciones como referencia documental de esta investigación, de modo que el punto de partida y el desarrollo posterior queden documentados con evidencia verificable y no solo por declaración: no como un trabajo aparte, sino como la continuación de un desarrollo realizado en equipo.
+
+Para situar qué traía esa entrega, es útil pensar en cada cubo como un teléfono con dos funciones ya resueltas de fábrica. La primera es un sensor de presencia: bajo cada cubo, el acoplamiento magnético con su casilla funciona como el interruptor de una lámpara; al levantar el cubo, el circuito se abre, y el microcontrolador maestro, que revisa constantemente sus once ``interruptores'', detecta de inmediato cuál se apagó y cuál volvió a encenderse. La segunda es una mensajería privada: el maestro puede enviarle a cada cubo, por WiFi, una instrucción de qué color mostrar y con qué intensidad vibrar, de la misma manera en que se envía un mensaje de texto a un número específico. Ambas funciones —sensor de presencia y mensajería— ya estaban resueltas y conectadas entre sí en la entrega original: un cubo levantado ya se reflejaba en la pantalla del docente, y una orden dada desde esa pantalla ya llegaba al cubo correspondiente.
+
+Concretamente, esa entrega estaba organizada en dos piezas de software que se hablan entre sí, siguiendo un patrón habitual en aplicaciones web: una interfaz (el frontend, construido en React) que el docente ve y usa desde el navegador, y un servidor intermedio (el backend, en Node.js con Socket.IO) que funciona como un buzón de mensajes entre esa interfaz y el maestro físico. La Figura~\ref{fig:vista-version1-frontend} muestra esa interfaz original: los once cubos representados como casillas numeradas —cinco azules, cinco rojas y la casilla vacía al centro—, donde al hacer clic sobre un cubo se abre un panel de configuración con exactamente tres controles (intensidad de vibración, frecuencia de parpadeo del LED y color) y un botón para enviar esos valores; ningún control de sonido aparece en este panel, coherente con lo que se explica más adelante sobre el canal sonoro. Cuando el docente guarda un cambio, el frontend se lo comunica al backend por Socket.IO; el backend lo retiene como el mensaje pendiente más reciente, y el maestro lo recoge la siguiente vez que le pregunta al backend, mediante una solicitud HTTP periódica, si hay algo nuevo para transmitir. En sentido contrario, cuando el maestro detecta un cambio de posición se lo envía al backend, que a su vez lo reenvía al frontend por Socket.IO para que la pantalla del docente se actualice. Ese recorrido de ida y vuelta —interfaz, backend, maestro, cubo, y de regreso— ya estaba completo en la entrega original.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{Vista_version1_frontend.png}
+    \caption{Interfaz original del proyecto ACACIA (versión 1): los once cubos del tablero, y el panel de configuración de un cubo con sus tres controles (intensidad, frecuencia y color).}
+    \label{fig:vista-version1-frontend}
+\end{figure}
+
+La aplicación original incluía, además, un tercer elemento: un sistema de pistas para el jugador que calculaba el mejor movimiento siguiente —de forma parecida a como un GPS recalcula la ruta más corta— y lo señalaba iluminando el cubo correspondiente. Ese sistema de pistas, guardado en el código bajo los nombres \texttt{pausar}, \texttt{pensar} y \texttt{elegir} —nombres que más adelante se retomaron para las fases del presente estudio—, responde a un propósito distinto: ayudar a resolver el juego, no regular el control inhibitorio. Por eso se conserva en el código como antecedente, pero no interviene en el protocolo Pausar-Pensar-Actuar descrito en este capítulo, que esta investigación diseñó e implementó de manera independiente sobre esa misma base de comunicación.
+
+A partir de esa línea base funcional, el desarrollo propio de esta investigación consiste en: el mecanismo de descubrimiento automático del backend en la red local —antes había que escribir a mano la dirección IP y la contraseña de la red del laboratorio; ahora el maestro la encuentra por sí solo, como un teléfono que busca las redes WiFi disponibles a su alrededor—; el seguimiento del estado de conexión de la base y de cada cubo; el protocolo de interacción Mago de Oz, con sus criterios operacionales de sugerencia y confirmación para las fases Pausar, Pensar y Actuar; el diseño de los tonos previstos para el canal sonoro de cada fase (frecuencia, duración y patrón), a la espera de que el buzzer del cubo quede conectado al firmware —algo equivalente a tener ya escrita la partitura de una melodía antes de conectar el parlante que la reproducirá—; y la adaptación completa del protocolo, la bitácora de sesión y el diseño experimental al estudio del control inhibitorio en un niño con TEA nivel 1 mediante EEG.
+
+Sobre el sonido conviene una precisión adicional, verificada directamente en el firmware y en el frontend. El buzzer del cubo, recibido sin integrar en la entrega original, nunca llegó a conectarse al canal de comunicación: el maestro no extrae ningún dato de sonido del mensaje que recibe, y el firmware del cubo no tiene un pin de buzzer activo ni una instrucción para generar tonos. En lugar de esperar a esa integración física —que habría requerido modificar el cubo— o de omitir por completo el canal sonoro, esta investigación optó por resolverlo desde el software: el computador del docente emite el sonido directamente, con un tono distinto ya asignado a cada fase del PPA y generado en el propio navegador mediante la API de audio del navegador (\textit{Web Audio API}), sin depender de ningún archivo de sonido externo. Pausar emite un tono grave breve; Pensar, un doble pulso sonoro; y Actuar, un barrido ascendente de tono. De esta manera, la señal sonora del PPA queda resuelta de extremo a extremo sin necesidad de tocar el hardware del cubo. Aparte de este mecanismo, la aplicación conserva además, sin cambios respecto a la entrega original, una función de audio de fondo seleccionable en el navegador —una pista musical ajena a los cubos y al PPA— que no debe confundirse con la señal sonora recién descrita.
 %%%%%% ******* %%%%%%% Foto Cubo Frente, Isométrica, Destapado, Encendido.
 \begin{figure}[h]
     \centering
@@ -2713,6 +2726,9 @@ implementación y de verificación en el prototipo.
 
 \section{Procedimiento}
 \subsection{Generación de gráficas EEG}
+
+El protocolo que se describe a continuación implementa computacionalmente, y adapta al casco OpenBCI de 16 canales empleado en esta investigación, la metodología de análisis espectral propuesta por \citet{Liang2018} para el estudio de estados de confusión mediante EEG durante la resolución de problemas matemáticos (véase la explicación conceptual de la potencia relativa alfa por tarea en la subsección «Análisis cuantitativo»). El código fuente de esta implementación está disponible como repositorio de acceso abierto, referenciado en el segundo punto de esta guía.
+
 \textbf{Guía paso a paso para generar gráficas EEG en MATLAB con EEGLAB}\\
 \begin{enumerate}
     \item \textbf{Instalar MATLAB y EEGLAB}
@@ -2853,7 +2869,13 @@ El análisis se organiza en dos componentes, cuantitativo y cualitativo, ambos o
 
 \subsection{Análisis cuantitativo}
 
-El registro EEG continuo de cada ejercicio se procesa según el protocolo de potencia relativa alfa por tarea (Alpha TRP) descrito en la subsección «Generación de gráficas EEG». Sobre cada archivo de sesión se calcula la potencia en banda alfa (8-13 Hz) por canal, normalizada contra un intervalo de referencia inicial, y se construye un mapa topográfico de potencia relativa alfa por canal para cada ejercicio.
+El registro EEG continuo de cada ejercicio se procesa según el protocolo de potencia relativa alfa por tarea (Alpha TRP, del inglés \textit{task-related power}), adaptado de la metodología propuesta por \citet{Liang2018}.
+
+En ese estudio, publicado en la revista \textit{Computational Intelligence and Neuroscience}, los autores investigaron cómo se refleja en la actividad eléctrica del cerebro un estado de confusión inducido deliberadamente durante la resolución de problemas matemáticos: a un grupo de participantes se les plantearon operaciones a las que les faltaba información necesaria para resolverlas, ya fuera de manera explícita (un símbolo desconocido en lugar de un operador conocido) o implícita (la falta de información escondida en la estructura misma del problema, que el participante debía descubrir por sí mismo). Mediante la transformada de Fourier de tiempo corto (STFT, por sus siglas en inglés), calcularon, canal por canal, cómo cambiaba la potencia de la banda alfa del EEG (8 a 13 Hz) durante cada tarea respecto a un intervalo de referencia sin la tarea, es decir, la potencia relativa a la tarea o TRP. Encontraron que la potencia alfa disminuía de forma significativa en las regiones corticales asociadas al cálculo cuando aparecía la confusión, y que las dos formas de insuficiencia de información activaban regiones cerebrales distintas entre sí.
+
+Ese hallazgo es relevante para la presente investigación por dos razones. La primera es metodológica: el ritmo alfa del EEG suele asociarse con un estado cortical relativamente inactivo o en reposo; cuando una región del cerebro se involucra más activamente en el procesamiento de una tarea, por ejemplo por mayor atención, mayor carga de memoria de trabajo o mayor esfuerzo cognitivo, su potencia alfa tiende a disminuir, un fenómeno conocido como desincronización relacionada con el evento. El TRP aprovecha esa relación: al comparar, canal por canal, la potencia alfa durante la tarea contra un intervalo de referencia, permite ubicar en qué regiones de la corteza aumentó la actividad, sin necesidad de técnicas de clasificación más complejas ni de un número grande de electrodos, lo que lo hace viable con un casco EEG de consumo como el OpenBCI de 16 canales empleado en esta investigación. La segunda razón es conceptual: la situación que estudian \citet{Liang2018}, tener que detenerse a evaluar si la información disponible alcanza para decidir el paso siguiente, guarda un paralelismo directo con lo que exige el ciclo 123 en cada movimiento de La Escalera, donde el estudiante debe evaluar sus opciones antes de decidir cuál ejecutar. Por esa cercanía metodológica y conceptual, y porque su protocolo de cálculo ya estaba implementado y disponible como código abierto (véase la subsección «Generación de gráficas EEG»), se adoptó como referencia de base para el análisis cuantitativo de esta investigación, en lugar de construir un protocolo de análisis espectral nuevo.
+
+Sobre cada archivo de sesión se calcula, siguiendo ese protocolo, la potencia en banda alfa (8-13 Hz) por canal, normalizada contra un intervalo de referencia inicial, y se construye un mapa topográfico de potencia relativa alfa por canal para cada ejercicio.
 
 % [SUJETO A VERIFICACIÓN TÉCNICA]
 El protocolo de procesamiento segmenta la señal por ventanas de tiempo fijas contadas desde el inicio del archivo, sin lectura de marcas de evento. Por esta razón, la correspondencia entre un mapa topográfico y un tramo específico de la sesión, por ejemplo el intervalo en que estuvo activo un ejercicio particular o una fase del PPA, se establece por alineación de tiempos a partir de una marca de inicio común, y no por segmentación automática dentro del propio protocolo. Extender el protocolo para que segmente directamente por evento queda como trabajo futuro, fuera del alcance de esta fase del estudio.
