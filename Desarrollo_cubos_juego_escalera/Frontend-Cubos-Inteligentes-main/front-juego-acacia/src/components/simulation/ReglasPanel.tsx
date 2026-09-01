@@ -34,6 +34,7 @@ function ReglasPanel() {
             <span style={chip('#ff0000')} />
             <span style={{ ...chip('transparent'), border: '2px dashed #555' }} />
             <ArrowRight size={16} color="#888" />
+            <span style={{ ...chip('transparent'), border: '2px dashed #555' }} />
             <span style={chip('#ff0000')} />
             <span style={chip('#0000ff')} />
           </div>

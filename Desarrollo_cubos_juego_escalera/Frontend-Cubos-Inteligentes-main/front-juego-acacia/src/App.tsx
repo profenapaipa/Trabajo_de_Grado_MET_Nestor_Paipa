@@ -1,63 +1,31 @@
 import { useEffect, useRef, useState } from 'react'
-import sound1 from './assets/sounds/loop.mp3'
 import './App.css'
 import Cube, { CubeAction } from './components/Cube'
-import PlatformConfigPopup from './components/PlatformConfigPopup'
+import AmbientMusicPanel from './components/AmbientMusicPanel'
 import { GameState } from './core/GameState'
 import socket from './client-socket/sockets'
 import {
   Activity, Hand, Grid2X2, Shuffle,
-  Wifi, WifiOff, Send,
-  Pause, Lightbulb, Zap, Box, TriangleAlert, Download, ClipboardList,
+  Wifi, WifiOff,
+  Pause, Lightbulb, Zap, Power, Box, TriangleAlert, Download, ClipboardList, Check,
+  Trophy, Ban,
 } from 'lucide-react'
 import {
   type EventoCubo, type DecisionOperador,
   toCsvEventosCubo, toCsvDecisionesOperador, downloadFile, nowIso,
 } from './core/control/bitacoraControl'
+import hexToRgbArray from './core/utils/hextToRgb'
+import { playPpaFeedback, playError } from './core/utils/ppaTones'
+import { PPA_RGB, PPA_HEX, PPA_TEXT, PPA_VIBRATION, PPA_VIB_PATTERN, PPA_SOUND_LABEL, PPA_LABEL, PPA_FRASE, ppaRgba, AUTO_OFF_MS, FALLAS_PARA_PAUSAR, type PPAPhase } from './core/ppa/ppaColors'
+import { type Board, legalMovesFor, computeWinBoard, boardsEqual, isStuck } from './core/simulation/laEscaleraRules'
+import PpaChargeMeter from './components/simulation/PpaChargeMeter'
 
-// ─── Web Audio helpers ────────────────────────────────────────────────────────
-function playTone(freq: number, duration: number) {
-  try {
-    const ctx = new AudioContext(), osc = ctx.createOscillator(), g = ctx.createGain()
-    osc.connect(g); g.connect(ctx.destination)
-    osc.frequency.value = freq
-    g.gain.setValueAtTime(0.45, ctx.currentTime)
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration)
-    osc.start(); osc.stop(ctx.currentTime + duration)
-  } catch (e) { console.warn('Audio:', e) }
-}
-function playBipBip(freq: number) {
-  try {
-    const ctx = new AudioContext()
-    for (let i = 0; i < 2; i++) {
-      const osc = ctx.createOscillator(), g = ctx.createGain()
-      osc.connect(g); g.connect(ctx.destination); osc.frequency.value = freq
-      const t = ctx.currentTime + i * 0.30
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.45, t + 0.01)
-      g.gain.setValueAtTime(0.45, t + 0.12); g.gain.linearRampToValueAtTime(0, t + 0.15)
-      osc.start(t); osc.stop(t + 0.16)
-    }
-  } catch (e) { console.warn('Audio:', e) }
-}
-function playAscending(s: number, e2: number, d: number) {
-  try {
-    const ctx = new AudioContext(), osc = ctx.createOscillator(), g = ctx.createGain()
-    osc.connect(g); g.connect(ctx.destination)
-    osc.frequency.setValueAtTime(s, ctx.currentTime)
-    osc.frequency.linearRampToValueAtTime(e2, ctx.currentTime + d)
-    g.gain.setValueAtTime(0.45, ctx.currentTime)
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + d)
-    osc.start(); osc.stop(ctx.currentTime + d)
-  } catch (e) { console.warn('Audio:', e) }
-}
-
-const VIB_H = [0.40, 0.65, 0.30, 0.85, 1.00, 0.70, 0.90, 0.50]
 const SND_H = [0.55, 0.75, 0.95, 0.60, 1.00, 0.80, 0.70, 0.90]
+const INITIAL_POSITIONS = [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10]
 
-// vibration display per action
-const ACTION_VIB: Record<CubeAction, number> = { pausar: 0.20, pensar: 0.50, actuar: 0.80 }
+export type ObservedCube = { id: number; team: 'A' | 'B' }
 
-function App() {
+function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeActions: Record<number, PPAPhase>) => void } = {}) {
   socket.connect()
 
   const teamBColor      = '#ff0000'
@@ -89,8 +57,6 @@ function App() {
   const [isBaseConnected, setIsBaseConnected] = useState(false)
   const [path,           setPath]           = useState<number[][]>([[1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10]])
   const [activeAction,   setActiveAction]   = useState<CubeAction | null>(null)
-  const [currentAudio,   setCurrentAudio]   = useState<HTMLAudioElement | null>(null)
-  const [currentSoundId, setCurrentSoundId] = useState(1)
   const [selectedCubeId, setSelectedCubeId] = useState<number | null>(null)
   const [noSelWarning,   setNoSelWarning]   = useState(false)
   // tracks the action assigned to each cube id
@@ -98,16 +64,31 @@ function App() {
   const [esclavos,       setEsclavos]       = useState<number[]>([])
   const [pares,          setPares]          = useState(5)
   const [operatorId,     setOperatorId]     = useState('')
+  const [operatorInput,  setOperatorInput]  = useState('')
   const [cuboEvents,     setCuboEvents]     = useState<EventoCubo[]>([])
   const [operatorEvents, setOperatorEvents] = useState<DecisionOperador[]>([])
+  // Condición acumulada hacia Pausar/Pensar: fallas reales detectadas
+  // comparando posiciones sucesivas contra las reglas del juego (ver
+  // laEscaleraRules) — informativo, nunca dispara nada solo.
+  const [fallaCount,      setFallaCount]      = useState(0)
+  const [actuarThresholdSec, setActuarThresholdSec] = useState(8)
+  const [tick,            setTick]            = useState(0)
 
   const actionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const warnTimer   = useRef<ReturnType<typeof setTimeout> | null>(null)
   const esclavosRef  = useRef<number[]>([])
   const paresRef      = useRef(pares)
   const operatorIdRef = useRef(operatorId)
+  const lastSettledPositionsRef = useRef<number[]>(INITIAL_POSITIONS)
+  const turnStartRef = useRef<number>(Date.now())
+  const prevControlStatusRef = useRef<'jugando' | 'victoria' | 'derrota'>('jugando')
   useEffect(() => { paresRef.current = pares }, [pares])
   useEffect(() => { operatorIdRef.current = operatorId }, [operatorId])
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 500)
+    return () => clearInterval(id)
+  }, [])
+  void tick // fuerza el re-render del medidor de Actuar cada 500ms; su valor no se muestra
 
   function logCuboEvent(entry: Omit<EventoCubo, 'timestamp' | 'pares'>) {
     setCuboEvents(prev => [...prev, { timestamp: nowIso(), pares: paresRef.current, ...entry }])
@@ -135,7 +116,13 @@ function App() {
     socket.on('esclavosConectados', (data: { esclavos: number[] }) => {
       const nuevos = data.esclavos ?? []
       const antes = esclavosRef.current
-      for (const id of nuevos) if (!antes.includes(id)) logCuboEvent({ tipo: 'esclavo_conectado', detalle: `Cubo esclavo #${id} conectado` })
+      for (const id of nuevos) if (!antes.includes(id)) {
+        logCuboEvent({ tipo: 'esclavo_conectado', detalle: `Cubo esclavo #${id} conectado` })
+        // Color de reposo del equipo (azul/rojo) al conectar, para que el
+        // cubo nunca quede en el color natural del MDF sin señal — ver
+        // PENDIENTES_TESIS.md, "Cubos sin color por defecto".
+        socket.emit('comandoCubo', estadoInicialPayload(id))
+      }
       for (const id of antes) if (!nuevos.includes(id)) logCuboEvent({ tipo: 'esclavo_desconectado', detalle: `Cubo esclavo #${id} desconectado` })
       esclavosRef.current = nuevos
       setEsclavos(nuevos)
@@ -152,21 +139,34 @@ function App() {
     const d = cubesData.find(c => c.id === id)
     return d ?? { id: 0, color: emptySpaceColor, vibrationIntensity: 0, iluminationFrequency: 0 }
   })
+  // El tablero físico siempre tiene 11 posiciones fijas (0-10, vacío en el
+  // centro). Para un ejercicio de menos pares, se muestran solo las
+  // posiciones más cercanas al centro (las mismas que ocuparía ese
+  // ejercicio), sin inventar una reasignación de qué cubo físico es cuál.
+  const visibleCubes = cubes.slice(5 - pares, 5 + pares + 1)
 
-  const stopAudio = () => {
-    if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; setCurrentAudio(null) }
-  }
-  const playAudioById = (id: number) => {
-    const map: Record<number, string> = { 1: sound1, 2: sound1, 3: sound1, 4: sound1, 5: sound1 }
-    if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0 }
-    const a = new Audio(map[id]); a.play(); setCurrentAudio(a)
-  }
+  // Victoria/derrota del tablero físico, con las mismas reglas de
+  // laEscaleraRules que usa la simulación — informativo: no envía ninguna
+  // señal por sí solo, solo se muestra al operador.
+  const initialBoardForPares: Board = INITIAL_POSITIONS.slice(5 - pares, 5 + pares + 1)
+    .map(id => id === 0 ? null : { id, team: id <= 5 ? 'A' as const : 'B' as const })
+  const winBoardControl: Board = computeWinBoard(initialBoardForPares)
+  const currentBoardControl: Board = visibleCubes.map(c => c.id === 0 ? null : { id: c.id, team: c.id <= 5 ? 'A' as const : 'B' as const })
+  const controlStatus: 'jugando' | 'victoria' | 'derrota' =
+    boardsEqual(currentBoardControl, winBoardControl) ? 'victoria'
+      : isStuck(currentBoardControl, winBoardControl) ? 'derrota'
+      : 'jugando'
+
+  // Reporta el estado visible de los cubos hacia AppShell, para que la
+  // pestaña "Vista de observador" (ahora principal, no anidada en
+  // Simulación) pueda mostrar en vivo los mismos cubos y colores PPA sin
+  // duplicar el estado del socket.
+  useEffect(() => {
+    onCubesUpdate?.(visibleCubes.filter(c => c.id !== 0).map(c => ({ id: c.id, team: c.id <= 5 ? 'A' as const : 'B' as const })), cubeActions)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState.cubesPositions, pares, cubeActions])
 
   async function SimDataReceived(positions: number[]) { await handleStateChange([...positions]) }
-
-  async function SimDataSend() {
-    socket.emit('comandoCubo', { id: 0, color: [173,216,230], vibrationIntensity: 0.23, iluminationFrequency: 1, soundId: 1 })
-  }
 
   async function handleStateChange(positions: number[]) {
     const empties: number[] = []
@@ -176,8 +176,28 @@ function App() {
       const v    = empties.find(i => prev[i] !== 0)!
       setCubesData(originalCubes)
       setGameState({ cubesPositions: [...positions], liftedCube: prev[v], emptyPosition: v })
-      stopAudio()
     } else if (empties.length === 1) {
+      // Detección real de fallas: compara el último estado asentado
+      // (antes de que se levantara este cubo) contra el nuevo, usando las
+      // mismas reglas del juego (laEscaleraRules) — el criterio real de
+      // Pausar/Pensar en main.tex ("dos movimientos que no corresponden a
+      // una opción válida"). Solo informa (medidor); nunca activa nada.
+      const prevSettled = lastSettledPositionsRef.current
+      const fromIdx = prevSettled.findIndex((v, i) => v !== 0 && positions[i] === 0)
+      const toIdx = prevSettled.findIndex((v, i) => v === 0 && positions[i] !== 0)
+      if (fromIdx !== -1 && toIdx !== -1) {
+        const prevBoard: Board = prevSettled.map(id => id === 0 ? null : { id, team: id <= 5 ? 'A' as const : 'B' as const })
+        const legal = legalMovesFor(prevBoard, fromIdx).includes(toIdx)
+        if (legal) {
+          setFallaCount(0)
+          turnStartRef.current = Date.now()
+        } else {
+          playError()
+          logCuboEvent({ tipo: 'falla_movimiento', detalle: `Movimiento inválido detectado: cubo #${prevSettled[fromIdx]} de la posición ${fromIdx + 1} a la ${toIdx + 1}` })
+          setFallaCount(nf => (nf + 1 >= FALLAS_PARA_PAUSAR ? 0 : nf + 1))
+        }
+      }
+      lastSettledPositionsRef.current = positions
       setCubesData(originalCubes)
       setPath(t => [...t, positions])
       setGameState({ cubesPositions: [...positions], liftedCube: null, emptyPosition: null })
@@ -185,10 +205,20 @@ function App() {
     socket.emit('restaurarCubos', 'restaurar')
   }
 
-  function triggerAction(a: CubeAction) {
+  function estadoInicialPayload(cubeId: number) {
+    const color = cubeId <= 5 ? teamAColor : teamBColor
+    return { id: cubeId, color: hexToRgbArray(color), vibrationIntensity: 0, iluminationFrequency: 0, tipo: 'estado_inicial' as const }
+  }
+
+  function triggerAction(a: CubeAction, cubeId: number) {
     if (actionTimer.current) clearTimeout(actionTimer.current)
     setActiveAction(a)
-    actionTimer.current = setTimeout(() => setActiveAction(null), 3000)
+    actionTimer.current = setTimeout(() => {
+      setActiveAction(null)
+      socket.emit('comandoCubo', estadoInicialPayload(cubeId))
+      setCubeActions(prev => { const next = { ...prev }; delete next[cubeId]; return next })
+      logCuboEvent({ tipo: 'senal_apagada_automatica', detalle: `Señal del cubo #${cubeId} apagada automáticamente tras ${AUTO_OFF_MS / 1000}s (estado inicial)` })
+    }, AUTO_OFF_MS)
   }
   function showNoSel() {
     if (warnTimer.current) clearTimeout(warnTimer.current)
@@ -198,19 +228,28 @@ function App() {
 
   function sendAction(a: CubeAction) {
     if (selectedCubeId === null) { showNoSel(); return }
+    const cubeId = selectedCubeId
     const payloads: Record<CubeAction, object> = {
-      pausar: { id: selectedCubeId, color: [0,0,150],     vibrationIntensity: 0.20, iluminationFrequency: 0.50, tipo: 'pausar', ledModo: 'fija',       vibracionPatron: 'pulso_largo',  vibracionIntervalo: 2000, sonido: { hz: 250, duracion: 500 } },
-      pensar: { id: selectedCubeId, color: [255,255,102], vibrationIntensity: 0.50, iluminationFrequency: 1.00, tipo: 'pensar', ledModo: 'respiracion', vibracionPatron: 'doble_pulso',  sonido: { hz: 600, patron: 'bip_bip' } },
-      actuar: { id: selectedCubeId, color: [0,255,0],     vibrationIntensity: 0.80, iluminationFrequency: 2.00, tipo: 'actuar', ledModo: 'fija',       vibracionPatron: 'pulso_unico',  sonido: { hz_inicio: 600, hz_fin: 1000, duracion: 500 } },
+      pausar: { id: cubeId, color: PPA_RGB.pausar, vibrationIntensity: PPA_VIBRATION.pausar, iluminationFrequency: 0.50, tipo: 'pausar', ledModo: 'fija',       vibracionPatron: PPA_VIB_PATTERN.pausar.patron, vibracionRepeticiones: PPA_VIB_PATTERN.pausar.repeticiones, vibracionIntervalo: PPA_VIB_PATTERN.pausar.intervaloMs, sonido: { hz: 250, duracion: 500 } },
+      pensar: { id: cubeId, color: PPA_RGB.pensar, vibrationIntensity: PPA_VIBRATION.pensar, iluminationFrequency: 1.00, tipo: 'pensar', ledModo: 'respiracion', vibracionPatron: PPA_VIB_PATTERN.pensar.patron, vibracionRepeticiones: PPA_VIB_PATTERN.pensar.repeticiones, vibracionIntervalo: PPA_VIB_PATTERN.pensar.intervaloMs, sonido: { hz: 600, patron: 'bip_bip' } },
+      actuar: { id: cubeId, color: PPA_RGB.actuar, vibrationIntensity: PPA_VIBRATION.actuar, iluminationFrequency: 2.00, tipo: 'actuar', ledModo: 'fija',       vibracionPatron: PPA_VIB_PATTERN.actuar.patron, sonido: { hz_inicio: 600, hz_fin: 1000, duracion: 500 } },
     }
     socket.emit('comandoCubo', payloads[a])
     // update cube visual in real time
-    setCubeActions(prev => ({ ...prev, [selectedCubeId]: a }))
-    triggerAction(a)
-    if (a === 'pausar') playTone(250, 0.5)
-    if (a === 'pensar') playBipBip(600)
-    if (a === 'actuar') playAscending(600, 1000, 0.5)
-    logOperatorEvent({ cuboId: selectedCubeId, fase: a, detalle: `Operador envió ${a.toUpperCase()} al cubo #${selectedCubeId}` })
+    setCubeActions(prev => ({ ...prev, [cubeId]: a }))
+    triggerAction(a, cubeId)
+    playPpaFeedback(a, AUTO_OFF_MS / 1000)
+    logOperatorEvent({ cuboId: cubeId, fase: a, detalle: `Operador envió ${a.toUpperCase()} al cubo #${cubeId}` })
+  }
+
+  function apagarSenal() {
+    if (selectedCubeId === null) { showNoSel(); return }
+    const cubeId = selectedCubeId
+    if (actionTimer.current) clearTimeout(actionTimer.current)
+    socket.emit('comandoCubo', estadoInicialPayload(cubeId))
+    setActiveAction(null)
+    setCubeActions(prev => { const next = { ...prev }; delete next[cubeId]; return next })
+    logOperatorEvent({ cuboId: cubeId, fase: 'estado_inicial', detalle: `Operador apagó manualmente la señal del cubo #${cubeId} (estado inicial)` })
   }
 
   function exportCuboEventsCsv() { downloadFile(`bitacora-cubos-control-${Date.now()}.csv`, toCsvEventosCubo(cuboEvents), 'text/csv;charset=utf-8') }
@@ -221,13 +260,20 @@ function App() {
   // ── Derived display values ──────────────────────────────────────────────────
   const moveCount    = path.length - 1
   const selAction    = selectedCubeId !== null ? cubeActions[selectedCubeId] : undefined
-  const vibIntensity = activeAction ? ACTION_VIB[activeAction] : defVib
 
-  const ledColor = activeAction === 'pausar' ? 'rgb(0,0,150)'    :
-                   activeAction === 'pensar' ? 'rgb(255,255,102)' :
-                   activeAction === 'actuar' ? 'rgb(0,255,0)'     : null
-  const ledCircles   = ['#008080','#00bcd4','#e91e63','#4caf50','#9c27b0','#ff9800']
-  const displayLed   = ledColor ? [ledColor, ...ledCircles.slice(1)] : ledCircles
+  // Registra victoria/derrota una sola vez por partida (al pasar de
+  // "jugando" a un estado final), no en cada render.
+  useEffect(() => {
+    if (controlStatus !== 'jugando' && prevControlStatusRef.current === 'jugando') {
+      logCuboEvent(
+        controlStatus === 'victoria'
+          ? { tipo: 'victoria', detalle: `Intercambio completo en ${moveCount} movimientos` }
+          : { tipo: 'derrota', detalle: 'Ningún cubo tiene ya un movimiento legal disponible (bloqueo)' }
+      )
+    }
+    prevControlStatusRef.current = controlStatus
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controlStatus])
 
   // ── Shared styles ───────────────────────────────────────────────────────────
   const card: React.CSSProperties = {
@@ -237,27 +283,20 @@ function App() {
     padding: '14px 16px',
   }
 
-  const btnAction = (a: CubeAction): React.CSSProperties => ({
+  const btnAction = (a: PPAPhase): React.CSSProperties => ({
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
     padding: '14px 12px', borderRadius: '12px', cursor: 'pointer',
-    background: activeAction === a
-      ? a === 'pausar' ? 'rgba(30,60,180,0.28)' : a === 'pensar' ? 'rgba(120,110,0,0.28)' : 'rgba(0,110,40,0.28)'
-      : 'rgba(26,16,8,0.85)',
-    border: `${activeAction === a ? 2 : 1}px solid ${
-      activeAction === a ? (a === 'pausar' ? '#4466ff' : a === 'pensar' ? '#cccc00' : '#00cc55')
-      : 'rgba(60,40,20,0.6)'
-    }`,
-    color: a === 'pausar' ? '#6699ff' : a === 'pensar' ? '#ffff66' : '#00ff88',
+    background: activeAction === a ? ppaRgba(a, 0.28) : 'rgba(26,16,8,0.85)',
+    border: `${activeAction === a ? 2 : 1}px solid ${activeAction === a ? PPA_HEX[a] : 'rgba(60,40,20,0.6)'}`,
+    color: PPA_TEXT[a],
     transition: 'all 0.25s',
     opacity: selectedCubeId === null ? 0.45 : 1,
   })
 
-  const iconCircle = (a: CubeAction): React.CSSProperties => ({
+  const iconCircle = (a: PPAPhase): React.CSSProperties => ({
     width: '46px', height: '46px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: a === 'pausar' ? 'rgba(0,0,180,0.20)' : a === 'pensar' ? 'rgba(150,130,0,0.20)' : 'rgba(0,140,40,0.20)',
-    boxShadow: activeAction === a
-      ? a === 'pausar' ? '0 0 16px rgba(0,80,255,0.6)' : a === 'pensar' ? '0 0 16px rgba(200,200,0,0.6)' : '0 0 16px rgba(0,220,80,0.6)'
-      : 'none',
+    background: ppaRgba(a, 0.20),
+    boxShadow: activeAction === a ? `0 0 16px ${ppaRgba(a, 0.6)}` : 'none',
     transition: 'box-shadow 0.25s',
   })
 
@@ -292,7 +331,7 @@ function App() {
             </div>
             <div>
               <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>Escalera Inteligente</h1>
-              <p  style={{ margin: 0, fontSize: '12px', color: '#888' }}>Panel de control IoT</p>
+              <p  style={{ margin: 0, fontSize: '12px', color: '#888' }}>Control Mago de Oz · el operador confirma cada señal</p>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -306,13 +345,6 @@ function App() {
               {isBaseConnected ? <Wifi size={13} /> : <WifiOff size={13} />}
               {isBaseConnected ? 'Conectado' : 'Desconectado'}
             </div>
-            <button onClick={SimDataSend} style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: '8px', padding: '6px 14px', color: '#fff', fontSize: '13px', cursor: 'pointer',
-            }}>
-              <Send size={13} /> Simular envío
-            </button>
           </div>
         </header>
 
@@ -332,16 +364,39 @@ function App() {
             </div>
           </div>
           <div>
-            <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em' }}>IDENTIFICADOR DE OPERADOR</span>
-            <div style={{ marginTop: '6px' }}>
-              <input value={operatorId} onChange={e => setOperatorId(e.target.value)} placeholder="sin asignar" style={{
-                background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: '6px', padding: '6px 10px', color: '#fff', fontSize: '13px', width: '160px',
-              }} />
+            <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em' }}>OPERADOR · NOMBRE DE QUIEN CONFIRMA Y ENVÍA LAS SEÑALES</span>
+            <div style={{ marginTop: '6px', display: 'flex', gap: '6px' }}>
+              <input
+                value={operatorInput}
+                onChange={e => setOperatorInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && operatorInput.trim()) setOperatorId(operatorInput.trim()) }}
+                placeholder="escribe el nombre y confirma"
+                style={{
+                  background: 'rgba(0,0,0,0.3)',
+                  border: `1px solid ${operatorId && operatorInput.trim() === operatorId ? '#22c55e77' : 'rgba(255,255,255,0.12)'}`,
+                  borderRadius: '6px', padding: '6px 10px', color: '#fff', fontSize: '13px', width: '180px',
+                }} />
+              <button
+                onClick={() => operatorInput.trim() && setOperatorId(operatorInput.trim())}
+                disabled={!operatorInput.trim()}
+                title="Confirmar nombre (o presiona Enter)"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', borderRadius: '6px',
+                  background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.4)',
+                  color: '#22c55e', fontSize: '12px', cursor: operatorInput.trim() ? 'pointer' : 'not-allowed',
+                  opacity: operatorInput.trim() ? 1 : 0.4,
+                }}>
+                <Check size={13} /> Confirmar
+              </button>
+            </div>
+            <div style={{ marginTop: '4px', fontSize: '11px' }}>
+              {operatorId
+                ? <span style={{ color: '#22c55e' }}>✓ Operador confirmado: {operatorId}</span>
+                : <span style={{ color: '#f59e0b' }}>Sin confirmar — los eventos se registrarán como "(sin asignar)" hasta que confirmes</span>}
             </div>
           </div>
           <div style={{ color: '#555', fontSize: '11px', flex: 1, minWidth: '200px' }}>
-            El nivel etiqueta cada evento de la bitácora; no cambia qué cubos físicos responden. Identificador libre — no hay identificadores de persona asignados todavía (ver DECISIONES_PROYECTO.md).
+Escribe tu nombre y confirma con Enter — queda en cada evento de la bitácora. No es un identificador oficial del proyecto (ver DECISIONES_PROYECTO.md).
           </div>
         </div>
 
@@ -399,10 +454,23 @@ function App() {
           ))}
         </div>
 
+        {controlStatus === 'victoria' && (
+          <div style={{ ...card, flexShrink: 0, background: 'rgba(20,80,30,0.5)', border: '1px solid #22c55e', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Trophy size={20} color="#22c55e" />
+            <span style={{ fontWeight: 700 }}>¡Victoria! Intercambio completo en {moveCount} movimientos.</span>
+          </div>
+        )}
+        {controlStatus === 'derrota' && (
+          <div style={{ ...card, flexShrink: 0, background: 'rgba(90,20,20,0.5)', border: '1px solid #ef4444', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Ban size={20} color="#ef4444" />
+            <span style={{ fontWeight: 700 }}>Derrota — ningún cubo tiene ya un movimiento legal disponible.</span>
+          </div>
+        )}
+
         {/* ── Board ── */}
         <div style={{ ...card, flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em' }}>TABLERO · 11 POSICIONES</span>
+            <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em' }}>TABLERO · {pares} PAR(ES) · {visibleCubes.length} POSICIONES</span>
             <div style={{ display: 'flex', gap: '14px' }}>
               {[
                 { label: 'Equipo A', color: teamAColor },
@@ -417,7 +485,7 @@ function App() {
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', flexWrap: 'wrap' }}>
-            {cubes.map((cube, idx) => (
+            {visibleCubes.map((cube, idx) => (
               <Cube
                 key={idx}
                 id={cube.id}
@@ -434,15 +502,34 @@ function App() {
               {Object.entries(cubeActions).map(([id, act]) => (
                 <span key={id} style={{
                   fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
-                  background: act === 'pausar' ? 'rgba(0,0,140,0.5)' : act === 'pensar' ? 'rgba(180,180,0,0.4)' : 'rgba(0,160,60,0.4)',
+                  background: ppaRgba(act, 0.4),
                   color: act === 'pensar' ? '#ffff88' : '#fff',
-                  border: `1px solid ${act === 'pausar' ? '#4466ff55' : act === 'pensar' ? '#cccc0055' : '#00cc5555'}`,
+                  border: `1px solid ${ppaRgba(act, 0.4)}`,
                 }}>
                   {act === 'pausar' ? '⏸' : act === 'pensar' ? '💡' : '⚡'} #{id}
                 </span>
               ))}
             </div>
           )}
+        </div>
+
+        {/* ── Condición acumulada por fase (informativo) ── */}
+        <div style={{ ...card, flexShrink: 0 }}>
+          <div style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em', marginBottom: '10px' }}>
+            CONDICIÓN ACUMULADA POR FASE — informativo, el operador decide si envía la señal
+          </div>
+          <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+            <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pausar} label={'Pausar — fallas reales detectadas'} />
+            <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pensar} label={'Pensar — mismo criterio, encadenado tras Pausar'} />
+            <PpaChargeMeter value={Math.min(Math.floor((Date.now() - turnStartRef.current) / 1000), actuarThresholdSec)} max={actuarThresholdSec} colorHex={PPA_HEX.actuar} label={`Actuar — latencia sin mover (umbral ${actuarThresholdSec}s, no oficial)`} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px' }}>
+            <span style={{ fontSize: '11px', color: '#666' }}>Umbral Actuar (segundos, no oficial):</span>
+            <input type="range" min={2} max={30} value={actuarThresholdSec}
+              onChange={e => setActuarThresholdSec(Number(e.target.value))}
+              style={{ flex: 1, maxWidth: '160px', accentColor: '#d97706' }} />
+            <span style={{ fontSize: '11px' }}>{actuarThresholdSec}s</span>
+          </div>
         </div>
 
         {/* ── Action buttons ── */}
@@ -465,8 +552,8 @@ function App() {
                 {selAction && (
                   <span style={{ color: '#aaa' }}>
                     — acción actual:&nbsp;
-                    <span style={{ color: selAction === 'pausar' ? '#6699ff' : selAction === 'pensar' ? '#ffff66' : '#00ff88', fontWeight: 600 }}>
-                      {selAction === 'pausar' ? '⏸ PAUSAR' : selAction === 'pensar' ? '💡 PENSAR' : '⚡ ACTUAR'}
+                    <span style={{ color: PPA_TEXT[selAction], fontWeight: 600 }}>
+                      {selAction === 'pausar' ? '⏸' : selAction === 'pensar' ? '💡' : '⚡'} {PPA_LABEL[selAction]}
                     </span>
                   </span>
                 )}
@@ -476,108 +563,63 @@ function App() {
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px' }}>
-            {/* PAUSAR */}
-            <button onClick={() => sendAction('pausar')} style={btnAction('pausar')}>
-              <div style={iconCircle('pausar')}><Pause size={22} color="#6699ff" /></div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px' }}>
+            {(['pausar', 'pensar', 'actuar'] as const).map(a => {
+              const Icon = a === 'pausar' ? Pause : a === 'pensar' ? Lightbulb : Zap
+              return (
+                <button key={a} onClick={() => sendAction(a)} style={btnAction(a)}>
+                  <div style={iconCircle(a)}><Icon size={22} color={PPA_TEXT[a]} /></div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontWeight: 700, fontSize: '14px', letterSpacing: '0.1em' }}>{PPA_LABEL[a]}</div>
+                    <div style={{ fontSize: '10px', color: '#555', marginTop: '3px' }}>
+                      rgb({PPA_RGB[a].join(',')}) · {Math.round(PPA_VIBRATION[a] * 100)}% vibr. · {PPA_SOUND_LABEL[a]}
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#444', marginTop: '1px', fontStyle: 'italic' }}>{PPA_FRASE[a]}</div>
+                  </div>
+                </button>
+              )
+            })}
+            {/* ESTADO INICIAL */}
+            <button onClick={apagarSenal} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+              padding: '14px 12px', borderRadius: '12px', cursor: 'pointer',
+              background: 'rgba(26,16,8,0.85)', border: '1px solid rgba(60,40,20,0.6)',
+              color: '#aaa', transition: 'all 0.25s', opacity: selectedCubeId === null ? 0.45 : 1,
+            }}>
+              <div style={{
+                width: '46px', height: '46px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(150,150,150,0.15)',
+              }}><Power size={22} color="#ccc" /></div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontWeight: 700, fontSize: '14px', letterSpacing: '0.1em' }}>PAUSAR</div>
-                <div style={{ fontSize: '10px', color: '#555', marginTop: '3px' }}>rgb(0,0,150) · 20% vibr. · 250 Hz</div>
-                <div style={{ fontSize: '10px', color: '#444', marginTop: '1px', fontStyle: 'italic' }}>"Detente. No respondas todavía."</div>
+                <div style={{ fontWeight: 700, fontSize: '14px', letterSpacing: '0.1em' }}>ESTADO INICIAL</div>
+                <div style={{ fontSize: '10px', color: '#555', marginTop: '3px' }}>Apaga color y vibración</div>
+                <div style={{ fontSize: '10px', color: '#444', marginTop: '1px', fontStyle: 'italic' }}>Manual — o automático a los {AUTO_OFF_MS / 1000}s</div>
               </div>
             </button>
-            {/* PENSAR */}
-            <button onClick={() => sendAction('pensar')} style={btnAction('pensar')}>
-              <div style={iconCircle('pensar')}><Lightbulb size={22} color="#ffff66" /></div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontWeight: 700, fontSize: '14px', letterSpacing: '0.1em' }}>PENSAR</div>
-                <div style={{ fontSize: '10px', color: '#555', marginTop: '3px' }}>rgb(255,255,102) · 50% vibr. · bip–bip 600 Hz</div>
-                <div style={{ fontSize: '10px', color: '#444', marginTop: '1px', fontStyle: 'italic' }}>"Analiza y busca alternativas."</div>
-              </div>
-            </button>
-            {/* ACTUAR */}
-            <button onClick={() => sendAction('actuar')} style={btnAction('actuar')}>
-              <div style={iconCircle('actuar')}><Zap size={22} color="#00ff88" /></div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontWeight: 700, fontSize: '14px', letterSpacing: '0.1em' }}>ACTUAR</div>
-                <div style={{ fontSize: '10px', color: '#555', marginTop: '3px' }}>rgb(0,255,0) · 80% vibr. · 600→1000 Hz</div>
-                <div style={{ fontSize: '10px', color: '#444', marginTop: '1px', fontStyle: 'italic' }}>"La decisión está tomada."</div>
-              </div>
-            </button>
+          </div>
+          <div style={{ color: '#555', fontSize: '11px', marginTop: '10px' }}>
+            Cada señal enviada (Pausar/Pensar/Actuar) se apaga sola a los {AUTO_OFF_MS / 1000} segundos; "Estado inicial" la apaga antes, de inmediato.
           </div>
         </div>
 
         {/* ── Bottom panels ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', flexShrink: 0 }}>
+        <div style={{ flexShrink: 0 }}>
 
-          {/* Vibración */}
-          <div style={{ ...card, display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '15px' }}>〰</span>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: '13px' }}>Vibración</div>
-                  <div style={{ color: '#666', fontSize: '10px' }}>Intensidad global</div>
-                </div>
-              </div>
-              <span style={{ fontSize: '9px', color: '#777', background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.08em', alignSelf: 'flex-start' }}>SIMULADO</span>
-            </div>
-            <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-end', flex: 1, marginBottom: '10px', minHeight: '40px' }}>
-              {VIB_H.map((h, i) => (
-                <div key={i} style={{
-                  flex: 1, borderRadius: '2px 2px 0 0', background: '#d97706',
-                  height: `${Math.max(vibIntensity * h * 100, 6)}%`,
-                  transition: 'height 0.35s ease',
-                }} />
-              ))}
-            </div>
-            <input type="range" min={0} max={1} step={0.01} value={vibIntensity} readOnly onChange={() => {}}
-              style={{ width: '100%', accentColor: '#d97706', cursor: 'default' }} />
-            <div style={{ color: '#777', fontSize: '11px', marginTop: '3px' }}>{vibIntensity.toFixed(2)}</div>
-          </div>
-
-          {/* LED */}
-          <div style={{ ...card, display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '15px' }}>💡</span>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: '13px' }}>LED</div>
-                  <div style={{ color: '#666', fontSize: '10px' }}>Color y frecuencia</div>
-                </div>
-              </div>
-              <span style={{ fontSize: '9px', color: '#777', background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.08em', alignSelf: 'flex-start' }}>SIMULADO</span>
-            </div>
-            <div style={{ display: 'flex', gap: '6px', flex: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-              {displayLed.map((c, i) => (
-                <div key={i} style={{
-                  width: '28px', height: '28px', borderRadius: '50%', background: c,
-                  border: `2px solid ${i === 0 && activeAction ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.1)'}`,
-                  boxShadow: i === 0 && activeAction ? `0 0 10px ${c}` : 'none',
-                  transition: 'all 0.3s',
-                }} />
-              ))}
-            </div>
-            <input type="range" min={0} max={2} step={0.01} value={defFreq} readOnly onChange={() => {}}
-              style={{ width: '100%', accentColor: '#00bcd4', cursor: 'default', marginTop: '10px' }} />
-            <div style={{ color: '#777', fontSize: '11px', marginTop: '3px' }}>{defFreq.toFixed(2)} Hz</div>
-          </div>
-
-          {/* Sonido */}
+          {/* Sonido / música de fondo */}
           <div style={{ ...card, display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '15px' }}>🔊</span>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: '13px' }}>Sonido</div>
-                  <div style={{ color: '#666', fontSize: '10px' }}>Plataforma · pista {currentSoundId}</div>
+                  <div style={{ fontWeight: 600, fontSize: '13px' }}>Señal sonora PPA</div>
+                  <div style={{ color: '#666', fontSize: '10px' }}>Tono al enviar Pausar/Pensar/Actuar</div>
                 </div>
               </div>
               <span style={{ fontSize: '9px', color: activeAction ? '#22c55e' : '#777', background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.08em', alignSelf: 'flex-start' }}>
                 {activeAction ? 'activo' : 'en espera'}
               </span>
             </div>
-            <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-end', flex: 1, marginBottom: '12px', minHeight: '40px' }}>
+            <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-end', height: '40px', marginBottom: '12px' }}>
               {SND_H.map((h, i) => (
                 <div key={i} style={{
                   flex: 1, borderRadius: '2px 2px 0 0', background: '#16a34a',
@@ -586,10 +628,9 @@ function App() {
                 }} />
               ))}
             </div>
-            <PlatformConfigPopup
-              currentSoundId={currentSoundId}
-              onSave={({ soundId }) => { setCurrentSoundId(soundId); playAudioById(soundId) }}
-            />
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', margin: '4px 0 10px' }} />
+            <div style={{ fontSize: '10px', color: '#666', marginBottom: '6px' }}>MÚSICA DE FONDO (OPCIONAL)</div>
+            <AmbientMusicPanel accentColor="#d97706" />
           </div>
 
         </div>

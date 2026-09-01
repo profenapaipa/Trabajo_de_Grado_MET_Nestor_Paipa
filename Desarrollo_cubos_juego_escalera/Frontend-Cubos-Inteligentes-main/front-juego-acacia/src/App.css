@@ -7,14 +7,19 @@
 }
 
 /* ── Cube action animations ──────────────────────────── */
+/* Pausar: 2 pulsos largos e intermitentes, luego una pausa de calma —
+   coincide con el patrón de vibración (ver PENDIENTES_TESIS.md). */
 @keyframes pausar-pulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(0, 0, 200, 0.3), 0 0 0 0 rgba(0, 0, 200, 0.3); }
-  50%       { box-shadow: 0 0 20px rgba(0, 0, 255, 0.9), 0 0 0 6px rgba(0, 0, 255, 0); }
+  0%, 12%, 38%, 100% { box-shadow: 0 0 6px rgba(0, 191, 255, 0.3), 0 0 0 0 rgba(0, 191, 255, 0.3); }
+  6%  { box-shadow: 0 0 20px rgba(0, 191, 255, 0.9), 0 0 0 6px rgba(0, 191, 255, 0); }
+  44% { box-shadow: 0 0 20px rgba(0, 191, 255, 0.9), 0 0 0 6px rgba(0, 191, 255, 0); }
 }
 
+/* Pensar: 3 repeticiones rápidas, frecuencia más alta que Pausar. */
 @keyframes pensar-breathe {
   0%, 100% { transform: scale(0.95); box-shadow: 0 0 4px  rgba(255, 255, 80, 0.3); }
-  50%       { transform: scale(1.05); box-shadow: 0 0 22px rgba(255, 255, 80, 1);   }
+  16.6%, 50%, 83.3% { transform: scale(1.05); box-shadow: 0 0 22px rgba(255, 255, 80, 1);   }
+  33.3%, 66.6% { transform: scale(0.95); box-shadow: 0 0 4px  rgba(255, 255, 80, 0.3); }
 }
 
 @keyframes actuar-glow {
@@ -23,16 +28,18 @@
   100% { box-shadow: 0 0 12px rgba(0, 255, 80, 0.6); }
 }
 
+/* 2 pulsos largos, luego reposo — mismo patrón que pausar-pulse. */
 @keyframes vib-pausar {
-  0%, 100% { transform: scaleX(1);    }
-  50%       { transform: scaleX(0.92); }
+  0%, 12%, 38%, 100% { transform: scaleX(1);    }
+  6%   { transform: scaleX(0.82); }
+  44%  { transform: scaleX(0.82); }
 }
 
+/* 3 repeticiones rápidas — mismo patrón que pensar-breathe. */
 @keyframes vib-pensar {
-  0%        { transform: translateX(0);    }
-  25%       { transform: translateX(-1px); }
-  75%       { transform: translateX(1px);  }
-  100%      { transform: translateX(0);    }
+  0%, 100%          { transform: translateX(0);    }
+  16.6%, 50%, 83.3%  { transform: translateX(-1px); }
+  33.3%, 66.6%       { transform: translateX(1px);  }
 }
 
 @keyframes vib-actuar {
@@ -43,10 +50,14 @@
   80%       { transform: translateX(1px);  }
 }
 
-.cube-pausar { animation: pausar-pulse 2s ease-in-out infinite; }
-.cube-pensar { animation: pensar-breathe 2s ease-in-out infinite; }
+/* Ciclos alineados con los patrones sonoros de ppaTones.ts: Pausar ~2.5s
+   (2 pulsos largos + descanso), Pensar ~1.4s (3 repeticiones rápidas +
+   descanso) — ambos se repiten solos mientras la señal siga activa
+   (hasta el apagado automático). */
+.cube-pausar { animation: pausar-pulse 2.5s ease-in-out infinite; }
+.cube-pensar { animation: pensar-breathe 1.4s ease-in-out infinite; }
 .cube-actuar { animation: actuar-glow 0.8s ease-out forwards; }
 
-.vib-pausar { animation: vib-pausar 2s ease-in-out infinite; }
-.vib-pensar { animation: vib-pensar 0.6s ease-in-out infinite; }
+.vib-pausar { animation: vib-pausar 2.5s ease-in-out infinite; }
+.vib-pensar { animation: vib-pensar 1.4s ease-in-out infinite; }
 .vib-actuar { animation: vib-actuar 0.3s ease-in-out infinite; }

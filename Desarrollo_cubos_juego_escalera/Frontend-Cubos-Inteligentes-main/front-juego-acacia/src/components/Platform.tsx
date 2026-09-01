@@ -1,9 +1,6 @@
 import PlatformConfigPopup from "./PlatformConfigPopup";
 
-function Platform({ playSound, currentSoundId }: {
-    playSound: (id: number) => void,
-    currentSoundId: number
-}) {
+function Platform() {
     return (
         <div style={{
             width: '100%',
@@ -12,13 +9,7 @@ function Platform({ playSound, currentSoundId }: {
             display: 'flex',
             backgroundColor: 'gray',
         }}>
-            <PlatformConfigPopup
-                currentSoundId={currentSoundId}
-                onSave={({ soundId }) => {
-                    playSound(soundId);
-                    console.log(soundId);
-                }}
-            />
+            <PlatformConfigPopup />
         </div>
     );
 }

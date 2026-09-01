@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react'
-import { Trophy, Ban, TriangleAlert, RotateCcw, Download, Pause, Lightbulb, Zap, Eye } from 'lucide-react'
+import { Trophy, Ban, TriangleAlert, RotateCcw, Download, Pause, Lightbulb, Zap, GraduationCap } from 'lucide-react'
 import {
   type Board, type Team,
   createInitialBoard, computeWinBoard, boardsEqual,
@@ -7,66 +7,38 @@ import {
 } from '../../core/simulation/laEscaleraRules'
 import { type PPAPhase, type BitacoraEvent, nowIso, toCsv, downloadFile } from '../../core/simulation/bitacora'
 import { simCard, simLabel, SIM_ACCENT } from '../../core/simulation/theme'
+import { playPpaFeedback, playError } from '../../core/utils/ppaTones'
+import { PPA_HEX, FALLAS_PARA_PAUSAR, AUTO_OFF_MS } from '../../core/ppa/ppaColors'
 import ReglasPanel from './ReglasPanel'
+import PpaChargeMeter from './PpaChargeMeter'
 
-const VERSION_CONFIGURACION = 'sim-config-v0.1 (umbral Actuar ajustable en pantalla, no calibrado)'
+const VERSION_CONFIGURACION = 'sim-config-v0.1'
 const DRAG_THRESHOLD_PX = 12
 const SNAP_RANGE_FACTOR = 1.6
 const SNAP_DURATION_MS = 180
 
-function playTone(freq: number, duration: number) {
-  try {
-    const ctx = new AudioContext(), osc = ctx.createOscillator(), g = ctx.createGain()
-    osc.connect(g); g.connect(ctx.destination)
-    osc.frequency.value = freq
-    g.gain.setValueAtTime(0.35, ctx.currentTime)
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration)
-    osc.start(); osc.stop(ctx.currentTime + duration)
-  } catch { /* audio no disponible */ }
-}
-function playBipBip(freq: number) {
-  try {
-    const ctx = new AudioContext()
-    for (let i = 0; i < 2; i++) {
-      const osc = ctx.createOscillator(), g = ctx.createGain()
-      osc.connect(g); g.connect(ctx.destination); osc.frequency.value = freq
-      const t = ctx.currentTime + i * 0.30
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.35, t + 0.01)
-      g.gain.setValueAtTime(0.35, t + 0.12); g.gain.linearRampToValueAtTime(0, t + 0.15)
-      osc.start(t); osc.stop(t + 0.16)
-    }
-  } catch { /* audio no disponible */ }
-}
-function playAscending(s: number, e: number, d: number) {
-  try {
-    const ctx = new AudioContext(), osc = ctx.createOscillator(), g = ctx.createGain()
-    osc.connect(g); g.connect(ctx.destination)
-    osc.frequency.setValueAtTime(s, ctx.currentTime)
-    osc.frequency.linearRampToValueAtTime(e, ctx.currentTime + d)
-    g.gain.setValueAtTime(0.35, ctx.currentTime)
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + d)
-    osc.start(); osc.stop(ctx.currentTime + d)
-  } catch { /* audio no disponible */ }
-}
-function playFeedback(fase: PPAPhase) {
-  if (fase === 'pausar') playTone(250, 0.5)
-  if (fase === 'pensar') playBipBip(600)
-  if (fase === 'actuar') playAscending(600, 1000, 0.5)
+const GUIDED_TIPS: Record<number, { titulo: string; texto: string }> = {
+  1: { titulo: 'Paso 1 · Deslizar', texto: 'Con una sola pareja de fichas alcanza con deslizar: arrastra tu ficha azul hacia la casilla vacía de al lado, y luego la roja hacia la que quede libre.' },
+  2: { titulo: 'Paso 2 · Saltar', texto: 'Ahora hay una ficha del otro color junto a la tuya. Si detrás de ella hay una casilla vacía, arrastra tu ficha para saltar sobre ella — es el segundo movimiento del juego.' },
+  3: { titulo: 'Paso 3 · Combinar', texto: 'Ya conoces los dos movimientos (deslizar y saltar). Con más fichas hace falta alternarlos para completar el intercambio — no siempre el primer movimiento disponible es el mejor.' },
+  4: { titulo: 'Paso 4 · Planificar', texto: 'Con más fichas en juego, antes de mover conviene pensar qué movimiento acerca más al intercambio completo — moverse rápido no siempre es lo más eficiente.' },
+  5: { titulo: 'Paso 5 · Nivel completo', texto: 'Esta es la versión completa del juego, cinco fichas por lado — igual que en una sesión real.' },
 }
 
 const PPA_META: Record<PPAPhase, { label: string; icon: ReactNode; rgb: string }> = {
-  pausar: { label: 'PAUSAR', icon: <Pause size={16} />, rgb: 'rgb(0,0,150)' },
-  pensar: { label: 'PENSAR', icon: <Lightbulb size={16} />, rgb: 'rgb(255,255,102)' },
-  actuar: { label: 'ACTUAR', icon: <Zap size={16} />, rgb: 'rgb(0,255,0)' },
+  pausar: { label: 'PAUSAR', icon: <Pause size={16} />, rgb: PPA_HEX.pausar },
+  pensar: { label: 'PENSAR', icon: <Lightbulb size={16} />, rgb: PPA_HEX.pensar },
+  actuar: { label: 'ACTUAR', icon: <Zap size={16} />, rgb: PPA_HEX.actuar },
 }
 const TEAM_COLOR: Record<Team, string> = { A: '#0000ff', B: '#ff0000' }
 
 type DragState = { fromIndex: number; startX: number; startY: number; dx: number; dy: number; snapping: boolean }
 
-function JuegoSimulado({ pares, role, operatorId }: {
+function JuegoSimulado({ pares, operatorId, guiado = false, modo = 'juego' }: {
   pares: number
-  role: 'operador' | 'observador'
   operatorId: string
+  guiado?: boolean
+  modo?: string
 }) {
   const [board, setBoard] = useState<Board>(() => createInitialBoard(pares))
   const [winBoard, setWinBoard] = useState<Board>(() => computeWinBoard(createInitialBoard(pares)))
@@ -76,15 +48,22 @@ function JuegoSimulado({ pares, role, operatorId }: {
   const [moveCount, setMoveCount] = useState(0)
   const [pendingSuggestion, setPendingSuggestion] = useState<{ fase: PPAPhase; motivo: string } | null>(null)
   const [lastActivation, setLastActivation] = useState<{ fase: PPAPhase; at: string } | null>(null)
-  const [actuarThresholdSec, setActuarThresholdSec] = useState(8)
   const [events, setEvents] = useState<BitacoraEvent[]>([])
   const [discardReason, setDiscardReason] = useState('')
   const [dragState, setDragState] = useState<DragState | null>(null)
+  const [actuarThresholdSec, setActuarThresholdSec] = useState(8)
+  const [, setTick] = useState(0)
 
   const turnStartRef = useRef<number>(Date.now())
   const cellRefs = useRef<(HTMLDivElement | null)[]>([])
   const restRectsRef = useRef<(DOMRect | null)[]>([])
   const toggleOffRef = useRef(false)
+
+  useEffect(() => {
+    if (guiado) return
+    const id = setInterval(() => setTick(t => t + 1), 500)
+    return () => clearInterval(id)
+  }, [guiado])
 
   function logEvent(
     partial: Omit<BitacoraEvent, 'timestamp' | 'esSimulacion' | 'operadorId' | 'versionConfiguracion' | 'pares' | 'posiciones'>,
@@ -118,7 +97,7 @@ function JuegoSimulado({ pares, role, operatorId }: {
   useEffect(() => {
     if (didLogStartRef.current) return
     didLogStartRef.current = true
-    logEvent({ tipo: 'reinicio', detalle: `Sesión de simulación iniciada: ${pares} par(es) de cubos` }, board)
+    logEvent({ tipo: 'reinicio', detalle: `Sesión de ${modo} iniciada: ${pares} par(es) de cubos` }, board)
   }, [])
 
   const firstParesRef = useRef(pares)
@@ -128,21 +107,6 @@ function JuegoSimulado({ pares, role, operatorId }: {
     startExercise(pares)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pares])
-
-  useEffect(() => {
-    if (status !== 'jugando') return
-    const id = setInterval(() => {
-      if (pendingSuggestion !== null) return
-      const elapsed = (Date.now() - turnStartRef.current) / 1000
-      if (elapsed >= actuarThresholdSec) {
-        const motivo = `latencia sin movimiento ≥ ${actuarThresholdSec}s (umbral configurable, no oficial)`
-        setPendingSuggestion({ fase: 'actuar', motivo })
-        logEvent({ tipo: 'sugerencia_ppa', fase: 'actuar', motivo, detalle: 'Sugerencia de Actuar emitida por latencia' }, board)
-      }
-    }, 500)
-    return () => clearInterval(id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, pendingSuggestion, actuarThresholdSec, board, operatorId, pares])
 
   function applyLegalMove(fromIndex: number, targetIndex: number) {
     const moved = board[fromIndex]!
@@ -164,9 +128,13 @@ function JuegoSimulado({ pares, role, operatorId }: {
 
   function registerFalla(fromIndex: number, targetIndex: number) {
     const attemptedId = board[fromIndex]!.id
+    playError()
     logEvent({ tipo: 'falla', detalle: `Intento inválido: mover el cubo #${attemptedId} a la posición ${targetIndex + 1}` }, board)
+    // El tutorial es únicamente para aprender el juego y sus reglas — no
+    // dispara la sugerencia de Pausar, solo la simulación libre lo hace.
+    if (guiado) return
     const nf = fallaCount + 1
-    if (nf >= 2 && pendingSuggestion === null) {
+    if (nf >= FALLAS_PARA_PAUSAR && pendingSuggestion === null) {
       setFallaCount(0)
       setPendingSuggestion({ fase: 'pausar', motivo: 'dos fallas consecutivas' })
       logEvent({ tipo: 'sugerencia_ppa', fase: 'pausar', motivo: 'dos fallas consecutivas', detalle: 'Sugerencia de Pausar emitida' }, board)
@@ -241,7 +209,6 @@ function JuegoSimulado({ pares, role, operatorId }: {
   }
 
   function resolveSuggestion(decision: 'confirmada' | 'descartada') {
-    if (role === 'observador') return
     if (!pendingSuggestion) return
     const { fase, motivo } = pendingSuggestion
 
@@ -257,53 +224,68 @@ function JuegoSimulado({ pares, role, operatorId }: {
 
     if (decision === 'confirmada') {
       setLastActivation({ fase, at: nowIso() })
-      playFeedback(fase)
+      playPpaFeedback(fase, AUTO_OFF_MS / 1000)
       if (fase === 'pausar') {
         const next = { fase: 'pensar' as PPAPhase, motivo: 'encadenado tras confirmar Pausar (mismo ciclo)' }
         setPendingSuggestion(next)
         logEvent({ tipo: 'sugerencia_ppa', fase: next.fase, motivo: next.motivo, detalle: 'Sugerencia de Pensar emitida (encadenada)' }, board)
       }
-      if (fase === 'actuar') turnStartRef.current = Date.now()
-    } else if (fase === 'actuar') {
-      turnStartRef.current = Date.now()
     }
   }
 
-  function exportCsv() { downloadFile(`bitacora-juego-simulado-${Date.now()}.csv`, toCsv(events), 'text/csv;charset=utf-8') }
-  function exportJson() { downloadFile(`bitacora-juego-simulado-${Date.now()}.json`, JSON.stringify(events, null, 2), 'application/json') }
+  function exportCsv() { downloadFile(`bitacora-${modo}-${Date.now()}.csv`, toCsv(events), 'text/csv;charset=utf-8') }
+  function exportJson() { downloadFile(`bitacora-${modo}-${Date.now()}.json`, JSON.stringify(events, null, 2), 'application/json') }
 
   const legalTargets = selected !== null ? legalMovesFor(board, selected) : []
 
+  const tip = GUIDED_TIPS[pares] ?? GUIDED_TIPS[5]
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <ReglasPanel />
-
-      <div style={{ ...simCard, opacity: role === 'observador' ? 0.6 : 1 }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
-          <div style={{ flex: 1, minWidth: '200px' }}>
-            <div style={simLabel}>UMBRAL ACTUAR (segundos, no oficial)</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
-              <input type="range" min={2} max={30} step={1} value={actuarThresholdSec} disabled={role === 'observador'}
-                onChange={e => setActuarThresholdSec(Number(e.target.value))}
-                style={{ flex: 1, accentColor: SIM_ACCENT }} />
-              <span style={{ fontSize: '13px', width: '32px' }}>{actuarThresholdSec}s</span>
-            </div>
+      {guiado && (
+        <div style={{ ...simCard, border: `1px solid ${SIM_ACCENT}`, display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+          <GraduationCap size={22} color={SIM_ACCENT} style={{ flexShrink: 0, marginTop: '2px' }} />
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '14px', color: SIM_ACCENT }}>{tip.titulo}</div>
+            <div style={{ fontSize: '13px', color: '#ccc', marginTop: '4px', lineHeight: 1.5 }}>{tip.texto}</div>
           </div>
-          <button disabled={role === 'observador'} onClick={() => startExercise(pares)} style={{
-            display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.07)',
-            border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '8px 14px',
-            color: '#fff', fontSize: '13px', cursor: role === 'observador' ? 'not-allowed' : 'pointer',
-          }}>
-            <RotateCcw size={13} /> Nuevo ejercicio
-          </button>
         </div>
+      )}
+
+      {guiado && <ReglasPanel />}
+
+      <div style={{ ...simCard, display: 'flex', justifyContent: 'flex-end' }}>
+        <button onClick={() => startExercise(pares)} style={{
+          display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.07)',
+          border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '8px 14px',
+          color: '#fff', fontSize: '13px', cursor: 'pointer',
+        }}>
+          <RotateCcw size={13} /> Nuevo ejercicio
+        </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '10px' }}>
         <div style={simCard}><div style={simLabel}>MOVIMIENTOS</div><div style={{ fontSize: '22px', fontWeight: 700, marginTop: '6px' }}>{moveCount}</div></div>
-        <div style={simCard}><div style={simLabel}>FALLAS CONSECUTIVAS</div><div style={{ fontSize: '22px', fontWeight: 700, marginTop: '6px' }}>{fallaCount}</div></div>
         <div style={simCard}><div style={simLabel}>ESTADO</div><div style={{ fontSize: '18px', fontWeight: 700, marginTop: '6px', textTransform: 'capitalize' }}>{status}</div></div>
       </div>
+
+      {!guiado && (
+        <div style={simCard}>
+          <div style={{ ...simLabel, marginBottom: '10px' }}>CONDICIÓN ACUMULADA POR FASE — informativo, el operador decide si envía la señal</div>
+          <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+            <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pausar} label="Pausar — fallas consecutivas" />
+            <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pensar} label="Pensar — mismo criterio, encadenado tras Pausar" />
+            <PpaChargeMeter value={Math.min(Math.floor((Date.now() - turnStartRef.current) / 1000), actuarThresholdSec)} max={actuarThresholdSec} colorHex={PPA_HEX.actuar} label={`Actuar — latencia sin mover (umbral ${actuarThresholdSec}s, no oficial)`} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px' }}>
+            <span style={{ fontSize: '11px', color: '#888' }}>Umbral Actuar (segundos, no oficial):</span>
+            <input type="range" min={2} max={30} value={actuarThresholdSec}
+              onChange={e => setActuarThresholdSec(Number(e.target.value))}
+              style={{ flex: 1, maxWidth: '160px', accentColor: SIM_ACCENT }} />
+            <span style={{ fontSize: '11px' }}>{actuarThresholdSec}s</span>
+          </div>
+        </div>
+      )}
 
       {status === 'victoria' && (
         <div style={{ ...simCard, background: 'rgba(20,80,30,0.5)', border: '1px solid #22c55e', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -318,14 +300,19 @@ function JuegoSimulado({ pares, role, operatorId }: {
         </div>
       )}
 
-      <div style={simCard}>
+      <div style={{ ...simCard, position: 'relative' }}>
         <div style={{ ...simLabel, marginBottom: '4px' }}>TABLERO · {pares} PAR(ES) · mantén presionado y arrastra para mover</div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', flexWrap: 'wrap', padding: '10px 0', touchAction: 'none' }}>
           {board.map((cell, i) => {
             const isSelected = selected === i
             const isLegalTarget = legalTargets.includes(i)
-            const bg = cell ? TEAM_COLOR[cell.team] : 'rgba(255,255,255,0.04)'
             const isDragging = dragState?.fromIndex === i
+            // Mientras se arrastra, la casilla de origen se muestra vacía
+            // de verdad — el cubo "levantado" se dibuja aparte, flotando
+            // sobre el tablero, para que quede claro que esa posición
+            // quedó libre en cuanto se sostiene el clic.
+            const showEmpty = !cell || isDragging
+            const bg = showEmpty ? 'rgba(255,255,255,0.10)' : TEAM_COLOR[cell!.team]
             return (
               <div key={i} data-cell={i}
                 ref={el => { cellRefs.current[i] = el }}
@@ -337,21 +324,44 @@ function JuegoSimulado({ pares, role, operatorId }: {
                   width: '56px', height: '64px', borderRadius: '10px', background: bg,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: status === 'jugando' && cell ? 'grab' : 'default',
-                  border: isSelected ? '3px solid #fff' : isLegalTarget ? `3px solid ${SIM_ACCENT}` : '1px solid rgba(255,255,255,0.15)',
-                  boxShadow: isLegalTarget ? `0 0 10px ${SIM_ACCENT}aa` : isDragging ? '0 6px 18px rgba(0,0,0,0.5)' : 'none',
+                  border: isSelected ? '3px solid #fff' : isLegalTarget ? `3px solid ${SIM_ACCENT}`
+                    : showEmpty ? '2px dashed rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.15)',
+                  boxShadow: isLegalTarget ? `0 0 10px ${SIM_ACCENT}aa` : 'none',
                   color: '#fff', fontWeight: 700, fontSize: '16px',
-                  transform: isDragging ? `translate(${dragState!.dx}px, ${dragState!.dy}px) scale(1.08)` : 'none',
-                  transition: isDragging && dragState!.snapping ? `transform ${SNAP_DURATION_MS}ms ease` : isDragging ? 'none' : 'all 0.15s',
-                  zIndex: isDragging ? 50 : 1,
+                  transition: 'border-color 0.15s, box-shadow 0.15s',
                   position: 'relative',
                   touchAction: 'none',
                   userSelect: 'none',
                 }}>
-                {cell ? `#${cell.id}` : ''}
+                {showEmpty ? <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px' }}>vacío</span> : `#${cell!.id}`}
               </div>
             )
           })}
         </div>
+
+        {/* Pieza flotante mientras se arrastra */}
+        {dragState && board[dragState.fromIndex] && (() => {
+          const fromRect = restRectsRef.current[dragState.fromIndex]
+          if (!fromRect) return null
+          const piece = board[dragState.fromIndex]!
+          return (
+            <div style={{
+              position: 'fixed',
+              left: fromRect.left, top: fromRect.top,
+              width: fromRect.width, height: fromRect.height,
+              borderRadius: '10px', background: TEAM_COLOR[piece.team],
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff', fontWeight: 700, fontSize: '16px',
+              boxShadow: '0 6px 18px rgba(0,0,0,0.5)',
+              transform: `translate(${dragState.dx}px, ${dragState.dy}px) scale(1.08)`,
+              transition: dragState.snapping ? `transform ${SNAP_DURATION_MS}ms ease` : 'none',
+              pointerEvents: 'none',
+              zIndex: 50,
+            }}>
+              #{piece.id}
+            </div>
+          )
+        })()}
       </div>
 
       {pendingSuggestion && (
@@ -362,27 +372,21 @@ function JuegoSimulado({ pares, role, operatorId }: {
             <span style={{ color: '#888', fontSize: '12px' }}>— motivo: {pendingSuggestion.motivo}</span>
           </div>
           <div style={{ color: '#888', fontSize: '12px' }}>El sistema sugiere; el operador decide. Ninguna fase se activa sin confirmación.</div>
-          {role === 'operador' ? (
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <button onClick={() => resolveSuggestion('confirmada')} style={{
-                background: 'rgba(34,197,94,0.15)', border: '1px solid #22c55e', color: '#22c55e',
-                borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontWeight: 700,
-              }}>Confirmar</button>
-              <input value={discardReason} onChange={e => setDiscardReason(e.target.value)} placeholder="motivo del descarte (opcional)"
-                style={{
-                  background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: '6px', padding: '7px 10px', color: '#fff', fontSize: '12px', flex: 1, minWidth: '180px',
-                }} />
-              <button onClick={() => resolveSuggestion('descartada')} style={{
-                background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', color: '#ef4444',
-                borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontWeight: 700,
-              }}>Descartar</button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f59e0b', fontSize: '12px', fontStyle: 'italic' }}>
-              <Eye size={12} /> Vista de observador — esperando la decisión del operador. Sin controles de confirmación.
-            </div>
-          )}
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button onClick={() => resolveSuggestion('confirmada')} style={{
+              background: 'rgba(34,197,94,0.15)', border: '1px solid #22c55e', color: '#22c55e',
+              borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontWeight: 700,
+            }}>Confirmar</button>
+            <input value={discardReason} onChange={e => setDiscardReason(e.target.value)} placeholder="motivo del descarte (opcional)"
+              style={{
+                background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '6px', padding: '7px 10px', color: '#fff', fontSize: '12px', flex: 1, minWidth: '180px',
+              }} />
+            <button onClick={() => resolveSuggestion('descartada')} style={{
+              background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', color: '#ef4444',
+              borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontWeight: 700,
+            }}>Descartar</button>
+          </div>
         </div>
       )}
 
@@ -401,7 +405,7 @@ function JuegoSimulado({ pares, role, operatorId }: {
 
       <div style={simCard}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-          <div style={simLabel}>BITÁCORA DEL JUEGO (SIMULACIÓN) · {events.length} EVENTOS</div>
+          <div style={simLabel}>BITÁCORA · {modo.toUpperCase()} (SIMULACIÓN) · {events.length} EVENTOS</div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={exportCsv} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '5px 10px', color: '#fff', fontSize: '12px', cursor: 'pointer' }}><Download size={12} /> CSV</button>
             <button onClick={exportJson} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '5px 10px', color: '#fff', fontSize: '12px', cursor: 'pointer' }}><Download size={12} /> JSON</button>

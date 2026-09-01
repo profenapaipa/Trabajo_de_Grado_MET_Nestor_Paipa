@@ -9,7 +9,8 @@ import { toCsvGeneric, downloadFile, nowIso } from '../bitacora/csv'
 
 export type EventoCuboTipo =
   | 'posiciones' | 'esclavo_conectado' | 'esclavo_desconectado'
-  | 'base_conectada' | 'base_desconectada'
+  | 'base_conectada' | 'base_desconectada' | 'senal_apagada_automatica' | 'falla_movimiento'
+  | 'victoria' | 'derrota'
 
 export type EventoCubo = {
   timestamp: string
@@ -24,7 +25,7 @@ export type DecisionOperador = {
   pares: number
   operadorId: string
   cuboId: number
-  fase: 'pausar' | 'pensar' | 'actuar'
+  fase: 'pausar' | 'pensar' | 'actuar' | 'estado_inicial'
   detalle: string
 }
 

@@ -5,12 +5,14 @@
 // operadores: deslizar a la casilla vacía adyacente, o saltar sobre una
 // ficha del equipo contrario si la casilla siguiente está vacía.
 //
-// El estado meta (intercambio completo) se verificó contra el nodo 2771 del
-// grafo precalculado del proyecto (EstadosGrafo.csv, caso n=5): las fichas
-// del equipo derecho terminan ocupando el extremo izquierdo en su mismo
-// orden relativo, las del equipo izquierdo el tramo siguiente, y la casilla
-// vacía termina en el extremo derecho. Esa misma regla generaliza para
-// cualquier n (verificado a mano también para n=1).
+// El estado meta (intercambio completo) se verificó por BFS exhaustivo sobre
+// las reglas de abajo, para n=1..5: las fichas del equipo derecho terminan
+// ocupando el extremo izquierdo en su mismo orden relativo, la casilla vacía
+// vuelve a su posición original (el centro), y las del equipo izquierdo
+// ocupan el extremo derecho. Para cada n el BFS confirma que ese estado es
+// alcanzable, que es un estado terminal (sin más movimientos legales) y que
+// la distancia mínima de movimientos coincide con la fórmula conocida del
+// problema "ranas y sapos" (n² + 2n).
 //
 // "Derrota" (bloqueo sin movimientos legales) no está definida en ningún
 // documento del proyecto; su inclusión aquí fue una decisión explícita del
@@ -33,7 +35,7 @@ export function computeWinBoard(initial: Board): Board {
   const pairs = (initial.length - 1) / 2
   const left = initial.slice(0, pairs)
   const right = initial.slice(pairs + 1)
-  return [...right, ...left, null]
+  return [...right, null, ...left]
 }
 
 export function boardsEqual(a: Board, b: Board): boolean {

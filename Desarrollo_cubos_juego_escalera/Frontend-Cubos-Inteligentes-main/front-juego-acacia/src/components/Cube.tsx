@@ -1,26 +1,28 @@
-type CubeAction = 'pausar' | 'pensar' | 'actuar'
+import { PPA_HEX, PPA_VIBRATION, PPA_SOUND_LABEL, type PPAPhase } from '../core/ppa/ppaColors'
+
+type CubeAction = PPAPhase
 
 const ACTION_META: Record<CubeAction, {
   bg: string; textColor: string; icon: string
   vibLabel: string; vibLevel: number; soundLabel: string
 }> = {
   pausar: {
-    bg: '#00008c',      textColor: '#fff',
+    bg: PPA_HEX.pausar, textColor: '#001a26',
     icon: '⏸',
-    vibLabel: '20%',    vibLevel: 0.20,
-    soundLabel: '250Hz',
+    vibLabel: `${Math.round(PPA_VIBRATION.pausar * 100)}%`, vibLevel: PPA_VIBRATION.pausar,
+    soundLabel: PPA_SOUND_LABEL.pausar,
   },
   pensar: {
-    bg: '#e6e600',      textColor: '#1a1a00',
+    bg: PPA_HEX.pensar, textColor: '#1a1a00',
     icon: '💡',
-    vibLabel: '50%',    vibLevel: 0.50,
-    soundLabel: '600Hz',
+    vibLabel: `${Math.round(PPA_VIBRATION.pensar * 100)}%`, vibLevel: PPA_VIBRATION.pensar,
+    soundLabel: PPA_SOUND_LABEL.pensar,
   },
   actuar: {
-    bg: '#00cc44',      textColor: '#001a0a',
+    bg: PPA_HEX.actuar, textColor: '#001a0a',
     icon: '⚡',
-    vibLabel: '80%',    vibLevel: 0.80,
-    soundLabel: '↑1kHz',
+    vibLabel: `${Math.round(PPA_VIBRATION.actuar * 100)}%`, vibLevel: PPA_VIBRATION.actuar,
+    soundLabel: PPA_SOUND_LABEL.actuar,
   },
 }
 
