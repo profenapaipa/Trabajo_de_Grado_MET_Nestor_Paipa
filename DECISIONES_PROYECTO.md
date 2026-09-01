@@ -1,6 +1,6 @@
 # DECISIONES DEL PROYECTO
 
-*Última actualización: 2026-08-14*
+*Última actualización: 2026-09-01*
 
 Este archivo contiene **únicamente decisiones ya tomadas** por el autor y confirmadas contra la evidencia disponible (código, firmware, artículo primario, o declaración directa del autor). No es un espacio de discusión ni de pendientes — para eso existe `PENDIENTES_TESIS.md`.
 
@@ -10,8 +10,9 @@ Este archivo contiene **únicamente decisiones ya tomadas** por el autor y confi
 
 - La investigación es exploratoria, por diseño, y se mantiene así deliberadamente sin forzar una hipótesis formal.
 - Se encuentra actualmente en etapa **preexperimental**: el prototipo tecnológico ya fue construido y depurado; el protocolo experimental está diseñado; las sesiones EEG **todavía no se han realizado**.
-- La muestra todavía no está definida de forma definitiva. Puede comenzar con 1 o 2 participantes.
+- **Muestra (cerrada, confirmada por el autor 2026-09-01): 1 solo estudiante.** La formulación anterior de esta sección ("puede comenzar con 1 o 2 participantes") queda superada — ya no está abierta la posibilidad de 2 casos.
 - No deben inventarse resultados, datos demográficos, ni afirmarse que el experimento ya se ejecutó.
+- **Encuadre metodológico (2026-09-01):** el alcance es exploratorio, el enfoque es mixto, el diseño es preexperimental y de **caso único** — no hay grupo de contraste ni pretensión causal. Coherente con la muestra de 1 estudiante confirmada arriba.
 
 ## Nomenclatura
 
@@ -53,6 +54,41 @@ Este archivo contiene **únicamente decisiones ya tomadas** por el autor y confi
 
 - La activación actual de los estados (Pausar/Pensar/Actuar) se realiza exclusivamente mediante una interfaz operada manualmente por el docente.
 - No debe asumirse ni redactarse que el sistema tiene autonomía cognitiva o emocional, detección automática del estado del estudiante, o transición automática entre fases — ninguna de estas capacidades existe en la implementación actual, verificado en el código.
+- **(2026-09-01)** La autonomía queda descartada como decisión de diseño, no solo como estado actual de la implementación: la herramienta conserva agentividad, pero el sistema no activa ningún estado por sí solo en ningún caso, ni siquiera como respaldo si algo falla. La consola **sugiere**; el operador humano **confirma**.
+- **Regla de vocabulario (2026-09-01), vinculante para código e interfaz:** usar exclusivamente "sugerencia" y "confirmación". Quedan prohibidos los verbos "detecta", "decide" y "activa automáticamente" para describir el comportamiento del sistema.
+
+## Criterios de activación de los estados PPA
+
+*Incorporado 2026-09-01.*
+
+- **Pausar** se activa por dos fallas consecutivas.
+- **Pensar** se activa por una señal de confusión.
+- **Actuar** se activa por latencia sin movimiento, medida desde el inicio del turno; tiene prioridad cuando ocurre después de un Pausar o un Pensar ya confirmados.
+- Los tres umbrales viven en configuración; ninguno queda quemado en el código.
+- El umbral de Actuar no es un número único: es relativo al nivel (número de cubos en juego, con progresión de 1 a 5) y debe recalibrarse en cada aumento de cubos. Un umbral fijo dispararía siempre con cinco cubos y casi nunca con uno, confundiendo dificultad de la tarea con vacilación del jugador.
+- El umbral base se calibra en la sesión de familiarización con la latencia propia del participante, y se fija alto a propósito: una latencia larga puede ser procesamiento y no bloqueo, y un Actuar prematuro interrumpiría justo lo que se quiere medir.
+- El criterio se puede ajustar entre sesiones, nunca dentro de una sesión. La configuración debe estar versionada, y el identificador de versión debe quedar escrito en cada sesión registrada.
+- El valor numérico del umbral base de Actuar todavía no se ha definido; no debe inventarse.
+
+## Bitácora de sesión
+
+*Incorporado 2026-09-01.*
+
+- Marca de tiempo en formato ISO 8601 con milisegundos. Exportable a CSV y a JSON.
+- Registra como mínimo: posición de cada cubo, fallas, desconexiones y, para cada evento de PPA, la secuencia completa: sugerencia emitida, motivo que la disparó, decisión del operador (confirmar o descartar), motivo del descarte cuando aplique, y activación efectiva.
+- El descarte de una sugerencia no es una falla del sistema, es dato: la discrepancia entre lo que sugiere la consola y lo que decide el humano es un hallazgo del estudio y no puede perderse ni sobrescribirse.
+- Cada evento lleva el identificador del operador que confirmó.
+- Cada sesión lleva la versión de configuración vigente (ver criterios de activación PPA arriba).
+- La alineación de relojes entre frontend, backend y ESP32 es requisito previo al inicio de las sesiones, porque la bitácora se sincroniza después con el registro EEG y con el video.
+
+## Roles durante la sesión
+
+*Incorporado 2026-09-01.*
+
+- El operador que confirma las sugerencias de PPA es el investigador principal, por consistencia en la aplicación de los criterios y por conocimiento de la configuración del sistema.
+- Existe además un rol de observador, que registra y acompaña, y que no confirma.
+- El sistema debe soportar ambos roles por separado: identificador de operador en cada evento confirmado, y una vista de observación de solo lectura, sin controles de confirmación. Es un requisito del protocolo, no una preferencia de interfaz — no debe simplificarse a un solo rol aunque el código quede más limpio.
+- Los identificadores de las personas que ocuparán estos roles todavía no se han asignado; no deben inventarse.
 
 ## Regla editorial
 
