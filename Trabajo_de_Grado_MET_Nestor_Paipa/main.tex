@@ -2892,7 +2892,7 @@ Video, registro EEG y bitácora del sistema se sincronizan mediante una marca de
 \subsection{Distinción entre cubo levantado y cubo no detectado}
 
 % [SUJETO A VERIFICACIÓN TÉCNICA]
-Para efectos del análisis, un cambio de estado de un cubo se interpreta como cubo levantado cuando es compatible con las reglas de movimiento del juego: en cada instante puede haber como máximo un cubo levantado, y ese cubo debe pertenecer al conjunto de cubos que pueden moverse legalmente, es decir, avanzar únicamente en el sentido opuesto al de inicio, sin retroceder, y saltando como máximo sobre un cubo. Un cambio de estado que no sea compatible con ningún movimiento legal se interpreta como una desconexión del sensor y se excluye del análisis.
+Para efectos del análisis, un cambio de estado de un cubo se evalúa en dos pasos. Primero se verifica si es compatible con las reglas de movimiento del juego: en cada instante puede haber como máximo un cubo levantado, y ese cubo debe pertenecer al conjunto de cubos que pueden moverse legalmente, es decir, avanzar únicamente en el sentido opuesto al de inicio, sin retroceder, y saltando como máximo sobre un cubo. Si el cambio es compatible con un movimiento legal, se interpreta como cubo levantado. Si no lo es, no se asume de inmediato que el cubo se desconectó: se revisa, en segundo lugar, una señal independiente del canal de posición que confirme la desconexión, antes de excluir ese cambio de estado del análisis. Esta misma distinción determina cómo se representa cada cubo en la interfaz del docente.
 
 \subsection{Objeto del análisis}
 

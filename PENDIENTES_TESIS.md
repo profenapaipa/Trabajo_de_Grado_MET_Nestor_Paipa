@@ -77,6 +77,17 @@ Registrado el 2026-09-01, a partir de pruebas físicas del autor con los cubos y
 
 ---
 
+## Distinción entre cubo levantado y cubo desconectado
+
+Registrado el 2026-09-02. El algoritmo de dos pasos (validar contra las reglas del juego primero, revisar una señal de desconexión después) ya quedó decidido por el autor — ver `DECISIONES_PROYECTO.md`. Lo que sigue abierto es la señal o proceso concreto para el segundo paso, y su verificación contra hardware real. Esto afecta directamente la Fase 10 del plan de hardware ("Estados posicionales en el frontend": Levantado / Reubicado / No detectado).
+
+| Pendiente | Prioridad | Estado | Dependencia | Evidencia necesaria | Próximo paso |
+|---|---|---|---|---|---|
+| Definir la señal/proceso que confirma la desconexión de un cubo (segundo paso del algoritmo) | 🟠 ALTO | Sin definir. Candidato ya disponible en el sistema: el maestro ya hace una prueba de conectividad TCP por cubo cada 5 segundos (`reportarEsclavosActivos`, puerto 3333) y reporta el resultado al backend/frontend mediante el evento `esclavosConectados` — es una señal independiente del canal de posición (GPIO), tal como pide la regla. No evaluado todavía si el intervalo de 5 s es suficientemente rápido para no confundirse con un cubo real recién levantado, ni si hace falta una señal adicional más inmediata | Firmware del maestro (ya emite `esclavosConectados`); frontend (ya escucha ese evento, sin usarlo todavía para esta distinción) | Prueba con hardware conectado: levantar un cubo real y medir cuánto tarda en reflejarse `esclavosConectados` tras una desconexión real, para saber si alcanza como única señal o si hace falta reducir el intervalo o agregar otra verificación | Al conectar el maestro, implementar el algoritmo de dos pasos en el backend o el frontend, usando `esclavosConectados` como señal de desconexión mientras no se demuestre insuficiente |
+| Actualizar la Fase 10 (estados posicionales del frontend) con este algoritmo una vez verificado | 🟡 MEDIO | Sin ejecutar — depende del punto anterior | Punto anterior | Ninguna adicional | Implementar los tres estados visuales (Levantado / Reubicado / No detectado) usando la regla ya verificada, con animación, según especifica la Fase 10 del plan de hardware |
+
+---
+
 ## Bibliografía
 
 | Pendiente | Prioridad | Estado | Dependencia | Evidencia necesaria | Próximo paso |

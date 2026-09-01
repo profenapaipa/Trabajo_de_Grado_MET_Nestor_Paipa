@@ -97,6 +97,17 @@ Este archivo contiene **únicamente decisiones ya tomadas** por el autor y confi
 - Su propósito es servir de evidencia verificable de la línea base real entregada, para poder distinguir con precisión, contra el código, qué es aporte propio de esta investigación y qué no. Confirmado (2026-09-01): el canal de posición (GPIO) y el canal de actuación (WiFi/TCP 3333) ya estaban funcionales de extremo a extremo en esta entrega original, incluida la conexión con la interfaz (`actualizarPosiciones`/`comandoCubo` vía Socket.IO); no son, por tanto, aporte propio. El aporte propio confirmado contra esta línea base es: descubrimiento automático de red, seguimiento de estado de conexión, protocolo de interacción Mago de Oz con sus criterios PPA, y toda la adaptación al estudio EEG/TEA nivel 1. El esquema de tres agentes de sugerencia de movimiento (`pausar`/`pensar`/`elegir`, basado en Dijkstra) también viene de esta entrega original y sigue sin usarse en la aplicación actual.
 - Cualquier verificación futura contra el código debe leerse desde esta carpeta, nunca desde memoria de sesiones anteriores.
 
+## Distinción entre cubo levantado y cubo desconectado
+
+*Incorporado 2026-09-02.*
+
+- La distinción se resuelve en dos pasos, no en uno solo. Primero se evalúa si el cambio de estado es compatible con un movimiento legal según las reglas de La Escalera: como máximo un cubo levantado a la vez, y ese cubo debe pertenecer al conjunto de cubos que pueden moverse (avance únicamente en el sentido opuesto al de inicio, sin retroceso, salto de un solo cubo).
+- Si el cambio es compatible con un movimiento legal, se interpreta como cubo levantado.
+- Si no es compatible, **no se asume automáticamente que el cubo está desconectado**. Antes de descartarlo, se debe revisar una señal o proceso independiente del canal de posición que confirme la desconexión.
+- Motivo de la regla: un cambio de estado fuera de las reglas del juego podría deberse a otra causa distinta de la desconexión (por ejemplo, un roce accidental o un rebote de sensor), y tratar todo lo "no legal" como desconexión perdería esa distinción.
+- Esto determina directamente cómo se representa cada cubo en el frontend (estados Levantado / Reubicado / No detectado).
+- La señal o proceso concreto para confirmar la desconexión todavía no está definida ni evaluada contra hardware real; queda registrada como pendiente en `PENDIENTES_TESIS.md`, junto con el candidato ya disponible en el sistema (el reporte periódico de esclavos conectados que hace el maestro).
+
 ## Regla editorial
 
 - La tesis debe presentarse como un documento académico consolidado de la propuesta y el desarrollo tecnológico, no como un diario de depuración.
