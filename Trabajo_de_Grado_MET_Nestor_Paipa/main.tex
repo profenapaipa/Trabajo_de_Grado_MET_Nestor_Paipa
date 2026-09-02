@@ -472,10 +472,11 @@ docente desde una interfaz remota. Estos cubos funcionan como
 actuadores físicos del juicio pedagógico: el docente observa 
 la sesión, evalúa el estado cognitivo y emocional del estudiante, 
 y activa la fase correspondiente del ciclo regulador 
-(Pausar, Pensar, Actuar), que se materializa en el cubo mediante
-tres canales de salida simultáneos: luz LED de color específico, 
-vibración háptica de patrón regulado e indicación sonora de 
-frecuencia predefinida.
+(Pausar, Pensar, Actuar), que se materializa mediante
+tres canales de salida simultáneos: luz LED de color específico y
+vibración háptica de patrón regulado, ambas en el propio cubo, e
+indicación sonora de frecuencia predefinida, emitida por el
+computador del docente en sincronía con las dos anteriores.
 
 Esta arquitectura distribuye la agentividad entre dos componentes: 
 el docente, que aporta el juicio situacional y la decisión 
@@ -2362,7 +2363,7 @@ Concretamente, esa entrega estaba organizada en dos piezas de software que se ha
 
 La aplicación original incluía, además, un tercer elemento: un sistema de pistas para el jugador que calculaba el mejor movimiento siguiente —de forma parecida a como un GPS recalcula la ruta más corta— y lo señalaba iluminando el cubo correspondiente. Ese sistema de pistas, guardado en el código bajo los nombres \texttt{pausar}, \texttt{pensar} y \texttt{elegir} —nombres que más adelante se retomaron para las fases del presente estudio—, responde a un propósito distinto: ayudar a resolver el juego, no regular el control inhibitorio. Por eso se conserva en el código como antecedente, pero no interviene en el protocolo Pausar-Pensar-Actuar descrito en este capítulo, que esta investigación diseñó e implementó de manera independiente sobre esa misma base de comunicación.
 
-A partir de esa línea base funcional, el desarrollo propio de esta investigación consiste en: el mecanismo de descubrimiento automático del backend en la red local —antes había que escribir a mano la dirección IP y la contraseña de la red del laboratorio; ahora el maestro la encuentra por sí solo, como un teléfono que busca las redes WiFi disponibles a su alrededor—; el seguimiento del estado de conexión de la base y de cada cubo; el protocolo de interacción Mago de Oz, con sus criterios operacionales de sugerencia y confirmación para las fases Pausar, Pensar y Actuar; el diseño de los tonos previstos para el canal sonoro de cada fase (frecuencia, duración y patrón), a la espera de que el buzzer del cubo quede conectado al firmware —algo equivalente a tener ya escrita la partitura de una melodía antes de conectar el parlante que la reproducirá—; y la adaptación completa del protocolo, la bitácora de sesión y el diseño experimental al estudio del control inhibitorio en un niño con TEA nivel 1 mediante EEG.
+A partir de esa línea base funcional, el desarrollo propio de esta investigación consiste en: el mecanismo de descubrimiento automático del backend en la red local —antes había que escribir a mano la dirección IP y la contraseña de la red del laboratorio; ahora el maestro la encuentra por sí solo, como un teléfono que busca las redes WiFi disponibles a su alrededor—; el seguimiento del estado de conexión de la base y de cada cubo; el protocolo de interacción Mago de Oz, con sus criterios operacionales de sugerencia y confirmación para las fases Pausar, Pensar y Actuar; el diseño y la implementación completa de los tonos del canal sonoro de cada fase (frecuencia, duración y patrón), resueltos íntegramente mediante el navegador del computador del docente, sin depender de que el buzzer del cubo llegue a conectarse —se explica con más detalle a continuación—; y la adaptación completa del protocolo, la bitácora de sesión y el diseño experimental al estudio del control inhibitorio en un niño con TEA nivel 1 mediante EEG.
 
 Sobre el sonido conviene una precisión adicional, verificada directamente en el firmware y en el frontend. El buzzer del cubo, recibido sin integrar en la entrega original, nunca llegó a conectarse al canal de comunicación: el maestro no extrae ningún dato de sonido del mensaje que recibe, y el firmware del cubo no tiene un pin de buzzer activo ni una instrucción para generar tonos. En lugar de esperar a esa integración física —que habría requerido modificar el cubo— o de omitir por completo el canal sonoro, esta investigación optó por resolverlo desde el software: el computador del docente emite el sonido directamente, con un tono distinto ya asignado a cada fase del PPA y generado en el propio navegador mediante la API de audio del navegador (\textit{Web Audio API}), sin depender de ningún archivo de sonido externo. Pausar emite un tono grave breve; Pensar, un doble pulso sonoro; y Actuar, un barrido ascendente de tono. De esta manera, la señal sonora del PPA queda resuelta de extremo a extremo sin necesidad de tocar el hardware del cubo. Aparte de este mecanismo, la aplicación conserva además, sin cambios respecto a la entrega original, una función de audio de fondo seleccionable en el navegador —una pista musical ajena a los cubos y al PPA— que no debe confundirse con la señal sonora recién descrita.
 %%%%%% ******* %%%%%%% Foto Cubo Frente, Isométrica, Destapado, Encendido.
@@ -2379,17 +2380,17 @@ El núcleo de procesamiento de cada cubo es un microcontrolador
 ESP32-C3 SuperMini, que se conecta por WiFi como estación a la red
 inalámbrica generada por el \textit{Master} para recibir sus
 instrucciones. Los periféricos de salida conectados al microcontrolador
-son tres: un diodo LED de tipo RGB capaz de producir cualquier
+son dos: un diodo LED de tipo RGB capaz de producir cualquier
 combinación de color mediante la modulación independiente de sus tres
 canales (rojo, verde y azul, con valores entre 0 y 255 en cada canal),
 un motor de vibración de tipo moneda con regulación de intensidad por
-modulación de ancho de pulso (PWM), y un altavoz piezoeléctrico o
-buzzer con capacidad de emitir tonos de frecuencia y duración
-controladas programáticamente. El sistema integra así una respuesta
-multimodal completa —luz, vibración y sonido—; la integración del
-componente sonoro en el mensaje de comando enviado por el
-\textit{Master} se completará en una fase posterior de desarrollo del
-firmware. La alimentación del cubo se realiza mediante batería
+modulación de ancho de pulso (PWM). La placa incluye además un
+altavoz piezoeléctrico o buzzer, pero sin ningún pin del
+microcontrolador conectado a él ni instrucción de firmware que lo
+accione, como se explicó arriba: el sistema integra su respuesta
+multimodal completa —luz, vibración y sonido— combinando estos dos
+actuadores físicos del cubo con el sonido que emite, en paralelo, el
+computador del docente. La alimentación del cubo se realiza mediante batería
 recargable Li-Po de 3.7~V y 180~mAh,
 
 %%%%%% ******* %%%%%%% Expicar Código + Diagrama de código "Algorithm"
@@ -2408,9 +2409,10 @@ enviadas por el ESP32 maestro y las traduce en señales de control
 hacia el LED RGB y el motor de vibración, cuyos parámetros de
 operación —color e intensidad, respectivamente— llegan directamente en
 el mensaje transmitido por el maestro. El cubo incorpora además un
-buzzer como tercer actuador multisensorial previsto en el diseño del
-sistema, cuya integración en el mensaje de comando del maestro se
-completará en una fase posterior de desarrollo del firmware. Cada cubo
+buzzer que la placa trae físicamente, pero que ningún pin del
+microcontrolador acciona: el sonido del sistema no pasa por este
+componente, sino que lo emite el computador del docente mediante el
+navegador (ver la subsección anterior). Cada cubo
 se fija a su posición en el tablero mediante una interfaz de
 acoplamiento magnético con la casilla correspondiente de la base, que
 además cierra un contacto empleado por la base para detectar la
@@ -2430,28 +2432,33 @@ mech/.style={thin}
 \node[box, left=of cubo_esp32] (cubo_acople) {Acoplamiento \\ magnético \\ \footnotesize con la casilla};
 \node[box, below left=of cubo_esp32] (cubo_led) {LED RGB};
 \node[box, below=of cubo_esp32] (cubo_vib) {Motor de \\ vibración};
-\node[box, below right=of cubo_esp32] (cubo_buz) {Buzzer};
+\node[box, below right=of cubo_esp32] (cubo_buz) {Buzzer \\ \footnotesize sin conectar};
 
 \draw[arrow] (cubo_alim) -- (cubo_esp32);
 \draw[mech] (cubo_acople) -- (cubo_esp32);
 \draw[arrow] (cubo_esp32) -- (cubo_led);
 \draw[arrow] (cubo_esp32) -- (cubo_vib);
-\draw[arrow] (cubo_esp32) -- (cubo_buz);
+\draw[arrow, dashed] (cubo_esp32) -- (cubo_buz);
 
 \end{tikzpicture}
 \caption{Arquitectura interna del cubo inteligente: un microcontrolador
-ESP32-C3 SuperMini gestiona los tres actuadores multisensoriales (LED
-RGB, motor de vibración y buzzer) y se alimenta de una batería Li-Po.
-El trazo delgado hacia el acoplamiento magnético señala una relación
+ESP32-C3 SuperMini gestiona dos actuadores multisensoriales (LED
+RGB y motor de vibración) y se alimenta de una batería Li-Po. La placa
+incluye además un buzzer (trazo discontinuo) sin conexión eléctrica
+activa al microcontrolador, por lo que no forma parte de la respuesta
+multisensorial del sistema — el sonido lo emite en su lugar el
+computador del docente, como se explica en el texto. El trazo delgado
+hacia el acoplamiento magnético señala una relación
 mecánica de posicionamiento con la casilla de la base, distinta de las
 señales de control eléctricas que el microcontrolador gestiona
-directamente sobre los tres actuadores.}
+directamente sobre el LED y el motor de vibración.}
 \label{fig:cubo-arquitectura}
 \end{figure}
 
-El comportamiento observable del cubo —su color, su patrón de
-vibración y, cuando se complete la integración del firmware, su
-sonido— depende de la instrucción que recibe desde el ESP32 maestro.
+El comportamiento observable del cubo —su color y su patrón de
+vibración— depende de la instrucción que recibe desde el ESP32
+maestro; el componente sonoro de esa misma acción lo aporta, en
+paralelo y sin pasar por el cubo, el computador del docente.
 La forma en que esa instrucción se genera, se transmite y llega hasta
 el cubo es objeto de la siguiente subsección.
 
@@ -2479,8 +2486,8 @@ arrownv/.style={-{Latex}, thick, dashed}
 \node[box, below=of arch_router] (arch_maestro) {\textbf{ESP32 DevKit V1} (maestro) \\ \footnotesize Power Bank};
 \node[box, below=of arch_maestro] (arch_cubos) {10 cubos \\ \footnotesize ESP32-C3 SuperMini};
 \node[box, right=of arch_maestro, text width=2.2cm] (arch_casillas) {Casillas de la base \\ \footnotesize cableado y acople magnético};
-\node[box, below left=of arch_cubos] (arch_ledvib) {LED RGB \\ Motor de vibración};
-\node[box, below right=of arch_cubos] (arch_buzzer) {Buzzer};
+\node[box, below=of arch_cubos] (arch_ledvib) {LED RGB \\ Motor de vibración};
+\node[box, right=of arch_frontend, text width=2.6cm, dashed] (arch_sonido) {Sonido PPA \\ \footnotesize navegador del docente, Web Audio API};
 
 \draw[arrow] (arch_docente) -- (arch_frontend);
 \draw[arrow] (arch_frontend) -- node[right, font=\footnotesize] {Socket.IO} (arch_backend);
@@ -2491,18 +2498,20 @@ arrownv/.style={-{Latex}, thick, dashed}
 \draw[arrow] (arch_maestro) -- node[above, font=\footnotesize, sloped] {(posición)} (arch_casillas);
 \draw[arrow] (arch_casillas) -- node[right, font=\footnotesize] {acople} (arch_cubos);
 \draw[arrow] (arch_cubos) -- (arch_ledvib);
-\draw[arrow] (arch_cubos) -- (arch_buzzer);
+\draw[arrow, dashed] (arch_frontend) -- (arch_sonido);
 
 \end{tikzpicture}
 \caption{Arquitectura general del sistema. El ESP32 DevKit V1 (maestro)
 se conecta a la red local del laboratorio a través de un router y
 sostiene, hacia los diez cubos, dos canales independientes: uno de
 actuación (WiFi, mediante una conexión TCP en el puerto 3333), por el
-que transmite los comandos de color y vibración —el sonido se
-incorporará a este mismo canal en una fase posterior de desarrollo—, y
+que transmite los comandos de color y vibración, y
 uno de posición (cableado de las casillas de la base y su acoplamiento
 magnético con cada cubo), por el que detecta en qué posición del
-tablero se encuentra cada uno.}
+tablero se encuentra cada uno. El sonido de cada fase del PPA no viaja
+por ninguno de estos dos canales (recuadro discontinuo): lo emite
+directamente el navegador del docente mediante la API de audio del
+navegador (Web Audio API), en sincronía con la orden enviada al cubo.}
 \label{fig:arquitectura-general}
 \end{figure}
 
@@ -2538,7 +2547,7 @@ arrownv/.style={-{Latex}, thick, dashed}
 \node[box, below=of flow_recib] (flow_interp) {\textbf{Orden interpretada} \\ ESP32 Maestro \\ \footnotesize solo se procesan color, vibración y frecuencia};
 \node[box, below=of flow_interp] (flow_ejec) {\textbf{Actuador ejecutado} \\ Cubo: LED RGB y motor de vibración};
 
-\node[sidebox, right=of flow_recib, dashed] (flow_buzzer) {Componente sonoro \\ \footnotesize la información sonora llega hasta el maestro; su integración en el mensaje al cubo se completará en una fase posterior};
+\node[sidebox, right=of flow_recib, dashed] (flow_buzzer) {Componente sonoro \\ \footnotesize la información sonora llega hasta el maestro, pero no se usa: el sonido real ya se emitió antes, en el navegador del docente};
 
 \draw[arrow] (flow_gen) -- node[right, font=\footnotesize] {Socket.IO} (flow_backend);
 \draw[arrow] (flow_backend) -- node[right, font=\footnotesize] {HTTP} (flow_recib);
@@ -2550,9 +2559,12 @@ arrownv/.style={-{Latex}, thick, dashed}
 \end{tikzpicture}
 \caption{Flujo de datos correspondiente a la activación de un cubo
 desde la interfaz del docente. La rama derecha, en trazo discontinuo,
-muestra que la información sonora viaja junto con el resto de la orden
-hasta el ESP32 maestro; su incorporación al mensaje enviado al cubo se
-completará en una fase posterior de desarrollo del firmware.}
+muestra que un campo de información sonora sigue viajando, sin
+usarse, junto con el resto de la orden hasta el ESP32 maestro
+—remanente de un diseño anterior—; el sonido real de cada fase ya se
+resolvió antes de ese punto, en el navegador del docente, y no
+depende de que este campo llegue a intervenir en el firmware del
+cubo.}
 \label{fig:flujo-datos-accion}
 \end{figure}
 
@@ -2560,9 +2572,10 @@ La Figura~\ref{fig:flujo-datos-accion} detalla ese último tramo con
 mayor precisión, distinguiendo la información generada por el
 frontend de la que efectivamente resulta interpretada por el ESP32
 maestro. El LED RGB y el motor de vibración reciben sus parámetros
-directamente del mensaje que el maestro transmite al cubo; la
-integración del componente sonoro en ese mismo mensaje queda, como se
-indicó, para una fase posterior de desarrollo.
+directamente del mensaje que el maestro transmite al cubo; el campo
+de información sonora que viaja en ese mismo mensaje no llega a
+usarse, porque el sonido de cada fase ya lo emitió antes el navegador
+del docente, como se indicó.
 
 La Tabla~\ref{tab:componentes-sistema} resume el estado de cada
 componente del sistema, y la Tabla~\ref{tab:comunicaciones-sistema}
@@ -2577,19 +2590,19 @@ sintetiza los protocolos de comunicación empleados entre ellos.
 \hline
 \textbf{Componente} & \textbf{Función} & \textbf{Estado actual} \\
 \hline
-Frontend & Interfaz web mediante la cual el docente selecciona un cubo y una acción (Pausar, Pensar o Actuar) & Implementado \\
+Frontend & Interfaz web mediante la cual el docente selecciona un cubo y una acción (Pausar, Pensar o Actuar); también emite el tono sonoro de cada fase mediante la API de audio del navegador & Implementado \\
 \hline
 Backend & Recibe la instrucción del frontend y la entrega al ESP32 maestro cuando este la solicita & Implementado \\
 \hline
 ESP32 DevKit V1 (maestro) & Actúa como puente entre la red de los cubos y la red del laboratorio, y detecta la posición de cada cubo en el tablero & Implementado \\
 \hline
-Cubo (ESP32-C3 SuperMini) & Recibe la instrucción del maestro y activa sus actuadores & Implementado; la integración del buzzer se completa en una fase posterior (véase la fila siguiente) \\
+Cubo (ESP32-C3 SuperMini) & Recibe la instrucción del maestro y activa sus actuadores de luz y vibración & Implementado (véase la fila del Buzzer para la aclaración sobre el sonido) \\
 \hline
 LED RGB & Indicador luminoso de color configurable & Implementado \\
 \hline
 Motor de vibración & Actuador háptico de intensidad configurable & Implementado \\
 \hline
-Buzzer & Emisor de tonos configurable, tercer componente de la respuesta multimodal del cubo & Integración en el canal de actuación prevista para una fase posterior de desarrollo \\
+Buzzer & Componente físico presente en la placa del cubo, sin conexión eléctrica activa al microcontrolador ni uso en el firmware & No utilizado — el sonido del sistema lo emite en su lugar el computador del docente (navegador, Web Audio API) \\
 \hline
 Firmware del cubo & Lógica interna de interpretación de comandos en el propio cubo & [INFORMACIÓN FALTANTE] \\
 \hline

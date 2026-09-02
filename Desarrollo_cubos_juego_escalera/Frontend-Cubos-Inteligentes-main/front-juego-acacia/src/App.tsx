@@ -192,9 +192,22 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           setFallaCount(0)
           turnStartRef.current = Date.now()
         } else {
-          playError()
-          logCuboEvent({ tipo: 'falla_movimiento', detalle: `Movimiento inválido detectado: cubo #${prevSettled[fromIdx]} de la posición ${fromIdx + 1} a la ${toIdx + 1}` })
-          setFallaCount(nf => (nf + 1 >= FALLAS_PARA_PAUSAR ? 0 : nf + 1))
+          // Segundo paso del algoritmo de dos pasos (DECISIONES_PROYECTO.md,
+          // "Distinción entre cubo levantado y cubo desconectado"): un cambio
+          // de posición que no corresponde a un movimiento legal no se
+          // asume automáticamente como falla — primero se revisa la señal
+          // independiente de conectividad (esclavosConectados, cada 5s) del
+          // cubo implicado. Si ese cubo no aparece conectado, se registra
+          // como "no detectado" y NO se cuenta como falla.
+          const cuboImplicado = prevSettled[fromIdx]
+          const cuboConectado = esclavosRef.current.includes(cuboImplicado)
+          if (cuboConectado) {
+            playError()
+            logCuboEvent({ tipo: 'falla_movimiento', detalle: `Movimiento inválido detectado: cubo #${cuboImplicado} de la posición ${fromIdx + 1} a la ${toIdx + 1}` })
+            setFallaCount(nf => (nf + 1 >= FALLAS_PARA_PAUSAR ? 0 : nf + 1))
+          } else {
+            logCuboEvent({ tipo: 'cubo_no_detectado', detalle: `Cubo #${cuboImplicado} no aparece conectado (esclavosConectados) — cambio de posición desde la ${fromIdx + 1} no se cuenta como falla` })
+          }
         }
       }
       lastSettledPositionsRef.current = positions

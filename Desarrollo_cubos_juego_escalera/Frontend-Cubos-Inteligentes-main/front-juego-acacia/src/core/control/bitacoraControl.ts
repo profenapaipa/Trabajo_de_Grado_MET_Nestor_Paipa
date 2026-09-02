@@ -10,7 +10,7 @@ import { toCsvGeneric, downloadFile, nowIso } from '../bitacora/csv'
 export type EventoCuboTipo =
   | 'posiciones' | 'esclavo_conectado' | 'esclavo_desconectado'
   | 'base_conectada' | 'base_desconectada' | 'senal_apagada_automatica' | 'falla_movimiento'
-  | 'victoria' | 'derrota'
+  | 'victoria' | 'derrota' | 'cubo_no_detectado'
 
 export type EventoCubo = {
   timestamp: string
