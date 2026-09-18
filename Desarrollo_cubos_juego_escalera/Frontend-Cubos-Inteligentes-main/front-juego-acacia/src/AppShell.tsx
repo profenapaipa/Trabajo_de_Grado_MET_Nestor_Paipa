@@ -6,7 +6,10 @@ import ObservadorTab, { OBS_ACCENT } from './components/ObservadorTab'
 import { SIM_ACCENT } from './core/simulation/theme'
 import type { PPAPhase } from './core/ppa/ppaColors'
 
-const CONTROL_ACCENT = '#d97706'
+// Azul de Control Mago de Oz — mismo tono que src/index.css --color-blue
+// (IBM Carbon Blue 50), para que la pestaña combine con la identidad
+// nueva de esa vista en vez del naranja heredado del diseño anterior.
+const CONTROL_ACCENT = '#4589FF'
 
 type Tab = 'control' | 'simulacion' | 'observador'
 
@@ -27,7 +30,7 @@ function AppShell() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#0a0a0a',
+      background: 'var(--color-bg, #0a0a0a)',
       color: '#fff',
     }}>
       <div style={{

@@ -58,7 +58,7 @@ function EegTrace({ color }: { color: string }) {
 // Color por defecto (azul/alerta) para usos generales de "activo/inactivo"
 // (selección, victoria/derrota); los usos de conexión real pasan
 // verde/rojo explícito — ver colorOn/colorOff en cada llamado.
-function Electrode({ on, colorOn = 'var(--color-blue)', colorOff = 'var(--color-alert)' }: { on: boolean; colorOn?: string; colorOff?: string }) {
+function Electrode({ on, colorOn = 'var(--color-blue)', colorOff = 'var(--color-offline)' }: { on: boolean; colorOn?: string; colorOff?: string }) {
   return (
     <span style={{
       width: '7px', height: '7px', borderRadius: '50%', display: 'inline-block', flexShrink: 0,
@@ -77,6 +77,17 @@ function Logo({ size = 28 }: { size?: number }) {
     <svg width={size} height={size * (20 / 32)} viewBox="0 0 32 20" aria-hidden="true">
       <path d="M0,20 L5.3,20 L5.3,14 L10.6,14 L10.6,8 L16,8 L16,2 L16,20 Z" fill="var(--color-blue)" />
       <path d="M16,2 L16,8 L21.3,8 L21.3,14 L26.7,14 L26.7,20 L32,20 L16,20 Z" fill="var(--color-red)" />
+    </svg>
+  )
+}
+
+// Medio escalón, tomado directamente de la mitad izquierda del logo —
+// marcador recurrente para títulos de sección en vez de una viñeta
+// genérica. Monocromo a propósito: no compite con el azul/rojo de marca.
+function StepMark({ color = 'var(--color-paper-faint)', size = 9 }: { color?: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <path d="M0,16 L5.3,16 L5.3,10.7 L10.6,10.7 L10.6,5.3 L16,5.3 L16,16 Z" fill={color} />
     </svg>
   )
 }
@@ -698,7 +709,9 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
              EEG como línea de estado de conexión ── */}
         <header style={{ flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <Logo size={26} />
+            {/* Altura del logo emparejada a la del título — antes se veía
+                más chico que la propia "E" de "Escalera". */}
+            <Logo size={34} />
             <h1 style={{ fontSize: '18px', fontWeight: 700, margin: 0, letterSpacing: '-0.01em' }}>Escalera Inteligente</h1>
             <span style={{ ...sectionLabel, fontWeight: 500 }}>Control Mago de Oz</span>
             <div style={{
@@ -784,7 +797,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           </div>
 
           {sessionWarning && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--color-alert)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--color-offline)' }}>
               <TriangleAlert size={13} /> {sessionWarning}
             </div>
           )}
@@ -807,7 +820,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
         {(controlStatus === 'victoria' || controlStatus === 'derrota') && (
           <div style={{
             ...panel, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '10px',
-            borderColor: controlStatus === 'victoria' ? 'var(--color-blue)' : 'var(--color-alert)',
+            borderColor: controlStatus === 'victoria' ? 'var(--color-blue)' : 'var(--color-offline)',
           }}>
             <Electrode on={controlStatus === 'victoria'} />
             <span style={{ fontWeight: 700, fontSize: '13px' }}>
@@ -829,7 +842,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
              estrecha. */}
         <div style={{ ...panel, flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span style={sectionLabel}>Tablero · {pares} par{pares > 1 ? 'es' : ''} · {visibleCubes.length} posiciones</span>
+            <span style={{ ...sectionLabel, display: 'flex', alignItems: 'center', gap: '6px' }}><StepMark />Tablero · {pares} par{pares > 1 ? 'es' : ''} · {visibleCubes.length} posiciones</span>
             <div style={{ display: 'flex', gap: '14px' }}>
               {[
                 { label: 'Equipo A', color: teamAColor },
@@ -880,8 +893,8 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
               operador necesita saber CUÁL cubo se desconectó, no solo
               cuántos. */}
           <div style={{ marginTop: '10px' }}>
-            <div style={{ fontSize: '11px', color: 'var(--color-paper-faint)', marginBottom: '6px' }}>esclavos {esclavos.length}/10</div>
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+            <div style={{ fontSize: '11px', color: 'var(--color-paper-faint)', marginBottom: '6px', textAlign: 'center' }}>esclavos {esclavos.length}/10</div>
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'center' }}>
               {Array.from({ length: 10 }, (_, i) => i + 1).map(id => {
                 const on = esclavos.includes(id)
                 return (
@@ -913,10 +926,10 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           <div style={{
             display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', marginBottom: '12px',
             background: 'var(--color-bg)', borderRadius: 'var(--radius)',
-            border: `1px solid ${noSelWarning ? 'var(--color-alert)' : 'var(--color-line)'}`, fontSize: '12px',
+            border: `1px solid ${noSelWarning ? 'var(--color-offline)' : 'var(--color-line)'}`, fontSize: '12px',
           }}>
             {noSelWarning ? (
-              <><TriangleAlert size={13} color="var(--color-alert)" /><span style={{ color: 'var(--color-alert)' }}>Selecciona un cubo del tablero antes de enviar una señal</span></>
+              <><TriangleAlert size={13} color="var(--color-offline)" /><span style={{ color: 'var(--color-offline)' }}>Selecciona un cubo del tablero antes de enviar una señal</span></>
             ) : selectedCubeId !== null ? (
               <>
                 <Electrode on />
@@ -971,7 +984,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
             que quedan siempre a la vista junto al tablero y los botones. */}
         <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={panel}>
-            <div style={{ ...sectionLabel, marginBottom: '10px' }}>En vivo</div>
+            <div style={{ ...sectionLabel, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}><StepMark />En vivo</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pausar} label={'Pausar — fallas reales detectadas'} />
               <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pensar} label={'Pensar — mismo criterio, encadenado tras Pausar'} />
@@ -1008,7 +1021,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           ...panel, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px',
           flexShrink: 0, textAlign: 'left', width: '100%',
         }}>
-          <span style={sectionLabel}>{histOpen ? '−' : '+'} Histórico — bitácoras de eventos y decisiones</span>
+          <span style={{ ...sectionLabel, display: 'flex', alignItems: 'center', gap: '6px' }}><StepMark />{histOpen ? '−' : '+'} Histórico — bitácoras de eventos y decisiones</span>
         </button>
 
         {histOpen && (

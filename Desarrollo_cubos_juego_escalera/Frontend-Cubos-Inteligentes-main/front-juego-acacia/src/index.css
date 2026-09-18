@@ -33,22 +33,26 @@
   --color-paper-dim: #9FB0B3;
   --color-paper-faint: #647275;
 
-  /* Marca — azul/rojo reales de los dos equipos del juego */
-  --color-blue: #2A6DF5;
-  --color-red: #F5433A;
+  /* Marca — azul/rojo de los dos equipos del juego, tomados de la paleta
+     de IBM Carbon Design System (Blue 50 / Red 50): coherente a propósito
+     con IBM Plex, la familia tipográfica ya elegida — mismo sistema de
+     diseño, no dos decisiones sueltas. Reemplaza los tonos web-primarios
+     (#2A6DF5/#F5433A) y el naranja de acento heredado de AppShell.tsx
+     (#d97706), que no armonizaban entre sí. Los cubos físicos (Cube.tsx)
+     siguen mostrando el azul/rojo real del hardware — esto es solo el
+     acento de la interfaz alrededor de ellos. */
+  --color-blue: #4589FF;
+  --color-red: #FA4D56;
 
   /* Los 3 colores PPA NO se repiten aquí: fuente única en
      core/ppa/ppaColors.ts (PPA_HEX/PPA_TEXT/PPA_RGB). */
 
-  --color-alert: #D4694A;
-
-  /* Conectado/desconectado — verde/rojo estándar, igual para el maestro,
-     los cubos esclavos y cualquier otro estado de conexión física.
-     Semánticamente distinto de --color-red (marca del equipo B): el
-     contexto (texto "conectado"/"desconectado", o el propio panel de
-     conexión) los distingue. */
-  --color-online: #22C55E;
-  --color-offline: #EF4444;
+  /* Conectado/desconectado — verde/rojo estándar (también de Carbon:
+     Green 40 / Red 50, este último el mismo que --color-red), igual para
+     el maestro, los cubos esclavos y cualquier otro estado de conexión
+     física. Un solo rojo en todo el sistema, no dos casi iguales. */
+  --color-online: #42BE65;
+  --color-offline: #FA4D56;
 
   --font-sans: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
