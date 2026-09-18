@@ -24,6 +24,10 @@ export type EventoCubo = {
   // bloqueo/reinicio). Ausente en eventos que no pertenecen a un intento
   // en curso (p. ej. señales de conexión antes de iniciar).
   intentoId?: string
+  // Correlativo legible del mismo intento (1, 2, 3…) — intentoId es un
+  // timestamp interno, útil para agrupar filas pero no para leer "¿en qué
+  // intento vamos?" de un vistazo al exportar y contrastar intentos.
+  intentoNum?: number
 }
 
 export type DecisionOperador = {
@@ -34,10 +38,11 @@ export type DecisionOperador = {
   fase: 'pausar' | 'pensar' | 'actuar' | 'estado_inicial'
   detalle: string
   intentoId?: string
+  intentoNum?: number
 }
 
-const EVENTO_CUBO_COLS: (keyof EventoCubo)[] = ['timestamp', 'pares', 'tipo', 'detalle', 'posiciones', 'intentoId']
-const DECISION_OPERADOR_COLS: (keyof DecisionOperador)[] = ['timestamp', 'pares', 'operadorId', 'cuboId', 'fase', 'detalle', 'intentoId']
+const EVENTO_CUBO_COLS: (keyof EventoCubo)[] = ['timestamp', 'pares', 'tipo', 'detalle', 'posiciones', 'intentoId', 'intentoNum']
+const DECISION_OPERADOR_COLS: (keyof DecisionOperador)[] = ['timestamp', 'pares', 'operadorId', 'cuboId', 'fase', 'detalle', 'intentoId', 'intentoNum']
 
 export function toCsvEventosCubo(rows: EventoCubo[]): string {
   return toCsvGeneric(rows, EVENTO_CUBO_COLS)

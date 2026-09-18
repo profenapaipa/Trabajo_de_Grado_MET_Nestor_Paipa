@@ -165,8 +165,19 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   const [countdownTick,  setCountdownTick]  = useState<number | null>(null) // 3,2,1,0("¡Inicia!") mientras cuenta
   const [flashCubeId,    setFlashCubeId]    = useState<number | null>(null) // reacción inmediata a movimiento inválido, en espejo con EF=3 del cubo físico
   const [sessionWarning, setSessionWarning] = useState<string | null>(null)
+  // Cuántos intentos lleva la sesión — un correlativo legible (1, 2, 3…)
+  // aparte del intentoId interno (timestamp, sirve para agrupar filas de
+  // bitácora pero no para contar). Nunca baja: Reiniciar cierra el intento
+  // en curso, pero el próximo Iniciar sigue la numeración, no la reinicia.
+  const [intentoCount,   setIntentoCount]   = useState(0)
+  const [confirmReset,   setConfirmReset]   = useState(false)
 
   const intentoIdRef        = useRef<string | null>(null)
+  // Espejo síncrono de intentoCount para las bitácoras: logCuboEvent se
+  // llama en el mismo tick que setIntentoCount, antes de que el nuevo
+  // valor de estado esté disponible por closure — igual que intentoIdRef,
+  // que existe por la misma razón.
+  const intentoNumRef       = useRef<number>(0)
   const sessionStartRef     = useRef<number>(0)   // Date.now() del arranque del tramo "jugando" actual
   const sessionAccumMsRef   = useRef<number>(0)   // tiempo acumulado de tramos "jugando" anteriores del mismo intento
   const countdownTimersRef  = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -200,11 +211,21 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   }, [])
   void tick // fuerza el re-render del medidor de Actuar cada 500ms; su valor no se muestra
 
-  function logCuboEvent(entry: Omit<EventoCubo, 'timestamp' | 'pares' | 'intentoId'>) {
-    setCuboEvents(prev => [...prev, { timestamp: nowIso(), pares: paresRef.current, intentoId: intentoIdRef.current ?? undefined, ...entry }])
+  function logCuboEvent(entry: Omit<EventoCubo, 'timestamp' | 'pares' | 'intentoId' | 'intentoNum'>) {
+    setCuboEvents(prev => [...prev, {
+      timestamp: nowIso(), pares: paresRef.current,
+      intentoId: intentoIdRef.current ?? undefined,
+      intentoNum: intentoIdRef.current ? intentoNumRef.current : undefined,
+      ...entry,
+    }])
   }
-  function logOperatorEvent(entry: Omit<DecisionOperador, 'timestamp' | 'pares' | 'operadorId' | 'intentoId'>) {
-    setOperatorEvents(prev => [...prev, { timestamp: nowIso(), pares: paresRef.current, operadorId: operatorIdRef.current || '(sin asignar)', intentoId: intentoIdRef.current ?? undefined, ...entry }])
+  function logOperatorEvent(entry: Omit<DecisionOperador, 'timestamp' | 'pares' | 'operadorId' | 'intentoId' | 'intentoNum'>) {
+    setOperatorEvents(prev => [...prev, {
+      timestamp: nowIso(), pares: paresRef.current, operadorId: operatorIdRef.current || '(sin asignar)',
+      intentoId: intentoIdRef.current ?? undefined,
+      intentoNum: intentoIdRef.current ? intentoNumRef.current : undefined,
+      ...entry,
+    }])
   }
 
   // ── Resolutor único de estado visual (ver core/ppa/cubeVisualState.ts y
@@ -427,15 +448,18 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   function sendAction(a: CubeAction) {
     if (selectedCubeId === null) { showNoSel(); return }
     const cubeId = selectedCubeId
-    // Ya no se arma un payload aparte aquí: setCubeActions es lo único que
-    // hace falta — el efecto de despacho ve el cambio y manda, con
-    // sustainedVisualToCommand (mismo criterio para todos los caminos), el
-    // color/vibración de esta fase PPA. Antes esta función mandaba su propio
-    // payload (con campos extra como ledModo/vibracionPatron/sonido que el
-    // maestro nunca leyó — ver PENDIENTES_TESIS.md/memoria del proyecto,
-    // "brecha de sonido") en paralelo a lo que el resolutor manda ahora; se
-    // retira para que solo exista una fuente de verdad del comando físico.
     setCubeActions(prev => ({ ...prev, [cubeId]: a }))
+    // Paso atrás deliberado (2026-09-18, tras prueba con hardware real): el
+    // envío es directo e inmediato aquí mismo, como en el commit anterior a
+    // este resolutor — la señal PPA manual es la acción más directa del
+    // operador y no puede depender de que un efecto posterior la despache
+    // (ese efecto, condicionado al nivel de sesión, fue justo lo que dejó
+    // de "servir el PPA" al agregarlo). Se llama a sendSustained
+    // directamente en vez de duplicar el payload: mismo comando/misma
+    // caché que usa el efecto de despacho de más abajo, así ese efecto no
+    // reenvía por su cuenta ni entra en conflicto cuando cubeActions cambie
+    // en la línea de arriba.
+    sendSustained(cubeId, { tier: 'ppa_manual', accion: a })
     triggerAction(a, cubeId)
     playPpaFeedback(a, AUTO_OFF_MS / 1000)
     logOperatorEvent({ cuboId: cubeId, fase: a, detalle: `Operador envió ${a.toUpperCase()} al cubo #${cubeId}` })
@@ -447,6 +471,8 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     if (actionTimer.current) clearTimeout(actionTimer.current)
     setActiveAction(null)
     setCubeActions(prev => { const next = { ...prev }; delete next[cubeId]; return next })
+    // Mismo paso atrás que sendAction: envío directo, no delegado al efecto.
+    sendSustained(cubeId, { tier: 'equipo_reposo' })
     logOperatorEvent({ cuboId: cubeId, fase: 'estado_inicial', detalle: `Operador apagó manualmente la señal del cubo #${cubeId} (estado inicial)` })
   }
 
@@ -465,11 +491,14 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     if (sessionState !== 'inactivo') return
     if (!isBoardAtInitial) { showSessionWarning('Reordena los cubos (5 azules + 5 rojos) antes de iniciar'); return }
 
+    const nextIntento = intentoCount + 1
     intentoIdRef.current = `intento-${Date.now()}`
+    intentoNumRef.current = nextIntento
     sessionAccumMsRef.current = 0
     setFallaCount(0)
     setPath([[...gameState.cubesPositions]])
-    logCuboEvent({ tipo: 'intento_iniciado', detalle: `Nuevo intento iniciado (${pares} pares)` })
+    setIntentoCount(nextIntento)
+    logCuboEvent({ tipo: 'intento_iniciado', detalle: `Intento #${nextIntento} iniciado (${pares} pares)` })
     setSessionState('cuenta_regresiva')
 
     countdownTimersRef.current.forEach(clearTimeout)
@@ -526,7 +555,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   function reiniciarJuego() {
     countdownTimersRef.current.forEach(clearTimeout)
     countdownTimersRef.current = []
-    logCuboEvent({ tipo: 'reinicio_manual', detalle: 'Operador reinició manualmente el intento — cubos en blanco, pendiente de reordenar' })
+    logCuboEvent({ tipo: 'reinicio_manual', detalle: `Intento #${intentoCount} reiniciado manualmente por el operador — cubos en blanco, pendiente de reordenar` })
     intentoIdRef.current = null
     sessionAccumMsRef.current = 0
     setFallaCount(0)
@@ -534,6 +563,17 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     setCubeActions({})
     setSessionState('bloqueado') // reutiliza la espera de reorden ya existente (ver useEffect de isBoardAtInitial)
   }
+
+  // El botón Reiniciar pide confirmación en 2 pasos (mismo botón cambia a
+  // "¿Confirmar reinicio?") en vez de un diálogo nativo del navegador, para
+  // no romper la identidad visual del resto de la interfaz. Si no se
+  // confirma en 4s, vuelve solo al estado normal.
+  useEffect(() => {
+    if (!confirmReset) return
+    const t = setTimeout(() => setConfirmReset(false), 4000)
+    return () => clearTimeout(t)
+  }, [confirmReset])
+  useEffect(() => { setConfirmReset(false) }, [sessionState])
 
   function exportCuboEventsCsv() { downloadFile(`bitacora-cubos-control-${Date.now()}.csv`, toCsvEventosCubo(cuboEvents), 'text/csv;charset=utf-8') }
   function exportCuboEventsJson() { downloadFile(`bitacora-cubos-control-${Date.now()}.json`, JSON.stringify(cuboEvents, null, 2), 'application/json') }
@@ -555,8 +595,8 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     if (controlStatus !== 'jugando' && prevControlStatusRef.current === 'jugando') {
       logCuboEvent(
         controlStatus === 'victoria'
-          ? { tipo: 'victoria', detalle: `Intercambio completo en ${moveCount} movimientos` }
-          : { tipo: 'derrota', detalle: 'Ningún cubo tiene ya un movimiento legal disponible (bloqueo)' }
+          ? { tipo: 'victoria', detalle: `Intento #${intentoCount} — intercambio completo en ${moveCount} movimientos` }
+          : { tipo: 'derrota', detalle: `Intento #${intentoCount} — ningún cubo tiene ya un movimiento legal disponible (bloqueo)` }
       )
       // Fin de partida: cierre del intento en curso en la bitácora + detener
       // el cronómetro. La señal física a los 10 cubos (EF=VICTORIA/BLOQUEO,
@@ -568,7 +608,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
         const elapsedSec = Math.round(sessionAccumMsRef.current / 1000)
         logCuboEvent({
           tipo: 'intento_finalizado',
-          detalle: `Intento ${controlStatus === 'victoria' ? 'ganado' : 'bloqueado'} en ${elapsedSec}s y ${moveCount} movimientos`,
+          detalle: `Intento #${intentoCount} ${controlStatus === 'victoria' ? 'ganado' : 'bloqueado'} en ${elapsedSec}s y ${moveCount} movimientos`,
         })
         setSessionState(controlStatus === 'victoria' ? 'victoria' : 'bloqueado')
       }
@@ -664,13 +704,17 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     letterSpacing: '0.1em', color: 'var(--color-paper-faint)', textTransform: 'uppercase',
   }
 
-  const ghostBtn = (enabled: boolean, tone: string): React.CSSProperties => ({
-    display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px',
-    borderRadius: 'var(--radius)', cursor: enabled ? 'pointer' : 'not-allowed',
-    background: enabled ? `${tone}1a` : 'var(--color-bg)',
+  // Botones de Iniciar/Pausar/Reanudar/Reiniciar: únicos del sistema con
+  // relleno sólido y forma de píldora — el resto de la interfaz usa bordes
+  // discretos a propósito, pero estos 3 son la acción principal de toda la
+  // sesión (arrancan/paran el cronómetro real), así que se resaltan aparte.
+  const sessionBtn = (enabled: boolean, tone: string): React.CSSProperties => ({
+    display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px',
+    borderRadius: '999px', cursor: enabled ? 'pointer' : 'not-allowed',
+    background: enabled ? tone : 'var(--color-line)',
     border: `1px solid ${enabled ? tone : 'var(--color-line-strong)'}`,
-    color: enabled ? tone : 'var(--color-paper-faint)',
-    fontWeight: 600, fontSize: '13px',
+    color: enabled ? '#fff' : 'var(--color-paper-faint)',
+    fontWeight: 700, fontSize: '13px',
   })
 
   const signalBtn = (a: PPAPhase): React.CSSProperties => ({
@@ -757,6 +801,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
                 : sessionState === 'pausado' ? 'en pausa'
                 : sessionState === 'victoria' ? 'victoria — reordena para seguir'
                 : 'bloqueado — reordena para seguir'}
+              {intentoCount > 0 ? ` · intento ${intentoCount}` : ''}
             </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', fontSize: '40px', fontWeight: 600, lineHeight: 1.15 }}>
               {sessionElapsedLabel}
@@ -764,13 +809,26 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           </div>
 
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={iniciarJuego} disabled={sessionState !== 'inactivo'} style={ghostBtn(sessionState === 'inactivo', 'var(--color-blue)')}>Iniciar</button>
+            <button onClick={iniciarJuego} disabled={sessionState !== 'inactivo'} style={sessionBtn(sessionState === 'inactivo', 'var(--color-blue)')}>Iniciar intento</button>
             {sessionState === 'pausado' ? (
-              <button onClick={reanudarJuego} style={ghostBtn(true, 'var(--color-blue)')}>Reanudar</button>
+              <button onClick={reanudarJuego} style={sessionBtn(true, 'var(--color-blue)')}>Reanudar</button>
             ) : (
-              <button onClick={pausarJuego} disabled={sessionState !== 'jugando'} style={ghostBtn(sessionState === 'jugando', 'var(--color-blue)')}>Pausar</button>
+              <button onClick={pausarJuego} disabled={sessionState !== 'jugando'} style={sessionBtn(sessionState === 'jugando', 'var(--color-blue)')}>Pausar</button>
             )}
-            <button onClick={reiniciarJuego} disabled={sessionState === 'cuenta_regresiva' || sessionState === 'inactivo'} style={ghostBtn(!(sessionState === 'cuenta_regresiva' || sessionState === 'inactivo'), 'var(--color-paper-dim)')}>Reiniciar</button>
+            <button
+              onClick={() => {
+                if (!confirmReset) { setConfirmReset(true); return }
+                setConfirmReset(false)
+                reiniciarJuego()
+              }}
+              disabled={sessionState === 'cuenta_regresiva' || sessionState === 'inactivo'}
+              style={sessionBtn(
+                !(sessionState === 'cuenta_regresiva' || sessionState === 'inactivo'),
+                confirmReset ? 'var(--color-offline)' : 'var(--color-paper-dim)',
+              )}
+            >
+              {confirmReset ? '¿Confirmar reinicio?' : 'Reiniciar'}
+            </button>
           </div>
 
           {sessionWarning && (
