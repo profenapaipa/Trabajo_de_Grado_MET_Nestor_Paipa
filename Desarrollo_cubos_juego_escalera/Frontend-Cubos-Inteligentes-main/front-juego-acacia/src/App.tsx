@@ -84,7 +84,7 @@ function Logo({ size = 28 }: { size?: number }) {
 // Medio escalón, tomado directamente de la mitad izquierda del logo —
 // marcador recurrente para títulos de sección en vez de una viñeta
 // genérica. Monocromo a propósito: no compite con el azul/rojo de marca.
-function StepMark({ color = 'var(--color-paper-faint)', size = 9 }: { color?: string; size?: number }) {
+function StepMark({ color = 'var(--color-paper-faint)', size = 13 }: { color?: string; size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" style={{ flexShrink: 0 }}>
       <path d="M0,16 L5.3,16 L5.3,10.7 L10.6,10.7 L10.6,5.3 L16,5.3 L16,16 Z" fill={color} />
@@ -669,7 +669,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
 
   return (
     <div style={{
-      height: '100vh',
+      height: '100%',
       overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
@@ -709,10 +709,11 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
              EEG como línea de estado de conexión ── */}
         <header style={{ flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            {/* Altura del logo emparejada a la del título — antes se veía
-                más chico que la propia "E" de "Escalera". */}
-            <Logo size={34} />
-            <h1 style={{ fontSize: '18px', fontWeight: 700, margin: 0, letterSpacing: '-0.01em' }}>Escalera Inteligente</h1>
+            {/* Logo con presencia propia de marca, no un ícono más de la
+                fila — a la altura del bloque completo del título, no solo
+                de la caja de la "E". */}
+            <Logo size={46} />
+            <h1 style={{ fontSize: '20px', fontWeight: 700, margin: 0, letterSpacing: '-0.01em' }}>Escalera Inteligente</h1>
             <span style={{ ...sectionLabel, fontWeight: 500 }}>Control Mago de Oz</span>
             <div style={{
               marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '7px',
@@ -730,6 +731,15 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
             <EegTrace color={isBaseConnected ? 'var(--color-online)' : 'var(--color-offline)'} />
           </div>
         </header>
+
+        {/* ── Tablero + Señal PPA (columna principal), con Configuración y
+             Control de partida al mismo ancho arriba de ellos, junto a una
+             barra lateral fija "en vivo" (condición acumulada + sonido/
+             música) que ahora arranca desde la misma altura que
+             Configuración — ya no queda hueco vacío bajo el tablero. Solo
+             Bitácoras queda en el desplegable de más abajo. ── */}
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 0 }}>
 
         {/* ── Configuración: pares + operador, fila compacta aparte ── */}
         <div style={{ ...panel, flexShrink: 0, display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'center' }}>
@@ -829,14 +839,6 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           </div>
         )}
 
-        {/* ── Tablero + Señal PPA (columna principal) junto a una barra
-             lateral fija "en vivo" (condición acumulada + sonido/música) —
-             esta última no es colapsable: son datos que cambian mientras
-             se juega, no histórico. Solo Bitácoras queda en el
-             desplegable de más abajo. ── */}
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 0 }}>
-
         {/* Tablero — siempre en una sola fila (nowrap), incluso con 5
              pares/11 posiciones: ancho completo del panel, no una columna
              estrecha. */}
@@ -881,12 +883,6 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
                 />
               )
             })}
-          </div>
-
-          <div style={{ marginTop: '10px', display: 'flex', gap: '18px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: '12px', color: 'var(--color-paper-dim)' }}>{gameState.liftedCube !== null ? 'procesando' : 'listo'}</span>
-            <span style={{ fontSize: '12px', color: 'var(--color-paper-dim)', fontFamily: 'var(--font-mono)' }}>mov. {moveCount}</span>
-            <span style={{ fontSize: '12px', color: 'var(--color-paper-dim)' }}>vacía {gameState.emptyPosition != null ? gameState.emptyPosition + 1 : '—'}</span>
           </div>
 
           {/* Esclavos: número de cada cubo visible, no solo un punto — el
@@ -1016,12 +1012,18 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
         </div>
 
         {/* ── Histórico, colapsable — solo bitácoras: son registro de lo ya
-             ocurrido, a diferencia de la barra lateral de arriba. ── */}
+             ocurrido, a diferencia de la barra lateral de arriba. Es un
+             separador de sección, no otro panel más: sin caja ni relleno,
+             solo un filo inferior, para que se lea como encabezado y no
+             compita visualmente con los paneles de datos en vivo. ── */}
         <button onClick={() => setHistOpen(o => !o)} style={{
-          ...panel, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px',
-          flexShrink: 0, textAlign: 'left', width: '100%',
+          background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-line)',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+          flexShrink: 0, textAlign: 'left', width: '100%', padding: '6px 2px',
         }}>
-          <span style={{ ...sectionLabel, display: 'flex', alignItems: 'center', gap: '6px' }}><StepMark />{histOpen ? '−' : '+'} Histórico — bitácoras de eventos y decisiones</span>
+          <StepMark />
+          <span style={sectionLabel}>Histórico — bitácoras de eventos y decisiones</span>
+          <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--color-paper-faint)' }}>{histOpen ? '−' : '+'}</span>
         </button>
 
         {histOpen && (

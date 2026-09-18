@@ -29,13 +29,17 @@ function AppShell() {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      height: '100vh',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
       background: 'var(--color-bg, #0a0a0a)',
       color: '#fff',
     }}>
       <div style={{
+        flexShrink: 0,
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', padding: '10px 20px',
-        borderBottom: `1px solid ${accent}33`, maxWidth: '1200px', margin: '0 auto',
+        borderBottom: `1px solid ${accent}33`, maxWidth: '1200px', margin: '0 auto', width: '100%', boxSizing: 'border-box',
       }}>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button style={tabBtn(tab === 'control', CONTROL_ACCENT)} onClick={() => setTab('control')}>
@@ -53,11 +57,22 @@ function AppShell() {
         </span>
       </div>
 
-      <div style={{ display: tab === 'control' ? 'block' : 'none' }}>
+      {/* Cada pestaña maneja su propio scroll interno dentro de esta región
+          de altura fija — así queda un único scrollbar visible por
+          pestaña, nunca uno para el contenido y otro para toda la página. */}
+      <div style={{ display: tab === 'control' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0 }}>
         <App onCubesUpdate={(cubes, actions) => { setObservedCubes(cubes); setObservedActions(actions) }} />
       </div>
-      {tab === 'simulacion' && <SimulationTab />}
-      {tab === 'observador' && <ObservadorTab cubes={observedCubes} cubeActions={observedActions} />}
+      {tab === 'simulacion' && (
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+          <SimulationTab />
+        </div>
+      )}
+      {tab === 'observador' && (
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+          <ObservadorTab cubes={observedCubes} cubeActions={observedActions} />
+        </div>
+      )}
     </div>
   )
 }
