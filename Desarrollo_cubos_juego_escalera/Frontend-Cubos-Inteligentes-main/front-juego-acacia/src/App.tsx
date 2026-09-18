@@ -4,19 +4,14 @@ import Cube, { CubeAction } from './components/Cube'
 import AmbientMusicPanel from './components/AmbientMusicPanel'
 import { GameState } from './core/GameState'
 import socket from './client-socket/sockets'
-import {
-  Activity, Hand, Grid2X2, Shuffle,
-  Wifi, WifiOff,
-  Pause, Lightbulb, Zap, Power, Box, TriangleAlert, Download, ClipboardList, Check,
-  Trophy, Ban, Play, RotateCcw, PauseCircle, PlayCircle, Volume2,
-} from 'lucide-react'
+import { TriangleAlert, Download } from 'lucide-react'
 import {
   type EventoCubo, type DecisionOperador,
   toCsvEventosCubo, toCsvDecisionesOperador, downloadFile, nowIso,
 } from './core/control/bitacoraControl'
 import hexToRgbArray from './core/utils/hextToRgb'
 import { playPpaFeedback, playError, playCountdownBeep } from './core/utils/ppaTones'
-import { PPA_RGB, PPA_HEX, PPA_TEXT, PPA_VIBRATION, PPA_SOUND_LABEL, PPA_LABEL, ppaRgba, AUTO_OFF_MS, FALLAS_PARA_PAUSAR, type PPAPhase, EFECTOS } from './core/ppa/ppaColors'
+import { PPA_RGB, PPA_HEX, PPA_TEXT, PPA_VIBRATION, PPA_SOUND_LABEL, PPA_LABEL, AUTO_OFF_MS, FALLAS_PARA_PAUSAR, type PPAPhase, EFECTOS } from './core/ppa/ppaColors'
 import { type Board, legalMovesFor, computeWinBoard, boardsEqual, isStuck } from './core/simulation/laEscaleraRules'
 import {
   type SessionState, type SustainedCubeVisual,
@@ -26,6 +21,12 @@ import PpaChargeMeter from './components/simulation/PpaChargeMeter'
 
 const SND_H = [0.55, 0.75, 0.95, 0.60, 1.00, 0.80, 0.70, 0.90]
 const INITIAL_POSITIONS = [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10]
+
+// Transformación puramente de presentación (no toca PPA_LABEL, que sigue
+// siendo 'PAUSAR'/'PENSAR'/'ACTUAR' en mayúsculas para el resto del
+// sistema): en un display serif grande, versalitas gritan menos que
+// mayúsculas completas.
+const titleCase = (s: string) => s.charAt(0) + s.slice(1).toLowerCase()
 
 export type ObservedCube = { id: number; team: 'A' | 'B' }
 
@@ -64,10 +65,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   const [selectedCubeId, setSelectedCubeId] = useState<number | null>(null)
   const [noSelWarning,   setNoSelWarning]   = useState(false)
   // Estado puramente de presentación (no de juego): abre/cierra el panel de
-  // histórico (bitácoras, condición acumulada, música ambiental) — ver
-  // docs/REDISENO_UI.md §6, layout de monitor clínico sin scroll. Abierto
-  // por defecto: la compresión de las franjas de arriba deja espacio de
-  // sobra incluso en 1366x768 (medido), así que no hace falta ocultarlo.
+  // histórico (bitácoras, condición acumulada, música ambiental).
   const [histOpen,       setHistOpen]       = useState(true)
   // tracks the action assigned to each cube id
   const [cubeActions,    setCubeActions]    = useState<Record<number, CubeAction>>({})
@@ -571,50 +569,29 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     socket.emit('comandoCubo', { id: 'all', efecto: countdownTick === 0 ? EFECTOS.CUENTA_INICIA : EFECTOS.CUENTA_TICK })
   }, [countdownTick])
 
-  // ── Shared styles — monitor clínico (docs/REDISENO_UI.md §5) ───────────────
-  // Franjas horizontales con hairline, no tarjetas — ver §5.5. Sin
-  // `transition` en ningún estilo de este archivo: regla dura #1 del
-  // rediseño (cero animación decorativa, cero transición >150ms).
-  const band: React.CSSProperties = {
-    background: 'var(--color-graphite-800)',
-    borderBottom: '1px solid var(--color-graphite-700)',
-    padding: '10px 20px',
-    display: 'flex',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: '20px',
-    flexShrink: 0,
+  // ── Shared styles — v3 "cuaderno de campo" (docs/REDISENO_UI.md) ───────────
+  // Sin tarjetas, sin ícono-en-círculo, sin grilla simétrica: numeración de
+  // sección + reglas de 1px + tipografía con carácter. Sin `transition` en
+  // ningún estilo (regla dura #1).
+  const kicker: React.CSSProperties = {
+    fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.14em',
+    color: 'var(--color-paper-faint)', textTransform: 'uppercase', lineHeight: 1.5,
   }
 
-  const label: React.CSSProperties = { fontSize: '10px', color: 'var(--color-paper-500)', letterSpacing: '0.08em' }
+  const rule: React.CSSProperties = { border: 'none', borderTop: '1px solid var(--color-rule)', margin: 0 }
 
-  const ghostBtn = (enabled: boolean, tone: string): React.CSSProperties => ({
-    display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
-    borderRadius: 'var(--radius-sm)', cursor: enabled ? 'pointer' : 'not-allowed',
-    background: enabled ? `${tone}1e` : 'var(--color-graphite-900)',
-    border: `1px solid ${enabled ? tone : 'var(--color-graphite-600)'}`,
-    color: enabled ? tone : 'var(--color-paper-500)',
-    fontWeight: 700, fontSize: '13px',
+  const textBtn = (enabled: boolean, tone?: string): React.CSSProperties => ({
+    background: 'none', border: 'none', padding: '0 0 3px', cursor: enabled ? 'pointer' : 'default',
+    fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '14px',
+    color: enabled ? (tone ?? 'var(--color-paper)') : 'var(--color-paper-faint)',
+    borderBottom: `1px solid ${enabled ? (tone ?? 'var(--color-paper)') : 'transparent'}`,
   })
 
-  const btnAction = (a: PPAPhase): React.CSSProperties => ({
-    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px',
-    padding: '10px', borderRadius: 'var(--radius-lg)', cursor: 'pointer',
-    background: activeAction === a ? ppaRgba(a, 0.14) : 'var(--color-graphite-800)',
-    border: `${activeAction === a ? 2 : 1}px solid ${activeAction === a ? PPA_HEX[a] : 'var(--color-graphite-600)'}`,
-    color: PPA_TEXT[a],
-    opacity: selectedCubeId === null ? 0.5 : 1,
-    flex: 1,
+  const signalWord = (a: PPAPhase): React.CSSProperties => ({
+    display: 'block', textAlign: 'left', cursor: 'pointer', background: 'none',
+    border: 'none', borderBottom: `${activeAction === a ? 3 : 1}px solid ${activeAction === a ? PPA_HEX[a] : 'var(--color-rule)'}`,
+    padding: '0 0 12px', opacity: selectedCubeId === null ? 0.45 : 1,
   })
-
-  const iconCircle = (a: PPAPhase): React.CSSProperties => ({
-    width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: ppaRgba(a, 0.16),
-  })
-
-  const Dot = ({ color }: { color: string }) => (
-    <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: color, flexShrink: 0 }} />
-  )
 
   return (
     <div style={{
@@ -622,9 +599,9 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
       overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
-      background: 'var(--color-graphite-900)',
+      background: 'var(--color-ink)',
+      color: 'var(--color-paper)',
       fontFamily: 'var(--font-sans)',
-      color: 'var(--color-paper-100)',
     }}>
       <div style={{
         flex: 1,
@@ -637,69 +614,73 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
         boxSizing: 'border-box',
       }}>
 
-        {/* ── Franja A: identidad + conexión ── */}
-        <header style={band}>
-          <Box size={16} color="var(--color-paper-300)" />
-          <span style={{ fontWeight: 700, fontSize: '14px' }}>Escalera Inteligente</span>
-          <span style={{ fontSize: '11px', color: 'var(--color-paper-500)' }}>Control Mago de Oz · el operador confirma cada señal</span>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: isBaseConnected ? PPA_TEXT.actuar : 'var(--color-alert)' }}>
-            {isBaseConnected ? <Wifi size={13} /> : <WifiOff size={13} />}
-            {isBaseConnected ? 'Conectado' : 'Desconectado'}
+        {/* ── Marca: dos cuadrados azul/rojo — el mecanismo real del juego
+             (dos colores que se intercambian), no un ícono de librería ── */}
+        <header style={{ display: 'flex', alignItems: 'baseline', gap: '14px', padding: '22px 28px 14px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '3px', alignSelf: 'center' }}>
+            <span style={{ width: '11px', height: '11px', background: 'var(--color-blue)', display: 'inline-block' }} />
+            <span style={{ width: '11px', height: '11px', background: 'var(--color-red)', display: 'inline-block' }} />
+          </div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '23px', margin: 0, letterSpacing: '-0.01em' }}>
+            Escalera Inteligente
+          </h1>
+          <span style={kicker}>Control Mago de Oz</span>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '7px', ...kicker }}>
+            <span style={{ width: '6px', height: '6px', background: isBaseConnected ? 'var(--color-blue)' : 'var(--color-alert)', display: 'inline-block' }} />
+            {isBaseConnected ? 'conectado' : 'desconectado'}
           </div>
         </header>
+        <hr style={rule} />
 
-        {/* ── Franja B: sesión — pares, operador, control de partida y cronómetro, todo en una sola banda ── */}
-        <div style={{ ...band, position: 'relative' }}>
-          <div>
-            <div style={label}>PARES</div>
-            <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+        {/* ── 01 · Sesión: pares, operador, control de partida, cronómetro ── */}
+        <section style={{ display: 'flex', gap: '28px', padding: '18px 28px', alignItems: 'flex-end', flexWrap: 'wrap', flexShrink: 0 }}>
+          <div style={{ ...kicker, flexShrink: 0 }}>01<br />Sesión</div>
+
+          <div style={{ flexShrink: 0 }}>
+            <div style={kicker}>pares</div>
+            <div style={{ display: 'flex', gap: '2px', marginTop: '5px' }}>
               {[1, 2, 3, 4, 5].map(n => (
                 <button key={n} onClick={() => setPares(n)} style={{
-                  width: '26px', height: '26px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                  background: pares === n ? 'var(--color-signal-neutral)' : 'var(--color-graphite-900)',
-                  border: `1px solid ${pares === n ? 'var(--color-signal-neutral)' : 'var(--color-graphite-600)'}`,
-                  color: pares === n ? 'var(--color-graphite-900)' : 'var(--color-paper-300)', fontWeight: 700, fontSize: '12px',
+                  width: '22px', height: '22px', cursor: 'pointer',
+                  background: pares === n ? 'var(--color-paper)' : 'transparent',
+                  color: pares === n ? 'var(--color-ink)' : 'var(--color-paper-dim)',
+                  border: '1px solid var(--color-rule)', fontFamily: 'var(--font-mono)', fontSize: '12px',
                 }}>{n}</button>
               ))}
             </div>
           </div>
 
-          <div>
-            <div style={label}>OPERADOR</div>
-            <div style={{ marginTop: '4px', display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <div style={{ flexShrink: 0 }}>
+            <div style={kicker}>operador</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '5px' }}>
               <input
                 value={operatorInput}
                 onChange={e => setOperatorInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && operatorInput.trim()) setOperatorId(operatorInput.trim()) }}
-                placeholder="nombre + Enter"
+                placeholder="nombre + enter"
                 title="Escribe tu nombre y confirma con Enter — queda en cada evento de la bitácora. No es un identificador oficial del proyecto (ver DECISIONES_PROYECTO.md)."
                 style={{
-                  background: 'var(--color-graphite-900)',
-                  border: `1px solid ${operatorId && operatorInput.trim() === operatorId ? 'var(--color-signal-neutral)' : 'var(--color-graphite-600)'}`,
-                  borderRadius: 'var(--radius-sm)', padding: '5px 8px', color: 'var(--color-paper-100)', fontSize: '12px', width: '150px',
+                  background: 'none', border: 'none', borderBottom: '1px solid var(--color-rule)',
+                  fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'var(--color-paper)', padding: '2px 0', width: '128px',
                 }} />
-              {operatorId
-                ? <span style={{ fontSize: '11px', color: 'var(--color-signal-neutral)', display: 'flex', alignItems: 'center', gap: '4px' }}><Check size={12} /> {operatorId}</span>
-                : <span style={{ fontSize: '11px', color: 'var(--color-alert)' }}>sin confirmar</span>}
+              <span style={{ fontSize: '11px', color: operatorId ? 'var(--color-blue)' : 'var(--color-paper-faint)' }}>
+                {operatorId || 'sin confirmar'}
+              </span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button onClick={iniciarJuego} disabled={sessionState !== 'inactivo'} style={ghostBtn(sessionState === 'inactivo', PPA_TEXT.actuar)}>
-              <Play size={14} /> Iniciar
-            </button>
+          <div style={{ display: 'flex', gap: '18px', flexShrink: 0 }}>
+            <button onClick={iniciarJuego} disabled={sessionState !== 'inactivo'} style={textBtn(sessionState === 'inactivo', 'var(--color-blue)')}>Iniciar</button>
             {sessionState === 'pausado' ? (
-              <button onClick={reanudarJuego} style={ghostBtn(true, PPA_TEXT.pausar)}><PlayCircle size={14} /> Reanudar</button>
+              <button onClick={reanudarJuego} style={textBtn(true, 'var(--color-blue)')}>Reanudar</button>
             ) : (
-              <button onClick={pausarJuego} disabled={sessionState !== 'jugando'} style={ghostBtn(sessionState === 'jugando', PPA_TEXT.pausar)}><PauseCircle size={14} /> Pausar</button>
+              <button onClick={pausarJuego} disabled={sessionState !== 'jugando'} style={textBtn(sessionState === 'jugando', 'var(--color-blue)')}>Pausar</button>
             )}
-            <button onClick={reiniciarJuego} disabled={sessionState === 'cuenta_regresiva' || sessionState === 'inactivo'} style={ghostBtn(!(sessionState === 'cuenta_regresiva' || sessionState === 'inactivo'), 'var(--color-paper-300)')}>
-              <RotateCcw size={14} /> Reiniciar
-            </button>
+            <button onClick={reiniciarJuego} disabled={sessionState === 'cuenta_regresiva' || sessionState === 'inactivo'} style={textBtn(!(sessionState === 'cuenta_regresiva' || sessionState === 'inactivo'))}>Reiniciar</button>
           </div>
 
-          <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-            <div style={label}>
+          <div style={{ marginLeft: 'auto', textAlign: 'right', position: 'relative' }}>
+            <div style={kicker}>
               {sessionState === 'inactivo' ? 'listo para iniciar'
                 : sessionState === 'cuenta_regresiva' ? 'cuenta regresiva…'
                 : sessionState === 'jugando' ? 'en curso'
@@ -707,9 +688,23 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
                 : sessionState === 'victoria' ? 'victoria — reordena para seguir'
                 : 'bloqueado — reordena para seguir'}
             </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', fontSize: '26px', fontWeight: 700, lineHeight: 1.1 }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '42px', lineHeight: 1 }}>
               {sessionElapsedLabel}
             </div>
+
+            {countdownTick !== null && (
+              <div style={{
+                position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'var(--color-ink-raised)', zIndex: 5,
+              }}>
+                <span style={{
+                  fontFamily: 'var(--font-display)', fontSize: '30vh', fontWeight: 600, lineHeight: 1,
+                  color: countdownTick === 0 ? 'var(--color-blue)' : 'var(--color-paper)',
+                }}>
+                  {countdownTick === 0 ? '¡Inicia!' : countdownTick}
+                </span>
+              </div>
+            )}
           </div>
 
           {sessionWarning && (
@@ -717,46 +712,29 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
               <TriangleAlert size={13} /> {sessionWarning}
             </div>
           )}
-
-          {countdownTick !== null && (
-            <div style={{
-              position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'var(--color-graphite-900)', zIndex: 5,
-            }}>
-              <span style={{
-                fontFamily: 'var(--font-mono)', fontSize: '48px', fontWeight: 700,
-                color: countdownTick === 0 ? PPA_TEXT.actuar : 'var(--color-signal-neutral)',
-              }}>
-                {countdownTick === 0 ? '¡INICIA!' : countdownTick}
-              </span>
-            </div>
-          )}
-        </div>
+        </section>
+        <hr style={rule} />
 
         {(controlStatus === 'victoria' || controlStatus === 'derrota') && (
-          <div style={{
-            ...band, flexShrink: 0,
-            background: controlStatus === 'victoria' ? 'rgba(0,255,136,0.12)' : 'rgba(212,105,74,0.16)',
-            borderBottom: `1px solid ${controlStatus === 'victoria' ? PPA_TEXT.actuar : 'var(--color-alert)'}`,
-          }}>
-            {controlStatus === 'victoria' ? <Trophy size={16} /> : <Ban size={16} />}
-            <span style={{ fontWeight: 700, fontSize: '13px' }}>
-              {controlStatus === 'victoria' ? `¡Victoria! Intercambio completo en ${moveCount} movimientos.` : 'Derrota — ningún cubo tiene ya un movimiento legal disponible.'}
-            </span>
-          </div>
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 28px', flexShrink: 0 }}>
+              <span style={{ width: '9px', height: '9px', background: controlStatus === 'victoria' ? 'var(--color-blue)' : 'var(--color-alert)', display: 'inline-block' }} />
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '17px' }}>
+                {controlStatus === 'victoria' ? `Victoria — intercambio completo en ${moveCount} movimientos` : 'Derrota — ningún cubo tiene ya un movimiento legal'}
+              </span>
+            </div>
+            <hr style={rule} />
+          </>
         )}
 
-        {/* ── Tablero (col A) + botones PPA (col B) — alto natural, no estirado:
-             el espacio que la compresión de las franjas de arriba recupera se
-             destina a mostrar el histórico abajo, no a agrandar estos botones
-             artificialmente (ver docs/REDISENO_UI.md §6). ── */}
-        <div style={{ display: 'flex', gap: '16px', padding: '14px 20px', flexShrink: 0 }}>
-
-          {/* Col A: tablero + telemetría compacta */}
-          <div style={{ flex: '0 0 42%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div>
-              <div style={{ ...label, marginBottom: '8px' }}>TABLERO · {pares} PAR(ES)</div>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', flexWrap: 'wrap' }}>
+        {/* ── 02 · Tablero — SIEMPRE en una sola fila, incluso con 5 pares (11
+             posiciones): ancho completo, nowrap, sin la columna al 42% que
+             lo partía en dos filas en la versión anterior. ── */}
+        <section style={{ padding: '20px 28px 16px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+            <div style={{ ...kicker, flexShrink: 0, paddingTop: '4px' }}>02<br />Tablero</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap', overflowX: 'auto' }}>
                 {visibleCubes.map((cube, idx) => {
                   // visibleCubes está recortado del tablero completo de 11
                   // posiciones (0-10); legalTargetsLive usa índices del
@@ -781,186 +759,158 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
                   )
                 })}
               </div>
+
+              <div style={{ marginTop: '12px', display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'center', ...kicker }}>
+                <span>{gameState.liftedCube !== null ? 'procesando' : 'listo'}</span>
+                <span style={{ fontFamily: 'var(--font-mono)' }}>mov. {moveCount}</span>
+                <span>vacía {gameState.emptyPosition != null ? gameState.emptyPosition + 1 : '—'}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  esclavos {esclavos.length}/10
+                  <span style={{ display: 'flex', gap: '2px' }}>
+                    {Array.from({ length: 10 }, (_, i) => i + 1).map(id => (
+                      <span key={id} title={`Cubo #${id}`} style={{ width: '5px', height: '5px', background: esclavos.includes(id) ? 'var(--color-blue)' : 'var(--color-alert)', display: 'inline-block' }} />
+                    ))}
+                  </span>
+                </span>
+              </div>
+
               {Object.keys(cubeActions).length > 0 && (
-                <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  {Object.entries(cubeActions).map(([id, act]) => {
-                    const ActionIcon = act === 'pausar' ? Pause : act === 'pensar' ? Lightbulb : Zap
-                    return (
-                      <span key={id} style={{
-                        display: 'flex', alignItems: 'center', gap: '4px',
-                        fontSize: '11px', padding: '2px 7px', borderRadius: 'var(--radius-sm)',
-                        background: ppaRgba(act, 0.16), color: PPA_TEXT[act],
-                        border: `1px solid ${ppaRgba(act, 0.4)}`,
-                      }}><ActionIcon size={10} /> #{id}</span>
-                    )
-                  })}
+                <div style={{ display: 'flex', gap: '10px', marginTop: '8px', flexWrap: 'wrap', ...kicker }}>
+                  {Object.entries(cubeActions).map(([id, act]) => (
+                    <span key={id} style={{ color: PPA_TEXT[act] }}>#{id} {act}</span>
+                  ))}
                 </div>
               )}
             </div>
-
-            <div style={{ borderTop: '1px solid var(--color-graphite-700)', paddingTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '12px', color: 'var(--color-paper-300)' }}>
-              <span><Activity size={11} style={{ verticalAlign: '-1px', marginRight: '3px' }} />{gameState.liftedCube !== null ? 'Procesando' : 'Listo'}</span>
-              <span><Hand size={11} style={{ verticalAlign: '-1px', marginRight: '3px' }} />Levantado {gameState.liftedCube ?? '—'}</span>
-              <span><Grid2X2 size={11} style={{ verticalAlign: '-1px', marginRight: '3px' }} />Vacía {gameState.emptyPosition != null ? gameState.emptyPosition + 1 : '—'}</span>
-              <span style={{ fontFamily: 'var(--font-mono)' }}><Shuffle size={11} style={{ verticalAlign: '-1px', marginRight: '3px' }} />Mov. {moveCount}</span>
-            </div>
-
-            <div style={{ borderTop: '1px solid var(--color-graphite-700)', paddingTop: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <span style={label}>CUBOS ESCLAVOS</span>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: esclavos.length >= 10 ? PPA_TEXT.actuar : 'var(--color-alert)' }}>{esclavos.length}/10</span>
-              </div>
-              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                {Array.from({ length: 10 }, (_, i) => i + 1).map(id => {
-                  const conectado = esclavos.includes(id)
-                  return <div key={id} title={`Cubo #${id} — ${conectado ? 'conectado' : 'sin conexión'}`} style={{ width: '7px', height: '7px', borderRadius: '50%', background: conectado ? PPA_TEXT.actuar : 'var(--color-alert)' }} />
-                })}
-              </div>
-            </div>
           </div>
+        </section>
+        <hr style={rule} />
 
-          {/* Col B: selección + botones PPA */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px',
-              background: 'var(--color-graphite-800)', borderRadius: 'var(--radius-sm)',
-              border: `1px solid ${noSelWarning ? 'var(--color-alert)' : 'var(--color-graphite-700)'}`,
-              fontSize: '12px',
-            }}>
-              {noSelWarning ? (
-                <><TriangleAlert size={13} color="var(--color-alert)" /><span style={{ color: 'var(--color-alert)' }}>Selecciona un cubo del tablero antes de enviar una señal</span></>
-              ) : selectedCubeId !== null ? (
-                <>
-                  <Dot color="var(--color-signal-neutral)" />
-                  <span style={{ color: 'var(--color-paper-300)' }}>Cubo seleccionado:</span>
-                  <span style={{ color: 'var(--color-paper-100)', fontWeight: 600 }}>#{selectedCubeId}</span>
-                  {selAction && (
-                    <span style={{ color: 'var(--color-paper-300)' }}>
-                      — acción actual: <span style={{ color: PPA_TEXT[selAction], fontWeight: 600 }}>{PPA_LABEL[selAction]}</span>
+        {/* ── 03 · Señal — Pausar/Pensar/Actuar como palabra tipográfica, no
+             caja con ícono; Estado inicial queda deliberadamente más chico,
+             no igualado en peso a las 3 señales reales. ── */}
+        <section style={{ padding: '20px 28px 24px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+            <div style={{ ...kicker, flexShrink: 0, paddingTop: '4px' }}>03<br />Señal</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: noSelWarning ? 'var(--color-alert)' : 'var(--color-paper-dim)', marginBottom: '18px' }}>
+                {noSelWarning ? 'selecciona un cubo antes de enviar una señal'
+                  : selectedCubeId !== null ? `cubo #${selectedCubeId} seleccionado${selAction ? ' · ' + PPA_LABEL[selAction].toLowerCase() : ''}`
+                  : 'selecciona un cubo del tablero'}
+              </div>
+              <div style={{ display: 'flex', gap: '44px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                {(['pausar', 'pensar', 'actuar'] as const).map(a => (
+                  <button key={a} onClick={() => sendAction(a)} style={signalWord(a)}>
+                    <span style={{ display: 'block', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '42px', color: PPA_TEXT[a], letterSpacing: '-0.01em' }}>
+                      {titleCase(PPA_LABEL[a])}
                     </span>
-                  )}
-                </>
-              ) : (
-                <><Dot color="var(--color-paper-500)" /><span style={{ color: 'var(--color-paper-500)' }}>Haz clic en un cubo del tablero para seleccionarlo</span></>
-              )}
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gridAutoRows: '128px', gap: '10px' }}>
-              {(['pausar', 'pensar', 'actuar'] as const).map(a => {
-                const Icon = a === 'pausar' ? Pause : a === 'pensar' ? Lightbulb : Zap
-                return (
-                  <button key={a} onClick={() => sendAction(a)} style={btnAction(a)}>
-                    <div style={iconCircle(a)}><Icon size={20} color={PPA_TEXT[a]} /></div>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontWeight: 700, fontSize: '15px', letterSpacing: '0.08em' }}>{PPA_LABEL[a]}</div>
-                      <div style={{ fontSize: '10px', color: 'var(--color-paper-500)', marginTop: '2px', fontFamily: 'var(--font-mono)' }}>
-                        {PPA_RGB[a].join(',')} · {Math.round(PPA_VIBRATION[a] * 100)}% · {PPA_SOUND_LABEL[a]}
-                      </div>
-                    </div>
+                    <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--color-paper-faint)', marginTop: '4px' }}>
+                      {PPA_RGB[a].join(',')} · {Math.round(PPA_VIBRATION[a] * 100)}% · {PPA_SOUND_LABEL[a]}
+                    </span>
                   </button>
-                )
-              })}
-              <button onClick={apagarSenal} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                padding: '10px', borderRadius: 'var(--radius-lg)', cursor: 'pointer',
-                background: 'var(--color-graphite-800)', border: '1px solid var(--color-graphite-600)',
-                color: 'var(--color-paper-300)', opacity: selectedCubeId === null ? 0.5 : 1,
-              }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-graphite-700)' }}>
-                  <Power size={20} color="var(--color-paper-300)" />
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontWeight: 700, fontSize: '15px', letterSpacing: '0.08em' }}>ESTADO INICIAL</div>
-                  <div style={{ fontSize: '10px', color: 'var(--color-paper-500)', marginTop: '2px' }}>Apaga color y vibración · auto {AUTO_OFF_MS / 1000}s</div>
-                </div>
-              </button>
+                ))}
+                <button onClick={apagarSenal} style={{ ...textBtn(selectedCubeId !== null), marginLeft: 'auto', alignSelf: 'flex-end' }}>
+                  estado inicial
+                </button>
+              </div>
+              <div style={{ marginTop: '14px', fontSize: '11px', color: 'var(--color-paper-faint)' }}>
+                Cada señal se apaga sola a los {AUTO_OFF_MS / 1000}s; estado inicial la apaga antes, de inmediato.
+              </div>
             </div>
           </div>
-        </div>
+        </section>
+        <hr style={rule} />
 
-        {/* ── Franja de histórico, colapsable — bitácoras, condición acumulada, música ── */}
-        <button onClick={() => setHistOpen(o => !o)} style={{ ...band, cursor: 'pointer', justifyContent: 'flex-start', border: 'none', borderTop: '1px solid var(--color-graphite-700)', width: '100%', textAlign: 'left' }}>
-          <span style={{ fontSize: '11px', color: 'var(--color-paper-300)' }}>{histOpen ? '▾' : '▸'} HISTÓRICO — bitácoras, condición acumulada, música ambiental</span>
+        {/* ── 04 · Histórico, colapsable — bitácoras, condición acumulada, música ── */}
+        <button onClick={() => setHistOpen(o => !o)} style={{
+          display: 'flex', alignItems: 'center', gap: '24px', padding: '14px 28px', flexShrink: 0,
+          background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left',
+        }}>
+          <span style={{ ...kicker, flexShrink: 0 }}>{histOpen ? '–' : '+'} 04</span>
+          <span style={kicker}>Histórico — bitácoras, condición acumulada, música ambiental</span>
         </button>
 
         {histOpen && (
-          <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ padding: '0 28px 28px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
 
             {/* Condición acumulada por fase */}
-            <div>
-              <div style={{ ...label, marginBottom: '10px' }}>CONDICIÓN ACUMULADA POR FASE — informativo, el operador decide si envía la señal</div>
-              <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-                <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pausar} label={'Pausar — fallas reales detectadas'} />
-                <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pensar} label={'Pensar — mismo criterio, encadenado tras Pausar'} />
-                <PpaChargeMeter value={Math.min(Math.floor((Date.now() - turnStartRef.current) / 1000), actuarThresholdSec)} max={actuarThresholdSec} colorHex={PPA_HEX.actuar} label={`Actuar — latencia sin mover (umbral ${actuarThresholdSec}s, no oficial)`} />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--color-paper-500)' }}>Umbral Actuar (segundos, no oficial):</span>
-                <input type="range" min={2} max={30} value={actuarThresholdSec}
-                  onChange={e => setActuarThresholdSec(Number(e.target.value))}
-                  style={{ flex: 1, maxWidth: '160px', accentColor: 'var(--color-signal-neutral)' }} />
-                <span style={{ fontSize: '11px' }}>{actuarThresholdSec}s</span>
+            <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+              <div style={{ ...kicker, flexShrink: 0, width: '0px', overflow: 'visible', whiteSpace: 'nowrap' }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ ...kicker, marginBottom: '12px' }}>condición acumulada por fase — informativo</div>
+                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                  <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pausar} label={'Pausar — fallas reales detectadas'} />
+                  <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pensar} label={'Pensar — mismo criterio, encadenado tras Pausar'} />
+                  <PpaChargeMeter value={Math.min(Math.floor((Date.now() - turnStartRef.current) / 1000), actuarThresholdSec)} max={actuarThresholdSec} colorHex={PPA_HEX.actuar} label={`Actuar — latencia sin mover (umbral ${actuarThresholdSec}s, no oficial)`} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--color-paper-dim)' }}>umbral Actuar (s, no oficial)</span>
+                  <input type="range" min={2} max={30} value={actuarThresholdSec}
+                    onChange={e => setActuarThresholdSec(Number(e.target.value))}
+                    style={{ flex: 1, maxWidth: '160px', accentColor: 'var(--color-blue)' }} />
+                  <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)' }}>{actuarThresholdSec}s</span>
+                </div>
               </div>
             </div>
+            <hr style={rule} />
 
             {/* Sonido / música de fondo */}
-            <div style={{ borderTop: '1px solid var(--color-graphite-700)', paddingTop: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Volume2 size={15} color="var(--color-paper-300)" />
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '13px' }}>Señal sonora PPA</div>
-                    <div style={{ color: 'var(--color-paper-500)', fontSize: '10px' }}>Tono al enviar Pausar/Pensar/Actuar</div>
-                  </div>
+            <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+              <div style={{ ...kicker, flexShrink: 0, width: '0px', overflow: 'visible', whiteSpace: 'nowrap' }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <div style={kicker}>señal sonora ppa — tono al enviar pausar/pensar/actuar</div>
+                  <span style={{ fontSize: '10px', color: activeAction ? 'var(--color-blue)' : 'var(--color-paper-faint)' }}>{activeAction ? 'activo' : 'en espera'}</span>
                 </div>
-                <span style={{ fontSize: '9px', color: activeAction ? PPA_TEXT.actuar : 'var(--color-paper-500)', background: 'var(--color-graphite-800)', padding: '2px 6px', borderRadius: 'var(--radius-sm)', letterSpacing: '0.08em', alignSelf: 'flex-start' }}>
-                  {activeAction ? 'activo' : 'en espera'}
-                </span>
+                <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-end', height: '24px', marginBottom: '14px' }}>
+                  {SND_H.map((h, i) => (
+                    <div key={i} style={{ flex: 1, background: 'var(--color-rule)', height: `${activeAction ? h * 90 : h * 35}%` }} />
+                  ))}
+                </div>
+                <div style={{ ...kicker, marginBottom: '6px' }}>música de fondo (opcional)</div>
+                <AmbientMusicPanel accentColor="#2A3EFF" />
               </div>
-              <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-end', height: '32px', marginBottom: '12px' }}>
-                {SND_H.map((h, i) => (
-                  <div key={i} style={{ flex: 1, borderRadius: '2px 2px 0 0', background: 'var(--color-graphite-600)', height: `${activeAction ? h * 90 : h * 35}%` }} />
-                ))}
-              </div>
-              <div style={{ fontSize: '10px', color: 'var(--color-paper-500)', marginBottom: '6px' }}>MÚSICA DE FONDO (OPCIONAL)</div>
-              <AmbientMusicPanel accentColor="#CFE8EC" />
             </div>
+            <hr style={rule} />
 
             {/* Bitácoras */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '14px', borderTop: '1px solid var(--color-graphite-700)', paddingTop: '14px' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                  <span style={{ ...label, display: 'flex', alignItems: 'center', gap: '6px' }}><ClipboardList size={12} /> BITÁCORA DE EVENTOS DE LOS CUBOS · {cuboEvents.length}</span>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button onClick={exportCuboEventsCsv} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-graphite-800)', border: '1px solid var(--color-graphite-600)', borderRadius: 'var(--radius-sm)', padding: '4px 8px', color: 'var(--color-paper-100)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> CSV</button>
-                    <button onClick={exportCuboEventsJson} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-graphite-800)', border: '1px solid var(--color-graphite-600)', borderRadius: 'var(--radius-sm)', padding: '4px 8px', color: 'var(--color-paper-100)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> JSON</button>
+            <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+              <div style={{ ...kicker, flexShrink: 0, width: '0px', overflow: 'visible', whiteSpace: 'nowrap' }} />
+              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '24px' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <span style={kicker}>bitácora de eventos de los cubos · {cuboEvents.length}</span>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <button onClick={exportCuboEventsCsv} style={textBtn(true)}><Download size={11} style={{ verticalAlign: '-1px', marginRight: '3px' }} />csv</button>
+                      <button onClick={exportCuboEventsJson} style={textBtn(true)}><Download size={11} style={{ verticalAlign: '-1px', marginRight: '3px' }} />json</button>
+                    </div>
+                  </div>
+                  <div style={{ maxHeight: '160px', overflowY: 'auto', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
+                    {cuboEvents.length === 0 && <div style={{ color: 'var(--color-paper-faint)' }}>sin eventos todavía</div>}
+                    {[...cuboEvents].reverse().map((ev, i) => (
+                      <div key={i} style={{ padding: '3px 0', borderTop: '1px solid var(--color-rule)', color: 'var(--color-paper-dim)' }}>
+                        <span style={{ color: 'var(--color-paper-faint)' }}>{ev.timestamp}</span> · <span>{ev.tipo}</span> · {ev.detalle}
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div style={{ maxHeight: '160px', overflowY: 'auto', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
-                  {cuboEvents.length === 0 && <div style={{ color: 'var(--color-paper-500)' }}>Sin eventos todavía — reportados por el hardware físico.</div>}
-                  {[...cuboEvents].reverse().map((ev, i) => (
-                    <div key={i} style={{ padding: '3px 0', borderBottom: '1px solid var(--color-graphite-700)', color: 'var(--color-paper-300)' }}>
-                      <span style={{ color: 'var(--color-paper-500)' }}>{ev.timestamp}</span> · <span style={{ color: 'var(--color-signal-neutral)' }}>{ev.tipo}</span> · {ev.detalle}
-                    </div>
-                  ))}
-                </div>
-              </div>
 
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                  <span style={{ ...label, display: 'flex', alignItems: 'center', gap: '6px' }}><ClipboardList size={12} /> BITÁCORA DEL OPERADOR (DECISIONES) · {operatorEvents.length}</span>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button onClick={exportOperatorEventsCsv} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-graphite-800)', border: '1px solid var(--color-graphite-600)', borderRadius: 'var(--radius-sm)', padding: '4px 8px', color: 'var(--color-paper-100)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> CSV</button>
-                    <button onClick={exportOperatorEventsJson} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-graphite-800)', border: '1px solid var(--color-graphite-600)', borderRadius: 'var(--radius-sm)', padding: '4px 8px', color: 'var(--color-paper-100)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> JSON</button>
-                  </div>
-                </div>
-                <div style={{ maxHeight: '160px', overflowY: 'auto', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
-                  {operatorEvents.length === 0 && <div style={{ color: 'var(--color-paper-500)' }}>Sin decisiones todavía — cada envío de Pausar/Pensar/Actuar queda aquí.</div>}
-                  {[...operatorEvents].reverse().map((ev, i) => (
-                    <div key={i} style={{ padding: '3px 0', borderBottom: '1px solid var(--color-graphite-700)', color: 'var(--color-paper-300)' }}>
-                      <span style={{ color: 'var(--color-paper-500)' }}>{ev.timestamp}</span> · <span style={{ color: 'var(--color-signal-neutral)' }}>{ev.operadorId}</span> · {ev.detalle}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <span style={kicker}>bitácora del operador (decisiones) · {operatorEvents.length}</span>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <button onClick={exportOperatorEventsCsv} style={textBtn(true)}><Download size={11} style={{ verticalAlign: '-1px', marginRight: '3px' }} />csv</button>
+                      <button onClick={exportOperatorEventsJson} style={textBtn(true)}><Download size={11} style={{ verticalAlign: '-1px', marginRight: '3px' }} />json</button>
                     </div>
-                  ))}
+                  </div>
+                  <div style={{ maxHeight: '160px', overflowY: 'auto', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
+                    {operatorEvents.length === 0 && <div style={{ color: 'var(--color-paper-faint)' }}>sin decisiones todavía</div>}
+                    {[...operatorEvents].reverse().map((ev, i) => (
+                      <div key={i} style={{ padding: '3px 0', borderTop: '1px solid var(--color-rule)', color: 'var(--color-paper-dim)' }}>
+                        <span style={{ color: 'var(--color-paper-faint)' }}>{ev.timestamp}</span> · <span>{ev.operadorId}</span> · {ev.detalle}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
