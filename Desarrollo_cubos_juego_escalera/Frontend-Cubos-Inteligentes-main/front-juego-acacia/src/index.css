@@ -71,3 +71,17 @@ body {
   color: var(--color-paper);
   font-family: var(--font-sans);
 }
+
+/* Único uso de animación en todo el rediseño — un destello que recorre el
+   trazo EEG del encabezado (App.tsx EegTrace) cada ~7s, no un loop
+   constante: pedido explícito para darle vida al elemento de identidad sin
+   caer en la decoración gratuita que el resto del sistema evita a
+   propósito. stroke-dasharray/offset usan pathLength=100 en el propio
+   <polyline>, así el 12/-12 de abajo es un porcentaje fijo del trazo,
+   sin importar su longitud geométrica real. */
+@keyframes eeg-sweep {
+  0%, 65%   { stroke-dasharray: 12 88; stroke-dashoffset: 112; opacity: 0; }
+  68%       { opacity: 1; }
+  85%       { stroke-dasharray: 12 88; stroke-dashoffset: -12; opacity: 1; }
+  88%, 100% { stroke-dasharray: 12 88; stroke-dashoffset: -12; opacity: 0; }
+}

@@ -40,15 +40,29 @@ function SignalGlyph({ phase, color }: { phase: PPAPhase; color: string }) {
   )
 }
 
-// Trazo EEG estático (regla dura #1: nada de animación decorativa) usado
-// como línea de estado bajo el encabezado — el propio instrumento de la
-// tesis como elemento de identidad, no un ícono de librería. El color
-// refleja el estado real de conexión, así que informa además de decorar.
+// Trazo EEG usado como línea de estado bajo el encabezado — el propio
+// instrumento de la tesis como elemento de identidad, no un ícono de
+// librería. El color refleja el estado real de conexión, así que informa
+// además de decorar. Única excepción deliberada a la regla de "nada de
+// animación decorativa": un destello periódico (no un loop constante) que
+// recorre el trazo cada ~7s, pedido explícitamente para dar vida a este
+// elemento sin caer en movimiento gratuito — ver @keyframes eeg-sweep en
+// index.css. pathLength=100 normaliza el dasharray/dashoffset a un 0-100
+// fijo sin depender de la longitud geométrica real del trazo en zigzag.
 const EEG_TRACE = '0,10 22,10 28,3 34,17 40,10 74,10 80,4 86,16 92,10 130,10 137,2 144,18 151,10 190,10 196,5 202,15 208,10 250,10 256,3 262,17 268,10 310,10 316,4 322,16 328,10 370,10 376,3 383,17 390,10 400,10'
 function EegTrace({ color }: { color: string }) {
   return (
-    <svg width="100%" height="18" viewBox="0 0 400 20" preserveAspectRatio="none" style={{ display: 'block' }} aria-hidden="true">
+    <svg width="100%" height="18" viewBox="0 0 400 20" preserveAspectRatio="none" style={{ display: 'block', overflow: 'visible' }} aria-hidden="true">
       <polyline points={EEG_TRACE} fill="none" stroke={color} strokeWidth="1.1" />
+      <polyline
+        points={EEG_TRACE}
+        fill="none"
+        stroke="#fff"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        pathLength={100}
+        style={{ mixBlendMode: 'screen', animation: 'eeg-sweep 7s linear infinite' }}
+      />
     </svg>
   )
 }
@@ -732,51 +746,15 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           </div>
         </header>
 
-        {/* ── Tablero + Señal PPA (columna principal), con Configuración y
-             Control de partida al mismo ancho arriba de ellos, junto a una
-             barra lateral fija "en vivo" (condición acumulada + sonido/
-             música) que ahora arranca desde la misma altura que
-             Configuración — ya no queda hueco vacío bajo el tablero. Solo
-             Bitácoras queda en el desplegable de más abajo. ── */}
+        {/* ── Tablero + Señal PPA (columna principal), con Control de
+             partida al mismo ancho arriba de ellos, junto a una barra
+             lateral fija que arranca con Configuración (pares + operador,
+             que se ajustan antes de jugar, no mientras) y sigue con "en
+             vivo" (condición acumulada + sonido/música) — ya no queda
+             hueco vacío bajo el tablero. Solo Bitácoras queda en el
+             desplegable de más abajo. ── */}
         <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 0 }}>
-
-        {/* ── Configuración: pares + operador, fila compacta aparte ── */}
-        <div style={{ ...panel, flexShrink: 0, display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'center' }}>
-          <div>
-            <div style={sectionLabel}>Pares</div>
-            <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
-              {[1, 2, 3, 4, 5].map(n => (
-                <button key={n} onClick={() => setPares(n)} style={{
-                  width: '26px', height: '26px', cursor: 'pointer', borderRadius: 'var(--radius)',
-                  background: pares === n ? 'var(--color-blue)' : 'var(--color-bg)',
-                  color: pares === n ? '#fff' : 'var(--color-paper-dim)',
-                  border: `1px solid ${pares === n ? 'var(--color-blue)' : 'var(--color-line-strong)'}`,
-                  fontWeight: 700, fontSize: '12px',
-                }}>{n}</button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div style={sectionLabel}>Operador</div>
-            <div style={{ display: 'flex', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
-              <input
-                value={operatorInput}
-                onChange={e => setOperatorInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && operatorInput.trim()) setOperatorId(operatorInput.trim()) }}
-                placeholder="nombre + Enter"
-                title="Escribe tu nombre y confirma con Enter — queda en cada evento de la bitácora. No es un identificador oficial del proyecto (ver DECISIONES_PROYECTO.md)."
-                style={{
-                  background: 'var(--color-bg)', border: `1px solid ${operatorId && operatorInput.trim() === operatorId ? 'var(--color-blue)' : 'var(--color-line-strong)'}`,
-                  borderRadius: 'var(--radius)', padding: '6px 9px', color: 'var(--color-paper)', fontSize: '13px', width: '150px',
-                }} />
-              <span style={{ fontSize: '11px', color: operatorId ? 'var(--color-blue)' : 'var(--color-paper-faint)' }}>
-                {operatorId || 'sin confirmar'}
-              </span>
-            </div>
-          </div>
-        </div>
 
         {/* ── Control de partida: cronómetro grande centrado arriba, los 3
              botones justo debajo — el patrón de un cronómetro real, no un
@@ -979,6 +957,45 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
             acumulada y señal sonora/música cambian mientras se juega, así
             que quedan siempre a la vista junto al tablero y los botones. */}
         <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {/* ── Configuración: pares + operador — se ajustan antes de
+               jugar, así que van arriba de todo en la barra lateral, no
+               en la columna del tablero. ── */}
+          <div style={{ ...panel, display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <div style={sectionLabel}>Pares</div>
+              <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
+                {[1, 2, 3, 4, 5].map(n => (
+                  <button key={n} onClick={() => setPares(n)} style={{
+                    width: '26px', height: '26px', cursor: 'pointer', borderRadius: 'var(--radius)',
+                    background: pares === n ? 'var(--color-blue)' : 'var(--color-bg)',
+                    color: pares === n ? '#fff' : 'var(--color-paper-dim)',
+                    border: `1px solid ${pares === n ? 'var(--color-blue)' : 'var(--color-line-strong)'}`,
+                    fontWeight: 700, fontSize: '12px',
+                  }}>{n}</button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div style={sectionLabel}>Operador</div>
+              <div style={{ display: 'flex', gap: '6px', marginTop: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <input
+                  value={operatorInput}
+                  onChange={e => setOperatorInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && operatorInput.trim()) setOperatorId(operatorInput.trim()) }}
+                  placeholder="nombre + Enter"
+                  title="Escribe tu nombre y confirma con Enter — queda en cada evento de la bitácora. No es un identificador oficial del proyecto (ver DECISIONES_PROYECTO.md)."
+                  style={{
+                    background: 'var(--color-bg)', border: `1px solid ${operatorId && operatorInput.trim() === operatorId ? 'var(--color-blue)' : 'var(--color-line-strong)'}`,
+                    borderRadius: 'var(--radius)', padding: '6px 9px', color: 'var(--color-paper)', fontSize: '13px', width: '100%', boxSizing: 'border-box',
+                  }} />
+                <span style={{ fontSize: '11px', color: operatorId ? 'var(--color-blue)' : 'var(--color-paper-faint)' }}>
+                  {operatorId || 'sin confirmar'}
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div style={panel}>
             <div style={{ ...sectionLabel, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}><StepMark />En vivo</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
