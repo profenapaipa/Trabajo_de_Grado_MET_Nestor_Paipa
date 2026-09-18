@@ -100,10 +100,13 @@ function Logo({ size = 28 }: { size?: number }) {
 // (solo se veía en el margen sobrante en pantallas más anchas que los
 // 1400px de contenido). Como patrón CSS repetido sí se ve en cualquier
 // tamaño de ventana, detrás de los paneles y en los huecos entre ellos.
-// El lienzo del SVG (96x60) es 3x más grande que el propio logo (32x20) y
-// lo centra dentro: ese margen en blanco es lo que separa cada copia del
-// patrón, para que no se vea como una retícula apretada.
-const LOGO_TILE_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='60' viewBox='0 0 96 60'%3E%3Cg transform='translate(32,20)'%3E%3Cpath d='M0,20 L5.3,20 L5.3,14 L10.6,14 L10.6,8 L16,8 L16,2 L16,20 Z' fill='%234589FF' fill-opacity='0.075'/%3E%3Cpath d='M16,2 L16,8 L21.3,8 L21.3,14 L26.7,14 L26.7,20 L32,20 L16,20 Z' fill='%23FA4D56' fill-opacity='0.075'/%3E%3C/g%3E%3C/svg%3E")`
+// El azulejo que se repite mide 192x120 y trae 4 copias del logo, una por
+// cuadrante (0°, 180°, 90°, 270°) — así, aunque el azulejo en sí se repita,
+// cada copia visible mira hacia un lado distinto y el patrón no se lee
+// como una retícula pareja de siluetas idénticas. Cada cuadrante mide
+// 96x60, 3x el propio logo (32x20): ese margen es lo que separa cada
+// copia dentro del azulejo.
+const LOGO_TILE_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='120' viewBox='0 0 192 120'%3E%3Cg transform='translate(32,20)'%3E%3Cpath d='M0,20 L5.3,20 L5.3,14 L10.6,14 L10.6,8 L16,8 L16,2 L16,20 Z' fill='%234589FF' fill-opacity='0.075'/%3E%3Cpath d='M16,2 L16,8 L21.3,8 L21.3,14 L26.7,14 L26.7,20 L32,20 L16,20 Z' fill='%23FA4D56' fill-opacity='0.075'/%3E%3C/g%3E%3Cg transform='translate(144,30) rotate(180) translate(-16,-10)'%3E%3Cpath d='M0,20 L5.3,20 L5.3,14 L10.6,14 L10.6,8 L16,8 L16,2 L16,20 Z' fill='%234589FF' fill-opacity='0.075'/%3E%3Cpath d='M16,2 L16,8 L21.3,8 L21.3,14 L26.7,14 L26.7,20 L32,20 L16,20 Z' fill='%23FA4D56' fill-opacity='0.075'/%3E%3C/g%3E%3Cg transform='translate(48,90) rotate(90) translate(-16,-10)'%3E%3Cpath d='M0,20 L5.3,20 L5.3,14 L10.6,14 L10.6,8 L16,8 L16,2 L16,20 Z' fill='%234589FF' fill-opacity='0.075'/%3E%3Cpath d='M16,2 L16,8 L21.3,8 L21.3,14 L26.7,14 L26.7,20 L32,20 L16,20 Z' fill='%23FA4D56' fill-opacity='0.075'/%3E%3C/g%3E%3Cg transform='translate(144,90) rotate(270) translate(-16,-10)'%3E%3Cpath d='M0,20 L5.3,20 L5.3,14 L10.6,14 L10.6,8 L16,8 L16,2 L16,20 Z' fill='%234589FF' fill-opacity='0.075'/%3E%3Cpath d='M16,2 L16,8 L21.3,8 L21.3,14 L26.7,14 L26.7,20 L32,20 L16,20 Z' fill='%23FA4D56' fill-opacity='0.075'/%3E%3C/g%3E%3C/svg%3E")`
 
 // Medio escalón, tomado directamente de la mitad izquierda del logo —
 // marcador recurrente para títulos de sección en vez de una viñeta
@@ -205,16 +208,24 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   // ── Resolutor único de estado visual (ver core/ppa/cubeVisualState.ts y
   // ESTADO_VISUAL_CUBOS.md): estas referencias existen solo para que el
   // despacho de comandos sepa qué ya se envió (y no repetirlo) y para que el
-  // listener de socket, montado una sola vez más abajo, lea sessionState/
-  // cubeActions sin cerrarse sobre un valor obsoleto.
-  const lastSentSustainedRef = useRef<Record<number, string>>({})
+  // listener de socket, montado una sola vez más abajo, lea sessionState
+  // sin cerrarse sobre un valor obsoleto.
+  //
+  // Caché sembrada con "color de equipo en reposo" para los 10 cubos: ese es
+  // el punto de partida REAL de cada cubo, porque el propio firmware se lo
+  // asigna solo desde su IP al conectar al WiFi (Cubo_Esclavo_v3.ino), sin
+  // que el frontend mande nada. Así el efecto de despacho no reenvía el
+  // color de equipo al cargar la página — decisión del autor (2026-09-18):
+  // el color de equipo lo maneja solo el cubo; el frontend solo manda
+  // eventos extraordinarios (PPA, bloqueo/victoria/pausa, inválido).
+  const lastSentSustainedRef = useRef<Record<number, string>>(
+    Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(id => [id, JSON.stringify({ tier: 'equipo_reposo' })])),
+  )
   const lastSentSessionRef   = useRef<string | null>(null)
   const sessionStateRef      = useRef<SessionState>('inactivo')
-  const cubeActionsRef       = useRef<Record<number, CubeAction>>({})
   useEffect(() => { paresRef.current = pares }, [pares])
   useEffect(() => { operatorIdRef.current = operatorId }, [operatorId])
   useEffect(() => { sessionStateRef.current = sessionState }, [sessionState])
-  useEffect(() => { cubeActionsRef.current = cubeActions }, [cubeActions])
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 500)
     return () => clearInterval(id)
@@ -251,9 +262,13 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     return hexToRgbArray(cubeId <= 5 ? teamAColor : teamBColor)
   }
 
-  function sendSustained(cubeId: number, v: SustainedCubeVisual) {
+  // `forzar`: para acciones directas del operador (clic en PPA / Estado
+  // inicial) y para un cubo que se acaba de reconectar — en ambos casos el
+  // comando tiene que salir sí o sí, aunque la caché diga que ya se mandó
+  // (un reintento manual del operador nunca debe quedar en silencio).
+  function sendSustained(cubeId: number, v: SustainedCubeVisual, forzar = false) {
     const key = JSON.stringify(v)
-    if (lastSentSustainedRef.current[cubeId] === key) return
+    if (!forzar && lastSentSustainedRef.current[cubeId] === key) return
     lastSentSustainedRef.current[cubeId] = key
     socket.emit('comandoCubo', { id: cubeId, ...sustainedVisualToCommand(v, teamRgbFor(cubeId)) })
   }
@@ -291,18 +306,17 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
       const antes = esclavosRef.current
       for (const id of nuevos) if (!antes.includes(id)) {
         logCuboEvent({ tipo: 'esclavo_conectado', detalle: `Cubo esclavo #${id} conectado` })
-        // Color de reposo del equipo (azul/rojo) al conectar, directo y sin
-        // etapa intermedia — ver PENDIENTES_TESIS.md, "Cubos sin color por
-        // defecto" (antes se enviaba primero una señal EF=2 de conexión,
-        // retirada tras la prueba con hardware real del 2026-09-18). Se
-        // resuelve con el mismo criterio de prioridad que todo lo demás
-        // (sessionStateRef/cubeActionsRef en vez de sessionState/cubeActions
-        // directos porque este listener se monta una sola vez, ver useEffect
-        // de más abajo con deps []): si el cubo se reconecta en medio de un
-        // bloqueo/victoria/pausa, debe reflejar eso de inmediato, no el
-        // color de equipo.
+        // Al conectar NO se le manda el color de equipo: el propio firmware
+        // ya se lo asigna solo desde su IP (decisión del autor, 2026-09-18,
+        // tras prueba con hardware real — menos condicionales en el momento
+        // de conexión, para no arriesgar la baja latencia ni pisar el color
+        // que el cubo ya puso bien). Única excepción: si se reconecta en
+        // medio de un bloqueo/victoria/pausa, se le reafirma esa señal de
+        // sesión (forzado: al reconectar, el cubo volvió a su color de
+        // equipo y la caché ya no refleja lo que muestra). sessionStateRef en
+        // vez de sessionState porque este listener se monta una sola vez.
         const tier = sessionVisualTier(sessionStateRef.current)
-        sendSustained(id, resolveSustainedVisual(tier, tier === 'normal' ? cubeActionsRef.current[id] : undefined))
+        if (tier !== 'normal') sendSustained(id, resolveSustainedVisual(tier), true)
       }
       for (const id of antes) if (!nuevos.includes(id)) logCuboEvent({ tipo: 'esclavo_desconectado', detalle: `Cubo esclavo #${id} desconectado` })
       esclavosRef.current = nuevos
@@ -469,7 +483,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     // caché que usa el efecto de despacho de más abajo, así ese efecto no
     // reenvía por su cuenta ni entra en conflicto cuando cubeActions cambie
     // en la línea de arriba.
-    sendSustained(cubeId, { tier: 'ppa_manual', accion: a })
+    sendSustained(cubeId, { tier: 'ppa_manual', accion: a }, true)
     triggerAction(a, cubeId)
     playPpaFeedback(a, AUTO_OFF_MS / 1000)
     logOperatorEvent({ cuboId: cubeId, fase: a, detalle: `Operador envió ${a.toUpperCase()} al cubo #${cubeId}` })
@@ -482,7 +496,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     setActiveAction(null)
     setCubeActions(prev => { const next = { ...prev }; delete next[cubeId]; return next })
     // Mismo paso atrás que sendAction: envío directo, no delegado al efecto.
-    sendSustained(cubeId, { tier: 'equipo_reposo' })
+    sendSustained(cubeId, { tier: 'equipo_reposo' }, true)
     logOperatorEvent({ cuboId: cubeId, fase: 'estado_inicial', detalle: `Operador apagó manualmente la señal del cubo #${cubeId} (estado inicial)` })
   }
 
