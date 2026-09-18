@@ -95,6 +95,16 @@ function Logo({ size = 28 }: { size?: number }) {
   )
 }
 
+// Mismo logo, como mosaico de fondo repetido en toda la página — la marca de
+// agua centrada en una esquina quedaba casi siempre tapada por los paneles
+// (solo se veía en el margen sobrante en pantallas más anchas que los
+// 1400px de contenido). Como patrón CSS repetido sí se ve en cualquier
+// tamaño de ventana, detrás de los paneles y en los huecos entre ellos.
+// El lienzo del SVG (96x60) es 3x más grande que el propio logo (32x20) y
+// lo centra dentro: ese margen en blanco es lo que separa cada copia del
+// patrón, para que no se vea como una retícula apretada.
+const LOGO_TILE_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='60' viewBox='0 0 96 60'%3E%3Cg transform='translate(32,20)'%3E%3Cpath d='M0,20 L5.3,20 L5.3,14 L10.6,14 L10.6,8 L16,8 L16,2 L16,20 Z' fill='%234589FF' fill-opacity='0.075'/%3E%3Cpath d='M16,2 L16,8 L21.3,8 L21.3,14 L26.7,14 L26.7,20 L32,20 L16,20 Z' fill='%23FA4D56' fill-opacity='0.075'/%3E%3C/g%3E%3C/svg%3E")`
+
 // Medio escalón, tomado directamente de la mitad izquierda del logo —
 // marcador recurrente para títulos de sección en vez de una viñeta
 // genérica. Monocromo a propósito: no compite con el azul/rojo de marca.
@@ -740,24 +750,17 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
       display: 'flex',
       flexDirection: 'column',
       background: 'var(--color-bg)',
-      // Retícula de osciloscopio — puntos de 1px, estática (sin animación,
-      // regla dura #1), no un degradado difuso: la textura real de un
-      // instrumento de laboratorio, no decoración genérica.
-      backgroundImage: 'radial-gradient(circle, var(--color-line) 1px, transparent 1px)',
-      backgroundSize: '22px 22px',
+      // Retícula de osciloscopio (puntos de 1px) + el logo como mosaico de
+      // marca de agua, ambos estáticos (sin animación, regla dura #1) y
+      // ambos capas del mismo backgroundImage — así el patrón del logo se
+      // ve en toda la página, no solo en el margen sobrante tras el
+      // contenido (ahí quedaba casi siempre tapado por los paneles).
+      backgroundImage: `radial-gradient(circle, var(--color-line) 1px, transparent 1px), ${LOGO_TILE_BG}`,
+      backgroundSize: '22px 22px, 192px 120px',
       color: 'var(--color-paper)',
       fontFamily: 'var(--font-sans)',
       position: 'relative',
     }}>
-      {/* Marca de agua — la misma escalera del encabezado, casi imperceptible,
-          como ancla de identidad del fondo sin competir con el contenido.
-          Antes vivía centrada tras el contenido (maxWidth 1400px) y quedaba
-          tapada por los paneles; ahora va pegada al borde derecho real de
-          la ventana, en el margen vertical que sobra cuando la pantalla es
-          más ancha que esos 1400px — el único sitio donde de verdad se ve. */}
-      <div style={{ position: 'absolute', top: '50%', right: '24px', transform: 'translateY(-50%)', opacity: 0.09, pointerEvents: 'none' }}>
-        <Logo size={200} />
-      </div>
 
       <div style={{
         flex: 1,
