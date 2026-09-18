@@ -8,7 +8,7 @@ import {
   Activity, Hand, Grid2X2, Shuffle,
   Wifi, WifiOff,
   Pause, Lightbulb, Zap, Power, Box, TriangleAlert, Download, ClipboardList, Check,
-  Trophy, Ban, Play, RotateCcw, PauseCircle, PlayCircle,
+  Trophy, Ban, Play, RotateCcw, PauseCircle, PlayCircle, Volume2,
 } from 'lucide-react'
 import {
   type EventoCubo, type DecisionOperador,
@@ -16,7 +16,7 @@ import {
 } from './core/control/bitacoraControl'
 import hexToRgbArray from './core/utils/hextToRgb'
 import { playPpaFeedback, playError, playCountdownBeep } from './core/utils/ppaTones'
-import { PPA_RGB, PPA_HEX, PPA_TEXT, PPA_VIBRATION, PPA_SOUND_LABEL, PPA_LABEL, PPA_FRASE, ppaRgba, AUTO_OFF_MS, FALLAS_PARA_PAUSAR, type PPAPhase, EFECTOS } from './core/ppa/ppaColors'
+import { PPA_RGB, PPA_HEX, PPA_TEXT, PPA_VIBRATION, PPA_SOUND_LABEL, PPA_LABEL, ppaRgba, AUTO_OFF_MS, FALLAS_PARA_PAUSAR, type PPAPhase, EFECTOS } from './core/ppa/ppaColors'
 import { type Board, legalMovesFor, computeWinBoard, boardsEqual, isStuck } from './core/simulation/laEscaleraRules'
 import {
   type SessionState, type SustainedCubeVisual,
@@ -63,6 +63,12 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   const [activeAction,   setActiveAction]   = useState<CubeAction | null>(null)
   const [selectedCubeId, setSelectedCubeId] = useState<number | null>(null)
   const [noSelWarning,   setNoSelWarning]   = useState(false)
+  // Estado puramente de presentación (no de juego): abre/cierra el panel de
+  // histórico (bitácoras, condición acumulada, música ambiental) — ver
+  // docs/REDISENO_UI.md §6, layout de monitor clínico sin scroll. Abierto
+  // por defecto: la compresión de las franjas de arriba deja espacio de
+  // sobra incluso en 1366x768 (medido), así que no hace falta ocultarlo.
+  const [histOpen,       setHistOpen]       = useState(true)
   // tracks the action assigned to each cube id
   const [cubeActions,    setCubeActions]    = useState<Record<number, CubeAction>>({})
   const [esclavos,       setEsclavos]       = useState<number[]>([])
@@ -565,30 +571,50 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     socket.emit('comandoCubo', { id: 'all', efecto: countdownTick === 0 ? EFECTOS.CUENTA_INICIA : EFECTOS.CUENTA_TICK })
   }, [countdownTick])
 
-  // ── Shared styles ───────────────────────────────────────────────────────────
-  const card: React.CSSProperties = {
-    background: 'rgba(26,16,8,0.85)',
-    border: '1px solid rgba(60,40,20,0.6)',
-    borderRadius: '12px',
-    padding: '14px 16px',
+  // ── Shared styles — monitor clínico (docs/REDISENO_UI.md §5) ───────────────
+  // Franjas horizontales con hairline, no tarjetas — ver §5.5. Sin
+  // `transition` en ningún estilo de este archivo: regla dura #1 del
+  // rediseño (cero animación decorativa, cero transición >150ms).
+  const band: React.CSSProperties = {
+    background: 'var(--color-graphite-800)',
+    borderBottom: '1px solid var(--color-graphite-700)',
+    padding: '10px 20px',
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '20px',
+    flexShrink: 0,
   }
 
+  const label: React.CSSProperties = { fontSize: '10px', color: 'var(--color-paper-500)', letterSpacing: '0.08em' }
+
+  const ghostBtn = (enabled: boolean, tone: string): React.CSSProperties => ({
+    display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+    borderRadius: 'var(--radius-sm)', cursor: enabled ? 'pointer' : 'not-allowed',
+    background: enabled ? `${tone}1e` : 'var(--color-graphite-900)',
+    border: `1px solid ${enabled ? tone : 'var(--color-graphite-600)'}`,
+    color: enabled ? tone : 'var(--color-paper-500)',
+    fontWeight: 700, fontSize: '13px',
+  })
+
   const btnAction = (a: PPAPhase): React.CSSProperties => ({
-    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
-    padding: '14px 12px', borderRadius: '12px', cursor: 'pointer',
-    background: activeAction === a ? ppaRgba(a, 0.28) : 'rgba(26,16,8,0.85)',
-    border: `${activeAction === a ? 2 : 1}px solid ${activeAction === a ? PPA_HEX[a] : 'rgba(60,40,20,0.6)'}`,
+    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px',
+    padding: '10px', borderRadius: 'var(--radius-lg)', cursor: 'pointer',
+    background: activeAction === a ? ppaRgba(a, 0.14) : 'var(--color-graphite-800)',
+    border: `${activeAction === a ? 2 : 1}px solid ${activeAction === a ? PPA_HEX[a] : 'var(--color-graphite-600)'}`,
     color: PPA_TEXT[a],
-    transition: 'all 0.25s',
-    opacity: selectedCubeId === null ? 0.45 : 1,
+    opacity: selectedCubeId === null ? 0.5 : 1,
+    flex: 1,
   })
 
   const iconCircle = (a: PPAPhase): React.CSSProperties => ({
-    width: '46px', height: '46px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: ppaRgba(a, 0.20),
-    boxShadow: activeAction === a ? `0 0 16px ${ppaRgba(a, 0.6)}` : 'none',
-    transition: 'box-shadow 0.25s',
+    width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: ppaRgba(a, 0.16),
   })
+
+  const Dot = ({ color }: { color: string }) => (
+    <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: color, flexShrink: 0 }} />
+  )
 
   return (
     <div style={{
@@ -596,152 +622,98 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
       overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
-      background: 'radial-gradient(ellipse at top left, #3d1a00 0%, #1c0c00 45%, #080400 100%)',
-      fontFamily: "'Public Sans', 'Segoe UI', sans-serif",
-      color: '#fff',
+      background: 'var(--color-graphite-900)',
+      fontFamily: 'var(--font-sans)',
+      color: 'var(--color-paper-100)',
     }}>
       <div style={{
         flex: 1,
         overflow: 'auto',
         display: 'flex',
         flexDirection: 'column',
-        maxWidth: '1200px',
+        maxWidth: '1400px',
         width: '100%',
         margin: '0 auto',
-        padding: '16px 20px',
-        gap: '12px',
         boxSizing: 'border-box',
       }}>
 
-        {/* ── Header ── */}
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.07)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Box size={20} color="#aaa" />
-            </div>
-            <div>
-              <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>Escalera Inteligente</h1>
-              <p  style={{ margin: 0, fontSize: '12px', color: '#888' }}>Control Mago de Oz · el operador confirma cada señal</p>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              background: isBaseConnected ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-              border: `1px solid ${isBaseConnected ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.35)'}`,
-              borderRadius: '20px', padding: '5px 12px',
-              color: isBaseConnected ? '#22c55e' : '#ef4444', fontSize: '13px',
-            }}>
-              {isBaseConnected ? <Wifi size={13} /> : <WifiOff size={13} />}
-              {isBaseConnected ? 'Conectado' : 'Desconectado'}
-            </div>
+        {/* ── Franja A: identidad + conexión ── */}
+        <header style={band}>
+          <Box size={16} color="var(--color-paper-300)" />
+          <span style={{ fontWeight: 700, fontSize: '14px' }}>Escalera Inteligente</span>
+          <span style={{ fontSize: '11px', color: 'var(--color-paper-500)' }}>Control Mago de Oz · el operador confirma cada señal</span>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: isBaseConnected ? PPA_TEXT.actuar : 'var(--color-alert)' }}>
+            {isBaseConnected ? <Wifi size={13} /> : <WifiOff size={13} />}
+            {isBaseConnected ? 'Conectado' : 'Desconectado'}
           </div>
         </header>
 
-        {/* ── Sesión: pares en juego + identificador de operador ── */}
-        <div style={{ ...card, flexShrink: 0, display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+        {/* ── Franja B: sesión — pares, operador, control de partida y cronómetro, todo en una sola banda ── */}
+        <div style={{ ...band, position: 'relative' }}>
           <div>
-            <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em' }}>NIVEL · PARES DE CUBOS EN USO</span>
-            <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+            <div style={label}>PARES</div>
+            <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
               {[1, 2, 3, 4, 5].map(n => (
                 <button key={n} onClick={() => setPares(n)} style={{
-                  width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer',
-                  background: pares === n ? '#d97706' : 'rgba(255,255,255,0.07)',
-                  border: `1px solid ${pares === n ? '#d97706' : 'rgba(255,255,255,0.12)'}`,
-                  color: '#fff', fontWeight: 700, fontSize: '13px',
+                  width: '26px', height: '26px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                  background: pares === n ? 'var(--color-signal-neutral)' : 'var(--color-graphite-900)',
+                  border: `1px solid ${pares === n ? 'var(--color-signal-neutral)' : 'var(--color-graphite-600)'}`,
+                  color: pares === n ? 'var(--color-graphite-900)' : 'var(--color-paper-300)', fontWeight: 700, fontSize: '12px',
                 }}>{n}</button>
               ))}
             </div>
           </div>
+
           <div>
-            <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em' }}>OPERADOR · NOMBRE DE QUIEN CONFIRMA Y ENVÍA LAS SEÑALES</span>
-            <div style={{ marginTop: '6px', display: 'flex', gap: '6px' }}>
+            <div style={label}>OPERADOR</div>
+            <div style={{ marginTop: '4px', display: 'flex', gap: '6px', alignItems: 'center' }}>
               <input
                 value={operatorInput}
                 onChange={e => setOperatorInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && operatorInput.trim()) setOperatorId(operatorInput.trim()) }}
-                placeholder="escribe el nombre y confirma"
+                placeholder="nombre + Enter"
+                title="Escribe tu nombre y confirma con Enter — queda en cada evento de la bitácora. No es un identificador oficial del proyecto (ver DECISIONES_PROYECTO.md)."
                 style={{
-                  background: 'rgba(0,0,0,0.3)',
-                  border: `1px solid ${operatorId && operatorInput.trim() === operatorId ? '#22c55e77' : 'rgba(255,255,255,0.12)'}`,
-                  borderRadius: '6px', padding: '6px 10px', color: '#fff', fontSize: '13px', width: '180px',
+                  background: 'var(--color-graphite-900)',
+                  border: `1px solid ${operatorId && operatorInput.trim() === operatorId ? 'var(--color-signal-neutral)' : 'var(--color-graphite-600)'}`,
+                  borderRadius: 'var(--radius-sm)', padding: '5px 8px', color: 'var(--color-paper-100)', fontSize: '12px', width: '150px',
                 }} />
-              <button
-                onClick={() => operatorInput.trim() && setOperatorId(operatorInput.trim())}
-                disabled={!operatorInput.trim()}
-                title="Confirmar nombre (o presiona Enter)"
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', borderRadius: '6px',
-                  background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.4)',
-                  color: '#22c55e', fontSize: '12px', cursor: operatorInput.trim() ? 'pointer' : 'not-allowed',
-                  opacity: operatorInput.trim() ? 1 : 0.4,
-                }}>
-                <Check size={13} /> Confirmar
-              </button>
-            </div>
-            <div style={{ marginTop: '4px', fontSize: '11px' }}>
               {operatorId
-                ? <span style={{ color: '#22c55e' }}>✓ Operador confirmado: {operatorId}</span>
-                : <span style={{ color: '#f59e0b' }}>Sin confirmar — los eventos se registrarán como "(sin asignar)" hasta que confirmes</span>}
-            </div>
-          </div>
-          <div style={{ color: '#555', fontSize: '11px', flex: 1, minWidth: '200px' }}>
-Escribe tu nombre y confirma con Enter — queda en cada evento de la bitácora. No es un identificador oficial del proyecto (ver DECISIONES_PROYECTO.md).
-          </div>
-        </div>
-
-        {/* ── Control de partida: Iniciar / Pausar / Reiniciar ── */}
-        <div style={{ ...card, flexShrink: 0, position: 'relative' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-            <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em' }}>CONTROL DE PARTIDA</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '10px', color: '#666' }}>
-                {sessionState === 'inactivo' ? 'listo para iniciar'
-                  : sessionState === 'cuenta_regresiva' ? 'cuenta regresiva...'
-                  : sessionState === 'jugando' ? 'en curso'
-                  : sessionState === 'pausado' ? 'en pausa'
-                  : sessionState === 'victoria' ? 'victoria — reordena para el siguiente intento'
-                  : 'bloqueado — reordena para el siguiente intento'}
-              </span>
-              <span style={{ fontSize: '22px', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{sessionElapsedLabel}</span>
+                ? <span style={{ fontSize: '11px', color: 'var(--color-signal-neutral)', display: 'flex', alignItems: 'center', gap: '4px' }}><Check size={12} /> {operatorId}</span>
+                : <span style={{ fontSize: '11px', color: 'var(--color-alert)' }}>sin confirmar</span>}
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button onClick={iniciarJuego} disabled={sessionState !== 'inactivo'} style={{
-              display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '8px',
-              background: sessionState === 'inactivo' ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)',
-              border: `1px solid ${sessionState === 'inactivo' ? 'rgba(34,197,94,0.5)' : 'rgba(255,255,255,0.1)'}`,
-              color: sessionState === 'inactivo' ? '#22c55e' : '#555',
-              cursor: sessionState === 'inactivo' ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: '13px',
-            }}><Play size={15} /> Iniciar juego</button>
-
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button onClick={iniciarJuego} disabled={sessionState !== 'inactivo'} style={ghostBtn(sessionState === 'inactivo', PPA_TEXT.actuar)}>
+              <Play size={14} /> Iniciar
+            </button>
             {sessionState === 'pausado' ? (
-              <button onClick={reanudarJuego} style={{
-                display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '8px',
-                background: 'rgba(0,191,255,0.15)', border: '1px solid rgba(0,191,255,0.5)', color: '#5fd4ff',
-                cursor: 'pointer', fontWeight: 700, fontSize: '13px',
-              }}><PlayCircle size={15} /> Reanudar</button>
+              <button onClick={reanudarJuego} style={ghostBtn(true, PPA_TEXT.pausar)}><PlayCircle size={14} /> Reanudar</button>
             ) : (
-              <button onClick={pausarJuego} disabled={sessionState !== 'jugando'} style={{
-                display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '8px',
-                background: sessionState === 'jugando' ? 'rgba(0,191,255,0.15)' : 'rgba(255,255,255,0.05)',
-                border: `1px solid ${sessionState === 'jugando' ? 'rgba(0,191,255,0.5)' : 'rgba(255,255,255,0.1)'}`,
-                color: sessionState === 'jugando' ? '#5fd4ff' : '#555',
-                cursor: sessionState === 'jugando' ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: '13px',
-              }}><PauseCircle size={15} /> Pausar</button>
+              <button onClick={pausarJuego} disabled={sessionState !== 'jugando'} style={ghostBtn(sessionState === 'jugando', PPA_TEXT.pausar)}><PauseCircle size={14} /> Pausar</button>
             )}
+            <button onClick={reiniciarJuego} disabled={sessionState === 'cuenta_regresiva' || sessionState === 'inactivo'} style={ghostBtn(!(sessionState === 'cuenta_regresiva' || sessionState === 'inactivo'), 'var(--color-paper-300)')}>
+              <RotateCcw size={14} /> Reiniciar
+            </button>
+          </div>
 
-            <button onClick={reiniciarJuego} disabled={sessionState === 'cuenta_regresiva' || sessionState === 'inactivo'} style={{
-              display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '8px',
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)',
-              color: sessionState === 'cuenta_regresiva' || sessionState === 'inactivo' ? '#555' : '#ccc',
-              cursor: sessionState === 'cuenta_regresiva' || sessionState === 'inactivo' ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '13px',
-            }}><RotateCcw size={15} /> Reiniciar</button>
+          <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+            <div style={label}>
+              {sessionState === 'inactivo' ? 'listo para iniciar'
+                : sessionState === 'cuenta_regresiva' ? 'cuenta regresiva…'
+                : sessionState === 'jugando' ? 'en curso'
+                : sessionState === 'pausado' ? 'en pausa'
+                : sessionState === 'victoria' ? 'victoria — reordena para seguir'
+                : 'bloqueado — reordena para seguir'}
+            </div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', fontSize: '26px', fontWeight: 700, lineHeight: 1.1 }}>
+              {sessionElapsedLabel}
+            </div>
           </div>
 
           {sessionWarning && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', fontSize: '12px', color: '#f59e0b' }}>
+            <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--color-alert)' }}>
               <TriangleAlert size={13} /> {sessionWarning}
             </div>
           )}
@@ -749,307 +721,251 @@ Escribe tu nombre y confirma con Enter — queda en cada evento de la bitácora.
           {countdownTick !== null && (
             <div style={{
               position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(8,4,0,0.88)', borderRadius: '12px', zIndex: 5,
+              background: 'var(--color-graphite-900)', zIndex: 5,
             }}>
-              <span style={{ fontSize: '56px', fontWeight: 800, color: countdownTick === 0 ? '#22c55e' : '#00f0ff', textShadow: '0 0 24px currentColor' }}>
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: '48px', fontWeight: 700,
+                color: countdownTick === 0 ? PPA_TEXT.actuar : 'var(--color-signal-neutral)',
+              }}>
                 {countdownTick === 0 ? '¡INICIA!' : countdownTick}
               </span>
             </div>
           )}
         </div>
 
-        {/* ── Esclavos conectados ── */}
-        <div style={{ ...card, flexShrink: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em' }}>CUBOS ESCLAVOS</span>
-            <span style={{
-              fontSize: '12px', fontWeight: 700,
-              color: esclavos.length >= 10 ? '#22c55e' : esclavos.length >= 9 ? '#f59e0b' : '#ef4444',
-            }}>
-              {esclavos.length} / 10 conectados
+        {(controlStatus === 'victoria' || controlStatus === 'derrota') && (
+          <div style={{
+            ...band, flexShrink: 0,
+            background: controlStatus === 'victoria' ? 'rgba(0,255,136,0.12)' : 'rgba(212,105,74,0.16)',
+            borderBottom: `1px solid ${controlStatus === 'victoria' ? PPA_TEXT.actuar : 'var(--color-alert)'}`,
+          }}>
+            {controlStatus === 'victoria' ? <Trophy size={16} /> : <Ban size={16} />}
+            <span style={{ fontWeight: 700, fontSize: '13px' }}>
+              {controlStatus === 'victoria' ? `¡Victoria! Intercambio completo en ${moveCount} movimientos.` : 'Derrota — ningún cubo tiene ya un movimiento legal disponible.'}
             </span>
           </div>
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-            {Array.from({ length: 10 }, (_, i) => i + 1).map(id => {
-              const conectado = esclavos.includes(id)
-              return (
-                <div key={id} style={{
-                  width: '42px', height: '42px', borderRadius: '8px',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  background: conectado ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.10)',
-                  border: `1px solid ${conectado ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.3)'}`,
-                  gap: '2px',
-                }}>
-                  <div style={{
-                    width: '8px', height: '8px', borderRadius: '50%',
-                    background: conectado ? '#22c55e' : '#ef4444',
-                    boxShadow: conectado ? '0 0 6px #22c55e' : 'none',
-                  }} />
-                  <span style={{ fontSize: '10px', color: conectado ? '#22c55e' : '#666', fontWeight: 600 }}>
-                    #{id}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        )}
 
-        {/* ── Stats ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', flexShrink: 0 }}>
-          {([
-            { title: 'ESTADO',         value: gameState.liftedCube !== null ? 'Procesando' : 'Listo', icon: <Activity size={14} color="#666" /> },
-            { title: 'CUBO LEVANTADO', value: String(gameState.liftedCube ?? '—'),   icon: <Hand    size={14} color="#666" /> },
-            { title: 'POSICIÓN VACÍA', value: gameState.emptyPosition != null ? String(gameState.emptyPosition + 1) : '—', icon: <Grid2X2 size={14} color="#666" /> },
-            { title: 'MOVIMIENTOS',    value: String(moveCount),                     icon: <Shuffle size={14} color="#666" /> },
-          ] as const).map(({ title, value, icon }) => (
-            <div key={title} style={card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontSize: '10px', color: '#666', letterSpacing: '0.1em' }}>{title}</span>
-                {icon}
+        {/* ── Tablero (col A) + botones PPA (col B) — alto natural, no estirado:
+             el espacio que la compresión de las franjas de arriba recupera se
+             destina a mostrar el histórico abajo, no a agrandar estos botones
+             artificialmente (ver docs/REDISENO_UI.md §6). ── */}
+        <div style={{ display: 'flex', gap: '16px', padding: '14px 20px', flexShrink: 0 }}>
+
+          {/* Col A: tablero + telemetría compacta */}
+          <div style={{ flex: '0 0 42%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div>
+              <div style={{ ...label, marginBottom: '8px' }}>TABLERO · {pares} PAR(ES)</div>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                {visibleCubes.map((cube, idx) => {
+                  // visibleCubes está recortado del tablero completo de 11
+                  // posiciones (0-10); legalTargetsLive usa índices del
+                  // tablero completo, así que hay que sumar el mismo offset
+                  // que ya usa el recorte de arriba (5 - pares).
+                  const fullBoardIdx = idx + (5 - pares)
+                  // Mismo resolutor que decide el comando físico (ver
+                  // ESTADO_VISUAL_CUBOS.md) — así pantalla y cubo real nunca
+                  // pueden discrepar.
+                  const visual = cube.id === 0
+                    ? { hex: emptySpaceColor }
+                    : resolveCubeDisplay(sessionVisualTier(sessionState), flashCubeId === cube.id, cubeActions[cube.id], cube.color)
+                  return (
+                    <Cube
+                      key={idx}
+                      id={cube.id}
+                      isSelected={selectedCubeId === cube.id && cube.id !== 0}
+                      onSelect={(id) => { if (id !== 0) setSelectedCubeId(id) }}
+                      isLegalTarget={cube.id === 0 && legalTargetsLive.includes(fullBoardIdx)}
+                      visual={visual}
+                    />
+                  )
+                })}
               </div>
-              <div style={{ fontSize: '24px', fontWeight: 700 }}>{value}</div>
-            </div>
-          ))}
-        </div>
-
-        {controlStatus === 'victoria' && (
-          <div style={{ ...card, flexShrink: 0, background: 'rgba(20,80,30,0.5)', border: '1px solid #22c55e', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Trophy size={20} color="#22c55e" />
-            <span style={{ fontWeight: 700 }}>¡Victoria! Intercambio completo en {moveCount} movimientos.</span>
-          </div>
-        )}
-        {controlStatus === 'derrota' && (
-          <div style={{ ...card, flexShrink: 0, background: 'rgba(90,20,20,0.5)', border: '1px solid #ef4444', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Ban size={20} color="#ef4444" />
-            <span style={{ fontWeight: 700 }}>Derrota — ningún cubo tiene ya un movimiento legal disponible.</span>
-          </div>
-        )}
-
-        {/* ── Board ── */}
-        <div style={{ ...card, flexShrink: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em' }}>TABLERO · {pares} PAR(ES) · {visibleCubes.length} POSICIONES</span>
-            <div style={{ display: 'flex', gap: '14px' }}>
-              {[
-                { label: 'Equipo A', color: teamAColor },
-                { label: 'Equipo B', color: teamBColor },
-                { label: 'Vacío',    color: 'transparent', border: '1px solid #666' },
-              ].map(({ label, color, border }) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <div style={{ width: '9px', height: '9px', borderRadius: '50%', background: color, border }} />
-                  <span style={{ fontSize: '11px', color: '#888' }}>{label}</span>
+              {Object.keys(cubeActions).length > 0 && (
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {Object.entries(cubeActions).map(([id, act]) => {
+                    const ActionIcon = act === 'pausar' ? Pause : act === 'pensar' ? Lightbulb : Zap
+                    return (
+                      <span key={id} style={{
+                        display: 'flex', alignItems: 'center', gap: '4px',
+                        fontSize: '11px', padding: '2px 7px', borderRadius: 'var(--radius-sm)',
+                        background: ppaRgba(act, 0.16), color: PPA_TEXT[act],
+                        border: `1px solid ${ppaRgba(act, 0.4)}`,
+                      }}><ActionIcon size={10} /> #{id}</span>
+                    )
+                  })}
                 </div>
-              ))}
+              )}
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--color-graphite-700)', paddingTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '12px', color: 'var(--color-paper-300)' }}>
+              <span><Activity size={11} style={{ verticalAlign: '-1px', marginRight: '3px' }} />{gameState.liftedCube !== null ? 'Procesando' : 'Listo'}</span>
+              <span><Hand size={11} style={{ verticalAlign: '-1px', marginRight: '3px' }} />Levantado {gameState.liftedCube ?? '—'}</span>
+              <span><Grid2X2 size={11} style={{ verticalAlign: '-1px', marginRight: '3px' }} />Vacía {gameState.emptyPosition != null ? gameState.emptyPosition + 1 : '—'}</span>
+              <span style={{ fontFamily: 'var(--font-mono)' }}><Shuffle size={11} style={{ verticalAlign: '-1px', marginRight: '3px' }} />Mov. {moveCount}</span>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--color-graphite-700)', paddingTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <span style={label}>CUBOS ESCLAVOS</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: esclavos.length >= 10 ? PPA_TEXT.actuar : 'var(--color-alert)' }}>{esclavos.length}/10</span>
+              </div>
+              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                {Array.from({ length: 10 }, (_, i) => i + 1).map(id => {
+                  const conectado = esclavos.includes(id)
+                  return <div key={id} title={`Cubo #${id} — ${conectado ? 'conectado' : 'sin conexión'}`} style={{ width: '7px', height: '7px', borderRadius: '50%', background: conectado ? PPA_TEXT.actuar : 'var(--color-alert)' }} />
+                })}
+              </div>
             </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', flexWrap: 'wrap' }}>
-            {visibleCubes.map((cube, idx) => {
-              // visibleCubes está recortado del tablero completo de 11
-              // posiciones (0-10); legalTargetsLive usa índices del
-              // tablero completo, así que hay que sumar el mismo offset
-              // que ya usa el recorte de arriba (5 - pares).
-              const fullBoardIdx = idx + (5 - pares)
-              // Mismo resolutor que decide el comando físico (ver
-              // ESTADO_VISUAL_CUBOS.md) — así pantalla y cubo real nunca
-              // pueden discrepar, a diferencia de las dos prioridades ad
-              // hoc independientes que había antes (una en este JSX, otra
-              // implícita en "último comando gana" del firmware).
-              const visual = cube.id === 0
-                ? { hex: emptySpaceColor }
-                : resolveCubeDisplay(sessionVisualTier(sessionState), flashCubeId === cube.id, cubeActions[cube.id], cube.color)
-              return (
-                <Cube
-                  key={idx}
-                  id={cube.id}
-                  isSelected={selectedCubeId === cube.id && cube.id !== 0}
-                  onSelect={(id) => { if (id !== 0) setSelectedCubeId(id) }}
-                  isLegalTarget={cube.id === 0 && legalTargetsLive.includes(fullBoardIdx)}
-                  visual={visual}
-                />
-              )
-            })}
-          </div>
-          {/* Cube action legend */}
-          {Object.keys(cubeActions).length > 0 && (
-            <div style={{ display: 'flex', gap: '12px', marginTop: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              {Object.entries(cubeActions).map(([id, act]) => (
-                <span key={id} style={{
-                  fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
-                  background: ppaRgba(act, 0.4),
-                  color: act === 'pensar' ? '#ffff88' : '#fff',
-                  border: `1px solid ${ppaRgba(act, 0.4)}`,
-                }}>
-                  {act === 'pausar' ? '⏸' : act === 'pensar' ? '💡' : '⚡'} #{id}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* ── Condición acumulada por fase (informativo) ── */}
-        <div style={{ ...card, flexShrink: 0 }}>
-          <div style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em', marginBottom: '10px' }}>
-            CONDICIÓN ACUMULADA POR FASE — informativo, el operador decide si envía la señal
-          </div>
-          <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-            <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pausar} label={'Pausar — fallas reales detectadas'} />
-            <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pensar} label={'Pensar — mismo criterio, encadenado tras Pausar'} />
-            <PpaChargeMeter value={Math.min(Math.floor((Date.now() - turnStartRef.current) / 1000), actuarThresholdSec)} max={actuarThresholdSec} colorHex={PPA_HEX.actuar} label={`Actuar — latencia sin mover (umbral ${actuarThresholdSec}s, no oficial)`} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px' }}>
-            <span style={{ fontSize: '11px', color: '#666' }}>Umbral Actuar (segundos, no oficial):</span>
-            <input type="range" min={2} max={30} value={actuarThresholdSec}
-              onChange={e => setActuarThresholdSec(Number(e.target.value))}
-              style={{ flex: 1, maxWidth: '160px', accentColor: '#d97706' }} />
-            <span style={{ fontSize: '11px' }}>{actuarThresholdSec}s</span>
-          </div>
-        </div>
-
-        {/* ── Action buttons ── */}
-        <div style={{ ...card, flexShrink: 0 }}>
-          {/* Selection status bar */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            marginBottom: '12px', padding: '7px 10px',
-            background: 'rgba(0,0,0,0.3)', borderRadius: '8px',
-            border: `1px solid ${noSelWarning ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.08)'}`,
-            fontSize: '12px', transition: 'border-color 0.2s',
-          }}>
-            {noSelWarning ? (
-              <><TriangleAlert size={13} color="#ef4444" /><span style={{ color: '#ef4444' }}>Selecciona un cubo del tablero antes de enviar una señal</span></>
-            ) : selectedCubeId !== null ? (
-              <>
-                <span style={{ color: '#22c55e' }}>●</span>
-                <span style={{ color: '#888' }}>Cubo seleccionado:</span>
-                <span style={{ color: '#fff', fontWeight: 600 }}>#{selectedCubeId}</span>
-                {selAction && (
-                  <span style={{ color: '#aaa' }}>
-                    — acción actual:&nbsp;
-                    <span style={{ color: PPA_TEXT[selAction], fontWeight: 600 }}>
-                      {selAction === 'pausar' ? '⏸' : selAction === 'pensar' ? '💡' : '⚡'} {PPA_LABEL[selAction]}
-                    </span>
-                  </span>
-                )}
-              </>
-            ) : (
-              <><span style={{ color: '#555' }}>○</span><span style={{ color: '#555' }}>Haz clic en un cubo del tablero para seleccionarlo</span></>
-            )}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px' }}>
-            {(['pausar', 'pensar', 'actuar'] as const).map(a => {
-              const Icon = a === 'pausar' ? Pause : a === 'pensar' ? Lightbulb : Zap
-              return (
-                <button key={a} onClick={() => sendAction(a)} style={btnAction(a)}>
-                  <div style={iconCircle(a)}><Icon size={22} color={PPA_TEXT[a]} /></div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontWeight: 700, fontSize: '14px', letterSpacing: '0.1em' }}>{PPA_LABEL[a]}</div>
-                    <div style={{ fontSize: '10px', color: '#555', marginTop: '3px' }}>
-                      rgb({PPA_RGB[a].join(',')}) · {Math.round(PPA_VIBRATION[a] * 100)}% vibr. · {PPA_SOUND_LABEL[a]}
-                    </div>
-                    <div style={{ fontSize: '10px', color: '#444', marginTop: '1px', fontStyle: 'italic' }}>{PPA_FRASE[a]}</div>
-                  </div>
-                </button>
-              )
-            })}
-            {/* ESTADO INICIAL */}
-            <button onClick={apagarSenal} style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
-              padding: '14px 12px', borderRadius: '12px', cursor: 'pointer',
-              background: 'rgba(26,16,8,0.85)', border: '1px solid rgba(60,40,20,0.6)',
-              color: '#aaa', transition: 'all 0.25s', opacity: selectedCubeId === null ? 0.45 : 1,
+          {/* Col B: selección + botones PPA */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px',
+              background: 'var(--color-graphite-800)', borderRadius: 'var(--radius-sm)',
+              border: `1px solid ${noSelWarning ? 'var(--color-alert)' : 'var(--color-graphite-700)'}`,
+              fontSize: '12px',
             }}>
-              <div style={{
-                width: '46px', height: '46px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: 'rgba(150,150,150,0.15)',
-              }}><Power size={22} color="#ccc" /></div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontWeight: 700, fontSize: '14px', letterSpacing: '0.1em' }}>ESTADO INICIAL</div>
-                <div style={{ fontSize: '10px', color: '#555', marginTop: '3px' }}>Apaga color y vibración</div>
-                <div style={{ fontSize: '10px', color: '#444', marginTop: '1px', fontStyle: 'italic' }}>Manual — o automático a los {AUTO_OFF_MS / 1000}s</div>
-              </div>
-            </button>
-          </div>
-          <div style={{ color: '#555', fontSize: '11px', marginTop: '10px' }}>
-            Cada señal enviada (Pausar/Pensar/Actuar) se apaga sola a los {AUTO_OFF_MS / 1000} segundos; "Estado inicial" la apaga antes, de inmediato.
+              {noSelWarning ? (
+                <><TriangleAlert size={13} color="var(--color-alert)" /><span style={{ color: 'var(--color-alert)' }}>Selecciona un cubo del tablero antes de enviar una señal</span></>
+              ) : selectedCubeId !== null ? (
+                <>
+                  <Dot color="var(--color-signal-neutral)" />
+                  <span style={{ color: 'var(--color-paper-300)' }}>Cubo seleccionado:</span>
+                  <span style={{ color: 'var(--color-paper-100)', fontWeight: 600 }}>#{selectedCubeId}</span>
+                  {selAction && (
+                    <span style={{ color: 'var(--color-paper-300)' }}>
+                      — acción actual: <span style={{ color: PPA_TEXT[selAction], fontWeight: 600 }}>{PPA_LABEL[selAction]}</span>
+                    </span>
+                  )}
+                </>
+              ) : (
+                <><Dot color="var(--color-paper-500)" /><span style={{ color: 'var(--color-paper-500)' }}>Haz clic en un cubo del tablero para seleccionarlo</span></>
+              )}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gridAutoRows: '128px', gap: '10px' }}>
+              {(['pausar', 'pensar', 'actuar'] as const).map(a => {
+                const Icon = a === 'pausar' ? Pause : a === 'pensar' ? Lightbulb : Zap
+                return (
+                  <button key={a} onClick={() => sendAction(a)} style={btnAction(a)}>
+                    <div style={iconCircle(a)}><Icon size={20} color={PPA_TEXT[a]} /></div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontWeight: 700, fontSize: '15px', letterSpacing: '0.08em' }}>{PPA_LABEL[a]}</div>
+                      <div style={{ fontSize: '10px', color: 'var(--color-paper-500)', marginTop: '2px', fontFamily: 'var(--font-mono)' }}>
+                        {PPA_RGB[a].join(',')} · {Math.round(PPA_VIBRATION[a] * 100)}% · {PPA_SOUND_LABEL[a]}
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+              <button onClick={apagarSenal} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                padding: '10px', borderRadius: 'var(--radius-lg)', cursor: 'pointer',
+                background: 'var(--color-graphite-800)', border: '1px solid var(--color-graphite-600)',
+                color: 'var(--color-paper-300)', opacity: selectedCubeId === null ? 0.5 : 1,
+              }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-graphite-700)' }}>
+                  <Power size={20} color="var(--color-paper-300)" />
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontWeight: 700, fontSize: '15px', letterSpacing: '0.08em' }}>ESTADO INICIAL</div>
+                  <div style={{ fontSize: '10px', color: 'var(--color-paper-500)', marginTop: '2px' }}>Apaga color y vibración · auto {AUTO_OFF_MS / 1000}s</div>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* ── Bottom panels ── */}
-        <div style={{ flexShrink: 0 }}>
+        {/* ── Franja de histórico, colapsable — bitácoras, condición acumulada, música ── */}
+        <button onClick={() => setHistOpen(o => !o)} style={{ ...band, cursor: 'pointer', justifyContent: 'flex-start', border: 'none', borderTop: '1px solid var(--color-graphite-700)', width: '100%', textAlign: 'left' }}>
+          <span style={{ fontSize: '11px', color: 'var(--color-paper-300)' }}>{histOpen ? '▾' : '▸'} HISTÓRICO — bitácoras, condición acumulada, música ambiental</span>
+        </button>
 
-          {/* Sonido / música de fondo */}
-          <div style={{ ...card, display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '15px' }}>🔊</span>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: '13px' }}>Señal sonora PPA</div>
-                  <div style={{ color: '#666', fontSize: '10px' }}>Tono al enviar Pausar/Pensar/Actuar</div>
-                </div>
+        {histOpen && (
+          <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+            {/* Condición acumulada por fase */}
+            <div>
+              <div style={{ ...label, marginBottom: '10px' }}>CONDICIÓN ACUMULADA POR FASE — informativo, el operador decide si envía la señal</div>
+              <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pausar} label={'Pausar — fallas reales detectadas'} />
+                <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pensar} label={'Pensar — mismo criterio, encadenado tras Pausar'} />
+                <PpaChargeMeter value={Math.min(Math.floor((Date.now() - turnStartRef.current) / 1000), actuarThresholdSec)} max={actuarThresholdSec} colorHex={PPA_HEX.actuar} label={`Actuar — latencia sin mover (umbral ${actuarThresholdSec}s, no oficial)`} />
               </div>
-              <span style={{ fontSize: '9px', color: activeAction ? '#22c55e' : '#777', background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.08em', alignSelf: 'flex-start' }}>
-                {activeAction ? 'activo' : 'en espera'}
-              </span>
-            </div>
-            <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-end', height: '40px', marginBottom: '12px' }}>
-              {SND_H.map((h, i) => (
-                <div key={i} style={{
-                  flex: 1, borderRadius: '2px 2px 0 0', background: '#16a34a',
-                  height: `${activeAction ? h * 90 : h * 35}%`,
-                  transition: 'height 0.35s ease',
-                }} />
-              ))}
-            </div>
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', margin: '4px 0 10px' }} />
-            <div style={{ fontSize: '10px', color: '#666', marginBottom: '6px' }}>MÚSICA DE FONDO (OPCIONAL)</div>
-            <AmbientMusicPanel accentColor="#d97706" />
-          </div>
-
-        </div>
-
-        {/* ── Bitácoras (independientes: cubos vs. operador) ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '12px', flexShrink: 0 }}>
-          <div style={card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-              <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <ClipboardList size={12} /> BITÁCORA DE EVENTOS DE LOS CUBOS · {cuboEvents.length}
-              </span>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button onClick={exportCuboEventsCsv} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '4px 8px', color: '#fff', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> CSV</button>
-                <button onClick={exportCuboEventsJson} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '4px 8px', color: '#fff', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> JSON</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--color-paper-500)' }}>Umbral Actuar (segundos, no oficial):</span>
+                <input type="range" min={2} max={30} value={actuarThresholdSec}
+                  onChange={e => setActuarThresholdSec(Number(e.target.value))}
+                  style={{ flex: 1, maxWidth: '160px', accentColor: 'var(--color-signal-neutral)' }} />
+                <span style={{ fontSize: '11px' }}>{actuarThresholdSec}s</span>
               </div>
             </div>
-            <div style={{ maxHeight: '160px', overflowY: 'auto', fontSize: '10px', fontFamily: 'monospace' }}>
-              {cuboEvents.length === 0 && <div style={{ color: '#555' }}>Sin eventos todavía — reportados por el hardware físico.</div>}
-              {[...cuboEvents].reverse().map((ev, i) => (
-                <div key={i} style={{ padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', color: '#aaa' }}>
-                  <span style={{ color: '#666' }}>{ev.timestamp}</span> · <span style={{ color: '#d97706' }}>{ev.tipo}</span> · {ev.detalle}
-                </div>
-              ))}
-            </div>
-          </div>
 
-          <div style={card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-              <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <ClipboardList size={12} /> BITÁCORA DEL OPERADOR (DECISIONES) · {operatorEvents.length}
-              </span>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button onClick={exportOperatorEventsCsv} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '4px 8px', color: '#fff', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> CSV</button>
-                <button onClick={exportOperatorEventsJson} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '4px 8px', color: '#fff', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> JSON</button>
+            {/* Sonido / música de fondo */}
+            <div style={{ borderTop: '1px solid var(--color-graphite-700)', paddingTop: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Volume2 size={15} color="var(--color-paper-300)" />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '13px' }}>Señal sonora PPA</div>
+                    <div style={{ color: 'var(--color-paper-500)', fontSize: '10px' }}>Tono al enviar Pausar/Pensar/Actuar</div>
+                  </div>
+                </div>
+                <span style={{ fontSize: '9px', color: activeAction ? PPA_TEXT.actuar : 'var(--color-paper-500)', background: 'var(--color-graphite-800)', padding: '2px 6px', borderRadius: 'var(--radius-sm)', letterSpacing: '0.08em', alignSelf: 'flex-start' }}>
+                  {activeAction ? 'activo' : 'en espera'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-end', height: '32px', marginBottom: '12px' }}>
+                {SND_H.map((h, i) => (
+                  <div key={i} style={{ flex: 1, borderRadius: '2px 2px 0 0', background: 'var(--color-graphite-600)', height: `${activeAction ? h * 90 : h * 35}%` }} />
+                ))}
+              </div>
+              <div style={{ fontSize: '10px', color: 'var(--color-paper-500)', marginBottom: '6px' }}>MÚSICA DE FONDO (OPCIONAL)</div>
+              <AmbientMusicPanel accentColor="#CFE8EC" />
+            </div>
+
+            {/* Bitácoras */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '14px', borderTop: '1px solid var(--color-graphite-700)', paddingTop: '14px' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                  <span style={{ ...label, display: 'flex', alignItems: 'center', gap: '6px' }}><ClipboardList size={12} /> BITÁCORA DE EVENTOS DE LOS CUBOS · {cuboEvents.length}</span>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button onClick={exportCuboEventsCsv} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-graphite-800)', border: '1px solid var(--color-graphite-600)', borderRadius: 'var(--radius-sm)', padding: '4px 8px', color: 'var(--color-paper-100)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> CSV</button>
+                    <button onClick={exportCuboEventsJson} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-graphite-800)', border: '1px solid var(--color-graphite-600)', borderRadius: 'var(--radius-sm)', padding: '4px 8px', color: 'var(--color-paper-100)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> JSON</button>
+                  </div>
+                </div>
+                <div style={{ maxHeight: '160px', overflowY: 'auto', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
+                  {cuboEvents.length === 0 && <div style={{ color: 'var(--color-paper-500)' }}>Sin eventos todavía — reportados por el hardware físico.</div>}
+                  {[...cuboEvents].reverse().map((ev, i) => (
+                    <div key={i} style={{ padding: '3px 0', borderBottom: '1px solid var(--color-graphite-700)', color: 'var(--color-paper-300)' }}>
+                      <span style={{ color: 'var(--color-paper-500)' }}>{ev.timestamp}</span> · <span style={{ color: 'var(--color-signal-neutral)' }}>{ev.tipo}</span> · {ev.detalle}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                  <span style={{ ...label, display: 'flex', alignItems: 'center', gap: '6px' }}><ClipboardList size={12} /> BITÁCORA DEL OPERADOR (DECISIONES) · {operatorEvents.length}</span>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button onClick={exportOperatorEventsCsv} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-graphite-800)', border: '1px solid var(--color-graphite-600)', borderRadius: 'var(--radius-sm)', padding: '4px 8px', color: 'var(--color-paper-100)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> CSV</button>
+                    <button onClick={exportOperatorEventsJson} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-graphite-800)', border: '1px solid var(--color-graphite-600)', borderRadius: 'var(--radius-sm)', padding: '4px 8px', color: 'var(--color-paper-100)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> JSON</button>
+                  </div>
+                </div>
+                <div style={{ maxHeight: '160px', overflowY: 'auto', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
+                  {operatorEvents.length === 0 && <div style={{ color: 'var(--color-paper-500)' }}>Sin decisiones todavía — cada envío de Pausar/Pensar/Actuar queda aquí.</div>}
+                  {[...operatorEvents].reverse().map((ev, i) => (
+                    <div key={i} style={{ padding: '3px 0', borderBottom: '1px solid var(--color-graphite-700)', color: 'var(--color-paper-300)' }}>
+                      <span style={{ color: 'var(--color-paper-500)' }}>{ev.timestamp}</span> · <span style={{ color: 'var(--color-signal-neutral)' }}>{ev.operadorId}</span> · {ev.detalle}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-            <div style={{ maxHeight: '160px', overflowY: 'auto', fontSize: '10px', fontFamily: 'monospace' }}>
-              {operatorEvents.length === 0 && <div style={{ color: '#555' }}>Sin decisiones todavía — cada envío de Pausar/Pensar/Actuar queda aquí.</div>}
-              {[...operatorEvents].reverse().map((ev, i) => (
-                <div key={i} style={{ padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', color: '#aaa' }}>
-                  <span style={{ color: '#666' }}>{ev.timestamp}</span> · <span style={{ color: '#d97706' }}>{ev.operadorId}</span> · {ev.detalle}
-                </div>
-              ))}
-            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )

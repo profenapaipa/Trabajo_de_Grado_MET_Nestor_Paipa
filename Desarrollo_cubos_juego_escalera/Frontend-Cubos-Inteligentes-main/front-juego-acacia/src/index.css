@@ -34,11 +34,12 @@
   /* Único acento neutro — todo lo que NO es una señal PPA */
   --color-signal-neutral: #CFE8EC;
 
-  /* Los 3 colores PPA — mismo valor RGB exacto que se envía al hardware.
-     Protegidos: se usan solo para su propia señal, en ningún otro lugar. */
-  --color-ppa-pausar: #00BFFF;
-  --color-ppa-pensar: #FFFF66;
-  --color-ppa-actuar: #00FF00;
+  /* Los 3 colores PPA NO se repiten aquí a propósito: ya tienen una única
+     fuente de verdad en core/ppa/ppaColors.ts (PPA_HEX/PPA_TEXT/PPA_RGB),
+     con variantes intencionales para pantalla vs. valor físico enviado al
+     cubo — duplicarlos en tokens CSS crearía una segunda fuente que podría
+     desincronizarse. Se consumen directamente desde ese módulo donde haga
+     falta. Ver docs/REDISENO_UI.md §5.1/§1 (colores PPA confirmados). */
 
   /* Alerta real: desconexión, movimiento inválido, error — nunca el rojo
      saturado #ef4444 que usaba el sistema anterior */
