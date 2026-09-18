@@ -597,7 +597,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
       display: 'flex',
       flexDirection: 'column',
       background: 'radial-gradient(ellipse at top left, #3d1a00 0%, #1c0c00 45%, #080400 100%)',
-      fontFamily: "'Manrope', 'Segoe UI', sans-serif",
+      fontFamily: "'Public Sans', 'Segoe UI', sans-serif",
       color: '#fff',
     }}>
       <div style={{
