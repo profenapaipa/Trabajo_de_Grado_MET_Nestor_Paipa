@@ -16,8 +16,12 @@ import {
 } from './core/control/bitacoraControl'
 import hexToRgbArray from './core/utils/hextToRgb'
 import { playPpaFeedback, playError, playCountdownBeep } from './core/utils/ppaTones'
-import { PPA_RGB, PPA_HEX, PPA_TEXT, PPA_VIBRATION, PPA_VIB_PATTERN, PPA_SOUND_LABEL, PPA_LABEL, PPA_FRASE, ppaRgba, AUTO_OFF_MS, FALLAS_PARA_PAUSAR, type PPAPhase, EFECTOS, INVALIDO_HEX, BLANCO_HEX } from './core/ppa/ppaColors'
+import { PPA_RGB, PPA_HEX, PPA_TEXT, PPA_VIBRATION, PPA_SOUND_LABEL, PPA_LABEL, PPA_FRASE, ppaRgba, AUTO_OFF_MS, FALLAS_PARA_PAUSAR, type PPAPhase, EFECTOS } from './core/ppa/ppaColors'
 import { type Board, legalMovesFor, computeWinBoard, boardsEqual, isStuck } from './core/simulation/laEscaleraRules'
+import {
+  type SessionState, type SustainedCubeVisual,
+  sessionVisualTier, resolveSustainedVisual, sustainedVisualToCommand, resolveCubeDisplay,
+} from './core/ppa/cubeVisualState'
 import PpaChargeMeter from './components/simulation/PpaChargeMeter'
 
 const SND_H = [0.55, 0.75, 0.95, 0.60, 1.00, 0.80, 0.70, 0.90]
@@ -75,7 +79,6 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   const [tick,            setTick]            = useState(0)
 
   // ── Control de partida (Iniciar/Pausar/Reiniciar) ──────────────────────────
-  type SessionState = 'inactivo' | 'cuenta_regresiva' | 'jugando' | 'pausado' | 'bloqueado' | 'victoria'
   const [sessionState,   setSessionState]   = useState<SessionState>('inactivo')
   const [countdownTick,  setCountdownTick]  = useState<number | null>(null) // 3,2,1,0("¡Inicia!") mientras cuenta
   const [flashCubeId,    setFlashCubeId]    = useState<number | null>(null) // reacción inmediata a movimiento inválido, en espejo con EF=3 del cubo físico
@@ -96,8 +99,19 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   const lastSettledPositionsRef = useRef<number[]>(INITIAL_POSITIONS)
   const turnStartRef = useRef<number>(Date.now())
   const prevControlStatusRef = useRef<'jugando' | 'victoria' | 'derrota'>('jugando')
+  // ── Resolutor único de estado visual (ver core/ppa/cubeVisualState.ts y
+  // ESTADO_VISUAL_CUBOS.md): estas referencias existen solo para que el
+  // despacho de comandos sepa qué ya se envió (y no repetirlo) y para que el
+  // listener de socket, montado una sola vez más abajo, lea sessionState/
+  // cubeActions sin cerrarse sobre un valor obsoleto.
+  const lastSentSustainedRef = useRef<Record<number, string>>({})
+  const lastSentSessionRef   = useRef<string | null>(null)
+  const sessionStateRef      = useRef<SessionState>('inactivo')
+  const cubeActionsRef       = useRef<Record<number, CubeAction>>({})
   useEffect(() => { paresRef.current = pares }, [pares])
   useEffect(() => { operatorIdRef.current = operatorId }, [operatorId])
+  useEffect(() => { sessionStateRef.current = sessionState }, [sessionState])
+  useEffect(() => { cubeActionsRef.current = cubeActions }, [cubeActions])
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 500)
     return () => clearInterval(id)
@@ -109,6 +123,38 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   }
   function logOperatorEvent(entry: Omit<DecisionOperador, 'timestamp' | 'pares' | 'operadorId' | 'intentoId'>) {
     setOperatorEvents(prev => [...prev, { timestamp: nowIso(), pares: paresRef.current, operadorId: operatorIdRef.current || '(sin asignar)', intentoId: intentoIdRef.current ?? undefined, ...entry }])
+  }
+
+  // ── Resolutor único de estado visual (ver core/ppa/cubeVisualState.ts y
+  // ESTADO_VISUAL_CUBOS.md) ───────────────────────────────────────────────
+  // sendSustained/sendSustainedAll son las ÚNICAS funciones que mandan el
+  // color/vibración SOSTENIDO de un cubo por socket. Todo lo demás
+  // (handleStateChange, sendAction, pausarJuego, etc.) solo cambia estado de
+  // React; el efecto de despacho de más abajo llama a estas dos cuando ese
+  // estado cambia. Esto es justo lo que evita que un evento no relacionado
+  // pise el estado vigente: ya no hay N sitios decidiendo por su cuenta qué
+  // mandarle a un cubo, hay uno solo.
+  function teamRgbFor(cubeId: number): [number, number, number] {
+    return hexToRgbArray(cubeId <= 5 ? teamAColor : teamBColor)
+  }
+
+  function sendSustained(cubeId: number, v: SustainedCubeVisual) {
+    const key = JSON.stringify(v)
+    if (lastSentSustainedRef.current[cubeId] === key) return
+    lastSentSustainedRef.current[cubeId] = key
+    socket.emit('comandoCubo', { id: cubeId, ...sustainedVisualToCommand(v, teamRgbFor(cubeId)) })
+  }
+
+  // Difunde un estado de nivel SESIÓN (bloqueo/victoria/pausado) a los 10
+  // cubos con un solo mensaje ("all"). Invalida la caché por-cubo: en
+  // cuanto la sesión vuelva a 'normal', cada cubo debe reafirmarse sí o sí,
+  // porque "all" les cambió el estado sin que sendSustained se enterara.
+  function sendSustainedAll(v: SustainedCubeVisual) {
+    const key = JSON.stringify(v)
+    if (lastSentSessionRef.current === key) return
+    lastSentSessionRef.current = key
+    lastSentSustainedRef.current = {}
+    socket.emit('comandoCubo', { id: 'all', ...sustainedVisualToCommand(v) })
   }
 
   useEffect(() => {
@@ -132,14 +178,18 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
       const antes = esclavosRef.current
       for (const id of nuevos) if (!antes.includes(id)) {
         logCuboEvent({ tipo: 'esclavo_conectado', detalle: `Cubo esclavo #${id} conectado` })
-        // Color de reposo del equipo (azul/rojo) al conectar, directo y
-        // sin etapa intermedia — ver PENDIENTES_TESIS.md, "Cubos sin
-        // color por defecto". Antes se enviaba primero una señal EF=2
-        // (cyberpunk lila 3s), pero en la prueba con hardware real del
-        // 2026-09-18 los cubos se quedaron pegados en ese color y dejaron
-        // de responder a Pausar/Pensar/Actuar; se retiró esa etapa
-        // intermedia y se volvió a esta versión, que sí funcionaba.
-        socket.emit('comandoCubo', estadoInicialPayload(id))
+        // Color de reposo del equipo (azul/rojo) al conectar, directo y sin
+        // etapa intermedia — ver PENDIENTES_TESIS.md, "Cubos sin color por
+        // defecto" (antes se enviaba primero una señal EF=2 de conexión,
+        // retirada tras la prueba con hardware real del 2026-09-18). Se
+        // resuelve con el mismo criterio de prioridad que todo lo demás
+        // (sessionStateRef/cubeActionsRef en vez de sessionState/cubeActions
+        // directos porque este listener se monta una sola vez, ver useEffect
+        // de más abajo con deps []): si el cubo se reconecta en medio de un
+        // bloqueo/victoria/pausa, debe reflejar eso de inmediato, no el
+        // color de equipo.
+        const tier = sessionVisualTier(sessionStateRef.current)
+        sendSustained(id, resolveSustainedVisual(tier, tier === 'normal' ? cubeActionsRef.current[id] : undefined))
       }
       for (const id of antes) if (!nuevos.includes(id)) logCuboEvent({ tipo: 'esclavo_desconectado', detalle: `Cubo esclavo #${id} desconectado` })
       esclavosRef.current = nuevos
@@ -241,11 +291,11 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
             logCuboEvent({ tipo: 'falla_movimiento', detalle: `Movimiento inválido detectado: cubo #${cuboImplicado} de la posición ${fromIdx + 1} a la ${toIdx + 1}` })
             setFallaCount(nf => (nf + 1 >= FALLAS_PARA_PAUSAR ? 0 : nf + 1))
             // Reacción física casi inmediata: el cubo implicado se pone
-            // naranja y vibra por su cuenta (EF=3, un solo mensaje, sin
-            // ida y vuelta repetida) — y se refleja lo mismo en el
-            // frontend de inmediato, sin esperar a que el hardware
-            // reporte el color de vuelta.
-            socket.emit('comandoCubo', { id: cuboImplicado, efecto: EFECTOS.INVALIDO })
+            // naranja y vibra por su cuenta (EF=3, un solo mensaje, sin ida
+            // y vuelta repetida). El envío real vive en el efecto de pulso
+            // de más abajo (keyed on flashCubeId), no aquí — así respeta el
+            // mismo criterio de prioridad que todo lo demás (no se dispara
+            // si la sesión ya está en bloqueo/victoria/pausada).
             setFlashCubeId(cuboImplicado)
             if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
             flashTimerRef.current = setTimeout(() => setFlashCubeId(null), 1000)
@@ -259,12 +309,16 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
       setPath(t => [...t, positions])
       setGameState({ cubesPositions: [...positions], liftedCube: null, emptyPosition: null })
     }
-    socket.emit('restaurarCubos', 'restaurar')
-  }
-
-  function estadoInicialPayload(cubeId: number) {
-    const color = cubeId <= 5 ? teamAColor : teamBColor
-    return { id: cubeId, color: hexToRgbArray(color), vibrationIntensity: 0, iluminationFrequency: 0, tipo: 'estado_inicial' as const }
+    // Antes: socket.emit('restaurarCubos', 'restaurar') incondicional en
+    // cada evento de posición — esa fue la causa del bug de "restaurar"
+    // corregido el 2026-09-18 (ver Cubo_Esclavo_v3.ino y
+    // PENDIENTES_TESIS.md): apagaba a negro cualquier cubo ya modificado
+    // con solo que OTRO cubo cambiara de posición. Se retira del todo: el
+    // resolutor único (sendSustained/sendSustainedAll, más abajo) ya sabe
+    // en todo momento qué debe mostrar cada cubo y lo manda explícito
+    // (color de equipo incluido) — no hace falta un comando aparte de
+    // "restaurar" disparado a ciegas. El comando sigue existiendo en el
+    // firmware para uso manual/depuración por Monitor Serial.
   }
 
   function triggerAction(a: CubeAction, cubeId: number) {
@@ -272,7 +326,12 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     setActiveAction(a)
     actionTimer.current = setTimeout(() => {
       setActiveAction(null)
-      socket.emit('comandoCubo', estadoInicialPayload(cubeId))
+      // Solo se borra el estado de React — el efecto de despacho (más
+      // abajo) ve que cubeActions ya no tiene a este cubo y manda él mismo
+      // el color de equipo (o lo que corresponda según la sesión). Antes
+      // este timeout mandaba un comando directo sin mirar el resto del
+      // estado: si esto expiraba durante un bloqueo/victoria/pausa, apagaba
+      // ese cubo a color de equipo por encima de la señal de sesión vigente.
       setCubeActions(prev => { const next = { ...prev }; delete next[cubeId]; return next })
       logCuboEvent({ tipo: 'senal_apagada_automatica', detalle: `Señal del cubo #${cubeId} apagada automáticamente tras ${AUTO_OFF_MS / 1000}s (estado inicial)` })
     }, AUTO_OFF_MS)
@@ -286,13 +345,14 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   function sendAction(a: CubeAction) {
     if (selectedCubeId === null) { showNoSel(); return }
     const cubeId = selectedCubeId
-    const payloads: Record<CubeAction, object> = {
-      pausar: { id: cubeId, color: PPA_RGB.pausar, vibrationIntensity: PPA_VIBRATION.pausar, iluminationFrequency: 0.50, tipo: 'pausar', ledModo: 'fija',       vibracionPatron: PPA_VIB_PATTERN.pausar.patron, vibracionRepeticiones: PPA_VIB_PATTERN.pausar.repeticiones, vibracionIntervalo: PPA_VIB_PATTERN.pausar.intervaloMs, sonido: { hz: 250, duracion: 500 } },
-      pensar: { id: cubeId, color: PPA_RGB.pensar, vibrationIntensity: PPA_VIBRATION.pensar, iluminationFrequency: 1.00, tipo: 'pensar', ledModo: 'respiracion', vibracionPatron: PPA_VIB_PATTERN.pensar.patron, vibracionRepeticiones: PPA_VIB_PATTERN.pensar.repeticiones, vibracionIntervalo: PPA_VIB_PATTERN.pensar.intervaloMs, sonido: { hz: 600, patron: 'bip_bip' } },
-      actuar: { id: cubeId, color: PPA_RGB.actuar, vibrationIntensity: PPA_VIBRATION.actuar, iluminationFrequency: 2.00, tipo: 'actuar', ledModo: 'fija',       vibracionPatron: PPA_VIB_PATTERN.actuar.patron, sonido: { hz_inicio: 600, hz_fin: 1000, duracion: 500 } },
-    }
-    socket.emit('comandoCubo', payloads[a])
-    // update cube visual in real time
+    // Ya no se arma un payload aparte aquí: setCubeActions es lo único que
+    // hace falta — el efecto de despacho ve el cambio y manda, con
+    // sustainedVisualToCommand (mismo criterio para todos los caminos), el
+    // color/vibración de esta fase PPA. Antes esta función mandaba su propio
+    // payload (con campos extra como ledModo/vibracionPatron/sonido que el
+    // maestro nunca leyó — ver PENDIENTES_TESIS.md/memoria del proyecto,
+    // "brecha de sonido") en paralelo a lo que el resolutor manda ahora; se
+    // retira para que solo exista una fuente de verdad del comando físico.
     setCubeActions(prev => ({ ...prev, [cubeId]: a }))
     triggerAction(a, cubeId)
     playPpaFeedback(a, AUTO_OFF_MS / 1000)
@@ -303,7 +363,6 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     if (selectedCubeId === null) { showNoSel(); return }
     const cubeId = selectedCubeId
     if (actionTimer.current) clearTimeout(actionTimer.current)
-    socket.emit('comandoCubo', estadoInicialPayload(cubeId))
     setActiveAction(null)
     setCubeActions(prev => { const next = { ...prev }; delete next[cubeId]; return next })
     logOperatorEvent({ cuboId: cubeId, fase: 'estado_inicial', detalle: `Operador apagó manualmente la señal del cubo #${cubeId} (estado inicial)` })
@@ -315,10 +374,11 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     sessionWarnTimer.current = setTimeout(() => setSessionWarning(null), 3000)
   }
 
-  // Cuenta regresiva sincronizada (3,2,1,¡Inicia!): cada tick manda UN
-  // único mensaje de difusión (id:"all") a los 10 cubos — el destello
-  // corre entero dentro de cada cubo (EF=6/7), sin depender de que el
-  // frontend mande varios comandos seguidos.
+  // Cuenta regresiva sincronizada (3,2,1,¡Inicia!): cada tick solo cambia
+  // countdownTick — el efecto de pulso de más abajo (keyed on countdownTick)
+  // es quien manda el mensaje de difusión (id:"all", EF=6/7) a los 10
+  // cubos; el destello corre entero dentro de cada cubo, sin depender de
+  // que el frontend mande varios comandos seguidos.
   function iniciarJuego() {
     if (sessionState !== 'inactivo') return
     if (!isBoardAtInitial) { showSessionWarning('Reordena los cubos (5 azules + 5 rojos) antes de iniciar'); return }
@@ -336,7 +396,6 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
       countdownTimersRef.current.push(setTimeout(() => {
         setCountdownTick(t)
         playCountdownBeep(t)
-        socket.emit('comandoCubo', { id: 'all', efecto: t === 0 ? EFECTOS.CUENTA_INICIA : EFECTOS.CUENTA_TICK })
         if (t === 0) {
           sessionStartRef.current = Date.now()
           setSessionState('jugando')
@@ -346,36 +405,51 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     })
   }
 
+  // Sesión pausada = nivel SESIÓN (ver cubeVisualState.ts): el efecto de
+  // despacho manda la señal de pausa a los 10 cubos por su cuenta en cuanto
+  // ve sessionState==='pausado', y de paso cancela (invalidando la caché
+  // por-cubo) cualquier señal PPA manual que estuviera vigente — decisión
+  // ya validada: la pausa global gana siempre, y al reanudar no se
+  // restaura sola (ver reanudarJuego).
   function pausarJuego() {
     if (sessionState !== 'jugando') return
     sessionAccumMsRef.current += Date.now() - sessionStartRef.current
-    socket.emit('comandoCubo', { id: 'all', color: PPA_RGB.pausar, vibrationIntensity: PPA_VIBRATION.pausar, iluminationFrequency: 0.50 })
     logOperatorEvent({ cuboId: 0, fase: 'pausar', detalle: 'Operador pausó la partida (señal Pausar a los 10 cubos)' })
     setSessionState('pausado')
   }
 
   function reanudarJuego() {
     if (sessionState !== 'pausado') return
-    for (const cubo of originalCubes) if (cubo.id !== 0) socket.emit('comandoCubo', estadoInicialPayload(cubo.id))
+    // Cualquier señal PPA manual que hubiera quedado pendiente antes de la
+    // pausa se descarta aquí explícitamente (no basta con que la pausa la
+    // haya tapado visualmente): al reanudar se parte de cero, nunca se
+    // restaura sola — decisión validada con el autor 2026-09-18.
+    if (actionTimer.current) clearTimeout(actionTimer.current)
+    setActiveAction(null)
+    setCubeActions({})
     sessionStartRef.current = Date.now()
     logOperatorEvent({ cuboId: 0, fase: 'estado_inicial', detalle: 'Operador reanudó la partida' })
     setSessionState('jugando')
   }
 
-  // Reinicio manual, disponible en cualquier momento: pone los 10 cubos
-  // en blanco de inmediato (mismo código que "pide reordenar" de un
-  // bloqueo/victoria) y cierra el intento en curso. La misma detección
-  // de "tablero reordenado" ya existente los libera de vuelta a su color
-  // de equipo en cuanto el operador los reacomoda.
+  // Reinicio manual, disponible en cualquier momento: reutiliza el mismo
+  // nivel SESIÓN "bloqueado" que la detección real de bloqueo (mismo
+  // efecto de despacho, mismo EF=4) y cierra el intento en curso. La misma
+  // detección de "tablero reordenado" ya existente los libera de vuelta a
+  // su color de equipo en cuanto el operador los reacomoda. Nota: esto
+  // significa que un reinicio manual también reproduce la breve animación
+  // de alarma de EF=4 antes de quedar en blanco (antes quedaba en blanco
+  // de inmediato, sin animación) — cambio deliberado para no bifurcar el
+  // criterio de prioridad en dos variantes de "blanco, pide reordenar".
   function reiniciarJuego() {
     countdownTimersRef.current.forEach(clearTimeout)
     countdownTimersRef.current = []
-    socket.emit('comandoCubo', { id: 'all', color: [255, 255, 255], vibrationIntensity: 0, iluminationFrequency: 0 })
     logCuboEvent({ tipo: 'reinicio_manual', detalle: 'Operador reinició manualmente el intento — cubos en blanco, pendiente de reordenar' })
     intentoIdRef.current = null
     sessionAccumMsRef.current = 0
     setFallaCount(0)
     setCountdownTick(null)
+    setCubeActions({})
     setSessionState('bloqueado') // reutiliza la espera de reorden ya existente (ver useEffect de isBoardAtInitial)
   }
 
@@ -402,13 +476,14 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           ? { tipo: 'victoria', detalle: `Intercambio completo en ${moveCount} movimientos` }
           : { tipo: 'derrota', detalle: 'Ningún cubo tiene ya un movimiento legal disponible (bloqueo)' }
       )
-      // Fin de partida: señal física a los 10 cubos (un solo mensaje,
-      // toda la secuencia corre en el propio cubo) + cierre del intento
-      // en curso en la bitácora + detener el cronómetro.
+      // Fin de partida: cierre del intento en curso en la bitácora + detener
+      // el cronómetro. La señal física a los 10 cubos (EF=VICTORIA/BLOQUEO,
+      // un solo mensaje, toda la secuencia corre en el propio cubo) la
+      // manda el efecto de despacho de más abajo en cuanto ve el cambio de
+      // sessionState a 'victoria'/'bloqueado' — no aquí directamente.
       if (sessionState === 'jugando' || sessionState === 'pausado') {
         sessionAccumMsRef.current += sessionState === 'jugando' ? Date.now() - sessionStartRef.current : 0
         const elapsedSec = Math.round(sessionAccumMsRef.current / 1000)
-        socket.emit('comandoCubo', { id: 'all', efecto: controlStatus === 'victoria' ? EFECTOS.VICTORIA : EFECTOS.BLOQUEO })
         logCuboEvent({
           tipo: 'intento_finalizado',
           detalle: `Intento ${controlStatus === 'victoria' ? 'ganado' : 'bloqueado'} en ${elapsedSec}s y ${moveCount} movimientos`,
@@ -423,16 +498,72 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   // Tras un bloqueo/victoria (cubos en blanco, "reordenen"), detecta que
   // el operador ya devolvió el tablero a la posición inicial del nivel y
   // libera los cubos de vuelta a su color de equipo — quedan listos para
-  // un nuevo "Iniciar juego".
+  // un nuevo "Iniciar juego". El efecto de despacho hace el envío real en
+  // cuanto ve sessionState volver a 'inactivo'; aquí también se limpia
+  // cubeActions por si había quedado alguna señal PPA manual de antes del
+  // bloqueo/victoria (igual que al reanudar de una pausa).
   useEffect(() => {
     if ((sessionState === 'bloqueado' || sessionState === 'victoria') && isBoardAtInitial) {
-      for (const cubo of originalCubes) if (cubo.id !== 0) socket.emit('comandoCubo', estadoInicialPayload(cubo.id))
       logCuboEvent({ tipo: 'tablero_reordenado', detalle: 'El tablero volvió a la posición inicial — listo para un nuevo intento' })
       intentoIdRef.current = null
+      setCubeActions({})
       setSessionState('inactivo')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionState, isBoardAtInitial])
+
+  // ── Efecto de despacho: nivel SESIÓN (bloqueo/victoria/pausado) ─────────────
+  // Gana siempre sobre el nivel cubo — ver ESTADO_VISUAL_CUBOS.md. Un solo
+  // mensaje "all" por cambio de tier; al volver a 'normal' se limpia
+  // lastSentSessionRef para que una futura repetición del MISMO tier
+  // (p. ej. bloqueo -> normal -> bloqueo de nuevo) también se reafirme.
+  useEffect(() => {
+    const tier = sessionVisualTier(sessionState)
+    if (tier === 'normal') { lastSentSessionRef.current = null; return }
+    sendSustainedAll(resolveSustainedVisual(tier))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionState])
+
+  // ── Efecto de despacho: nivel CUBO (señal PPA manual / color de equipo) ─────
+  // Solo corre en juego normal (nivel sesión ya cubierto arriba). Se salta
+  // el cubo que esté en pleno pulso de "movimiento inválido" (ver el efecto
+  // siguiente) para no pisarlo mientras dura.
+  useEffect(() => {
+    if (sessionVisualTier(sessionState) !== 'normal') return
+    for (const cubo of originalCubes) {
+      if (cubo.id === 0 || cubo.id === flashCubeId) continue
+      sendSustained(cubo.id, resolveSustainedVisual('normal', cubeActions[cubo.id]))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionState, cubeActions, flashCubeId])
+
+  // ── Efecto de pulso: movimiento inválido (EF=3, ~1s) ────────────────────────
+  // Solo se dispara en juego normal (tier 1/2/4 ya ganaron arriba). Al
+  // terminar (flashCubeId vuelve a null por su propio flashTimerRef, en
+  // handleStateChange) el efecto de nivel CUBO de arriba ya deja de saltarse
+  // este cubo y lo reafirma — restaurando la señal PPA manual si su propio
+  // temporizador de 5s no había expirado, o el color de equipo si no había
+  // ninguna (decisión validada con el autor 2026-09-18).
+  useEffect(() => {
+    if (flashCubeId === null) return
+    if (sessionVisualTier(sessionStateRef.current) !== 'normal') return
+    socket.emit('comandoCubo', { id: flashCubeId, efecto: EFECTOS.INVALIDO })
+    // El cubo físico, al terminar el pulso, se asienta solo en color de
+    // equipo (último paso de EFECTO_3_INVALIDO en el firmware) — no sabe
+    // nada de una señal PPA manual que pudiera seguir vigente. Se invalida
+    // la caché de este cubo para que, cuando el efecto de nivel CUBO deje
+    // de saltárselo (flashCubeId vuelve a null), vea sí o sí una diferencia
+    // y reenvíe explícitamente lo que corresponda, aunque sea el mismo
+    // valor que tenía antes del pulso.
+    delete lastSentSustainedRef.current[flashCubeId]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flashCubeId])
+
+  // ── Efecto de pulso: cuenta regresiva (EF=6/7, ~300ms) ──────────────────────
+  useEffect(() => {
+    if (countdownTick === null) return
+    socket.emit('comandoCubo', { id: 'all', efecto: countdownTick === 0 ? EFECTOS.CUENTA_INICIA : EFECTOS.CUENTA_TICK })
+  }, [countdownTick])
 
   // ── Shared styles ───────────────────────────────────────────────────────────
   const card: React.CSSProperties = {
@@ -718,20 +849,22 @@ Escribe tu nombre y confirma con Enter — queda en cada evento de la bitácora.
               // tablero completo, así que hay que sumar el mismo offset
               // que ya usa el recorte de arriba (5 - pares).
               const fullBoardIdx = idx + (5 - pares)
+              // Mismo resolutor que decide el comando físico (ver
+              // ESTADO_VISUAL_CUBOS.md) — así pantalla y cubo real nunca
+              // pueden discrepar, a diferencia de las dos prioridades ad
+              // hoc independientes que había antes (una en este JSX, otra
+              // implícita en "último comando gana" del firmware).
+              const visual = cube.id === 0
+                ? { hex: emptySpaceColor }
+                : resolveCubeDisplay(sessionVisualTier(sessionState), flashCubeId === cube.id, cubeActions[cube.id], cube.color)
               return (
                 <Cube
                   key={idx}
                   id={cube.id}
-                  color={cube.color}
                   isSelected={selectedCubeId === cube.id && cube.id !== 0}
-                  action={cubeActions[cube.id]}
                   onSelect={(id) => { if (id !== 0) setSelectedCubeId(id) }}
                   isLegalTarget={cube.id === 0 && legalTargetsLive.includes(fullBoardIdx)}
-                  flashColor={
-                    flashCubeId === cube.id ? INVALIDO_HEX
-                      : (sessionState === 'bloqueado' || sessionState === 'victoria') && cube.id !== 0 ? BLANCO_HEX
-                      : undefined
-                  }
+                  visual={visual}
                 />
               )
             })}

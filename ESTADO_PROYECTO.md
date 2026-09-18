@@ -157,6 +157,85 @@ Resumen de la Fase 7 (cerrada, commit `d4202a8`): arquitectura tecnológica híb
 - **Sin verificar todavía**: ninguno de los efectos EF=3..7 (inválido/bloqueo/victoria/cuenta regresiva) ni los botones Iniciar/Pausar/Reiniciar se han probado en un cubo físico — solo la señal de conexión (retirada) llegó a probarse. Detalle completo y próximos pasos en `PENDIENTES_TESIS.md`, sección "Control de partida y código de colores/vibración por efecto".
 - **Impacto en el proyecto**: ninguno sobre la tesis ni la metodología. Es desarrollo del prototipo tecnológico, en curso — el autor sigue probando y corrigiendo en sesiones posteriores antes de darlo por terminado.
 
+## Tarea técnica — Resolutor único de estado visual por cubo (reestructuración de la Fase 2)
+
+*Registrado 2026-09-18, a pedido explícito del autor tras los dos bugs de la
+Fase 2 (señal de conexión EF=1/EF=2, comando `"restaurar"` a negro): en vez
+de seguir agregando comandos sueltos que se pueden pisar entre sí, se
+rediseñó el modelo de estado visual con un único resolutor y un orden de
+prioridad explícito. Tarea independiente de la tesis y de cualquier decisión
+metodológica — no corresponde a ninguna fase numerada. Commit de esta
+sesión: ver tabla de abajo. **Estado: diseñado, validado con el autor,
+implementado y compilado sin errores — NO verificado contra hardware real
+todavía.**
+
+- **Diseño**: modelo de dos niveles — nivel SESIÓN (bloqueo > victoria >
+  cuenta regresiva > sesión pausada, igual para los 10 cubos, prioridad
+  absoluta) y nivel CUBO (movimiento inválido > señal PPA manual > color de
+  equipo en reposo, solo evaluado en juego normal). Documentado en
+  `Desarrollo_cubos_juego_escalera/ESTADO_VISUAL_CUBOS.md`, la referencia
+  única de la que dependen tanto el frontend como el firmware. No hizo
+  falta ningún código `EF=` nuevo en `Cubo_Esclavo_v3.ino`: las 7
+  condiciones de la tabla (las 5 pedidas por el autor más 2 que ya existían
+  sin estar nombradas explícitamente — señal PPA manual, sesión pausada)
+  caben todas en primitivas que el motor de efectos ya tenía. Se validaron
+  con el autor 3 decisiones antes de escribir código: (1) la pausa global
+  cancela cualquier señal PPA manual en curso, y al reanudar no se restaura
+  sola; (2) se retira el disparo automático de `"restaurar"` (queda en el
+  firmware solo para uso manual/depuración); (3) un movimiento inválido
+  interrumpe 1s una señal PPA manual y luego la restaura si su temporizador
+  de 5s no había expirado.
+- **Implementación (frontend)**: nuevo módulo
+  `core/ppa/cubeVisualState.ts` con la única implementación de la tabla de
+  prioridad. `App.tsx` deja de mandar comandos imperativos sueltos: todos
+  los manejadores (`handleStateChange`, `sendAction`, `pausarJuego`,
+  `reanudarJuego`, `reiniciarJuego`, `apagarSenal`, el efecto de
+  victoria/derrota, el efecto de reorden) ahora solo cambian estado de
+  React; dos efectos de despacho (nivel sesión, nivel cubo) y dos efectos
+  de pulso (inválido, cuenta regresiva) son los únicos puntos que hablan
+  con el socket. `Cube.tsx` recibe un único prop `visual` (el mismo
+  resultado usado para el comando físico) en vez de tres props
+  independientes (`color`/`action`/`flashColor`) que él mismo reconciliaba
+  por su cuenta — pantalla y cubo físico ya no pueden discrepar porque
+  salen del mismo cálculo. De paso se corrigieron 3 casos más de la misma
+  clase de bug, encontrados al hacer este cambio (no verificados contra
+  hardware, pero sí reales por lectura de código): el temporizador de
+  apagado automático de una señal PPA (5s) y el botón "Estado inicial"
+  mandaban un comando directo sin mirar si la sesión ya estaba en
+  bloqueo/victoria/pausa; y en pantalla, el destello de movimiento inválido
+  tenía más prioridad visual que bloqueo/victoria (justo al revés que en el
+  cubo físico, donde el efecto de bloqueo/victoria siempre reemplaza
+  cualquier destello en curso).
+- **Simplificación deliberada, señalada para revisión**: el botón
+  "Reiniciar" ahora reutiliza el mismo estado de sesión `bloqueado` (y por
+  lo tanto el mismo `EF=4`) que la detección real de bloqueo, en vez de un
+  blanco plano aparte. Efecto práctico: un reinicio manual reproduce ahora
+  la breve animación de alarma antes de quedar en blanco. Ver
+  `ESTADO_VISUAL_CUBOS.md` para el detalle y cómo revertirlo si el autor
+  prefiere el blanco instantáneo tras probarlo con hardware real.
+- **Sin cambios de protocolo ni de transporte**: `Maestro_v3.ino` no se
+  tocó (sigue relayando `EF=<n>`/`M=...` genérico, sin saber de prioridad);
+  `Cubo_Esclavo_v3.ino` solo ganó un comentario apuntando a
+  `ESTADO_VISUAL_CUBOS.md`, ninguna línea de lógica cambió. TCP con sockets
+  persistentes maestro-cubo se mantiene igual que en la Fase 1, sin
+  migración a ESP-NOW.
+- **Validación técnica realizada**: `npm run build` (`tsc -b && vite
+  build`) del frontend, limpio. `arduino-cli compile` de
+  `Cubo_Esclavo_v3.ino` contra `esp32:esp32:esp32c3`, sin errores (queda 1
+  warning de deprecación de `NetworkServer::available()` ajeno a este
+  cambio — viene de una línea preexistente sin tocar, aparece por la
+  versión del núcleo esp32 instalada, no por esta tarea).
+- **Sin verificar todavía**: ninguna de las 7 condiciones de la tabla de
+  prioridad se ha probado con los cubos físicos bajo este resolutor nuevo.
+  En particular, los 3 casos de interacción entre niveles (inválido + señal
+  PPA manual activa; pausa + señal PPA manual activa; reconexión de un cubo
+  en medio de un bloqueo/victoria/pausa) son deducidos por lectura de
+  código, no observados. Detalle completo de qué probar en
+  `ESTADO_VISUAL_CUBOS.md` y en `PENDIENTES_TESIS.md`.
+- **Impacto en el proyecto**: ninguno sobre la tesis ni la metodología. Es
+  desarrollo del prototipo tecnológico, en curso — el autor prueba contra
+  hardware real en una sesión posterior antes de darlo por terminado.
+
 ## PRÓXIMA ACCIÓN
 
 Decidir si se hace commit de las Fases 9 y 10 (normalización Elegir→Actuar y corrección parcial del lenguaje de autonomía en `main.tex`, ambas verificadas) y del alistamiento del repositorio para GitHub privado. En paralelo, sin bloqueo, también pueden autorizarse la Fase 8 (nota de alcance preexperimental) o la Fase 14 (puente conceptual HRS-EDU). La Fase 12 (relación entre los dos guiones experimentales) sigue bloqueada a la espera de una decisión metodológica del autor — de ella depende cerrar por completo la Fase 10 (5 líneas restantes) y también resolver la colisión de títulos "Guion(ón) experimental TEA nivel 1" (líneas 1992 y 2677) detectada en la auditoría de la Fase 10.
@@ -229,5 +308,6 @@ La Fase 7 quedó cerrada y committeada en `d4202a8`. La Fase 9 (normalización E
 | 2026-09-17 | Tarea técnica (no asociada a una fase) | Fase 1: diagnóstico de la latencia/desconexiones (bitácora `Prueba voluntario/`) y reescritura de `Maestro_v3.ino`/`Cubo_Esclavo_v3.ino` (tareas FreeRTOS separadas, sockets persistentes, antirrebote); `Maestro_v2.ino`/`Cubo_Esclavo_v2.ino` quedan congelados como backup | ✅ Verificado con hardware real (`Prueba v3/`): 10/10 cubos conectan casi al instante, sin el patrón de falsas desconexiones | *(pendiente — sin commit todavía)* |
 | 2026-09-17/18 | Tarea técnica (no asociada a una fase) | Fase 2: control de partida (Iniciar/Pausar/Reiniciar, cuenta regresiva, cronómetro, bitácora de intentos) y motor de efectos del cubo (EF=1..7: conexión, inválido, bloqueo, victoria, cuenta regresiva); cola de comandos maestro↔backend con difusión `id:"all"` | 🟡 Compila limpio (`arduino-cli`, `npm run build`); sin verificar contra hardware — ver corrección de bugs en la fila siguiente | *(pendiente — sin commit todavía)* |
 | 2026-09-18 | Tarea técnica (no asociada a una fase) | Primera prueba con hardware real: cubos no mostraban azul/rojo y Pausar/Pensar/Actuar no se reflejaban. Retirada la señal de conexión EF=1/EF=2 (sospechosa inicial); causa real encontrada: `"restaurar"` volvía el cubo a negro y se dispara en cada evento de posición del tablero — corregido para que vuelva al color de equipo. Hardening adicional: sondeo HTTP acotado de ~50/s a ~8/s, detección de socket "zombi" en el envío de comandos | 🟡 Compilación real verificada con `arduino-cli compile` (0 errores, 0 warnings) contra ambas placas; **sin confirmación de hardware todavía** — pendiente que el autor pruebe de nuevo | *(pendiente — sin commit todavía)* |
+| 2026-09-18 | Tarea técnica (no asociada a una fase) | Reestructuración del modelo de estado visual de los cubos: resolutor único con prioridad explícita en 2 niveles (sesión: bloqueo/victoria/cuenta regresiva/pausada; cubo: inválido/señal PPA manual/color de equipo), documentado en `ESTADO_VISUAL_CUBOS.md`. `App.tsx` deja de mandar comandos imperativos sueltos; `Cube.tsx` unifica 3 props en 1 (`visual`). Sin cambios de protocolo ni de `Maestro_v3.ino`; `Cubo_Esclavo_v3.ino` solo gana un comentario de referencia | 🟡 `npm run build` limpio; `arduino-cli compile` de `Cubo_Esclavo_v3.ino` sin errores (1 warning de deprecación ajeno, preexistente); **sin verificar contra hardware real** — pendiente probar los 3 casos de interacción entre niveles | *(pendiente — sin commit todavía)* |
 
 *Nota: no se registran fechas ni commits distintos de los verificados directamente con `git log`. Si una fase futura no tiene commit, esta tabla lo indica explícitamente como "(pendiente)" en vez de inventar uno.*

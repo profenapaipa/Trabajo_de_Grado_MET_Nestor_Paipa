@@ -76,6 +76,21 @@
 //  depurar por Monitor Serial si algo vuelve a fallar. Si el cubo usa
 //  USB nativo (no un chip USB-serie aparte), activar "USB CDC On Boot:
 //  Enabled" en Herramientas del IDE para poder ver estos mensajes.
+//
+//  ================================================================
+//  REFERENCIA ÚNICA DE PRIORIDAD VISUAL (2026-09-18)
+//  ================================================================
+//  La tabla completa de qué gana sobre qué (bloqueo > victoria > cuenta
+//  regresiva > sesión pausada > movimiento inválido > señal PPA manual >
+//  color de equipo en reposo) vive en ESTADO_VISUAL_CUBOS.md, en la raíz
+//  de Desarrollo_cubos_juego_escalera/ — la implementa
+//  core/ppa/cubeVisualState.ts en el frontend. Este firmware no decide
+//  esa prioridad por su cuenta: su único contrato es ejecutar cualquier
+//  EF=<n>/M=.../restaurar recibido como reemplazo atómico y completo del
+//  estado anterior (ya lo hace: iniciarEfecto/actualizarColorObjetivo/
+//  setColorSolid siempre apagan cualquier efecto en curso antes de
+//  aplicar el nuevo). Si se agrega un EF= nuevo o cambia el criterio de
+//  prioridad, actualizar ese documento primero.
 // ============================================================
 
 #include <WiFi.h>

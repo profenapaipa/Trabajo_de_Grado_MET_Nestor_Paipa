@@ -30,41 +30,41 @@ const VIB_HEIGHTS = [0.5, 0.9, 0.6, 1.0, 0.7]
 
 function Cube({
   id,
-  color,
   isSelected,
-  action,
   onSelect,
   isLegalTarget,
-  flashColor,
+  visual,
 }: {
   id: number
-  color: string
   isSelected: boolean
-  action?: CubeAction
   onSelect: (id: number) => void
   // Casilla vacía a la que el cubo actualmente levantado SÍ puede bajar
   // (resaltado en vivo, mismo criterio que ya usan las pestañas de
   // Simulación — ver laEscaleraRules.legalMovesFor).
   isLegalTarget?: boolean
-  // Color transitorio que refleja en el frontend, casi al instante, un
-  // efecto que el cubo físico también está mostrando en ese momento
-  // (naranja = movimiento inválido, blanco = pide reordenar). Tiene
-  // prioridad sobre el color de equipo/acción PPA mientras está activo.
-  flashColor?: string
+  // Único resultado del resolutor de estado visual (ver
+  // core/ppa/cubeVisualState.ts y ESTADO_VISUAL_CUBOS.md) — el mismo valor
+  // que decide qué comando físico se le manda a este cubo, así pantalla y
+  // cubo real nunca pueden discrepar. `accion`, si viene, muestra el mismo
+  // indicador (icono/barras de vibración/sonido) que antes solo aparecía
+  // para una señal PPA manual — ahora también para "pausado" (sesión), que
+  // físicamente es la misma señal.
+  visual: { hex: string; accion?: CubeAction; pulso?: true }
 }) {
   const isEmpty = id === 0
+  const action  = visual.accion
   const meta    = action ? ACTION_META[action] : null
 
-  const bgColor    = flashColor ?? (meta ? meta.bg : color)
-  const textColor  = meta && !flashColor ? meta.textColor : '#fff'
+  const bgColor    = visual.hex
+  const textColor  = meta ? meta.textColor : '#fff'
 
   // selection ring: white on action color, accent blue on default,
   // verde-agua sobre casillas vacías que son un movimiento válido ahora
   const LEGAL_TARGET_ACCENT = '#00e5a0'
   const selRing = isSelected
     ? `0 0 0 3px ${meta ? '#fff' : '#4fc3f7'}, 0 0 14px ${meta ? meta.bg + 'aa' : '#4fc3f7aa'}`
-    : flashColor
-      ? `0 0 0 3px ${flashColor}, 0 0 16px ${flashColor}aa`
+    : visual.pulso
+      ? `0 0 0 3px ${visual.hex}, 0 0 16px ${visual.hex}aa`
       : isLegalTarget
         ? `0 0 0 3px ${LEGAL_TARGET_ACCENT}, 0 0 12px ${LEGAL_TARGET_ACCENT}aa`
         : meta
