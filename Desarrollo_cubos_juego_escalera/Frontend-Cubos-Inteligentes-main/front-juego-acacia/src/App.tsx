@@ -822,7 +822,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
              estrecha. */}
         <div style={{ ...panel, flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span style={{ ...sectionLabel, display: 'flex', alignItems: 'center', gap: '6px' }}><StepMark />Tablero · {pares} par{pares > 1 ? 'es' : ''} · {visibleCubes.length} posiciones</span>
+            <span style={{ ...sectionLabel, display: 'flex', alignItems: 'center', gap: '6px' }}><StepMark />Tablero · {pares} par{pares > 1 ? 'es' : ''} · {visibleCubes.length} posiciones · esclavos {esclavos.length}/10</span>
             <div style={{ display: 'flex', gap: '14px' }}>
               {[
                 { label: 'Equipo A', color: teamAColor },
@@ -850,39 +850,32 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
               const visual = cube.id === 0
                 ? { hex: emptySpaceColor }
                 : resolveCubeDisplay(sessionVisualTier(sessionState), flashCubeId === cube.id, cubeActions[cube.id], cube.color)
+              const isEmpty = cube.id === 0
+              const connected = !isEmpty && esclavos.includes(cube.id)
               return (
-                <Cube
-                  key={idx}
-                  id={cube.id}
-                  isSelected={selectedCubeId === cube.id && cube.id !== 0}
-                  onSelect={(id) => { if (id !== 0) setSelectedCubeId(id) }}
-                  isLegalTarget={cube.id === 0 && legalTargetsLive.includes(fullBoardIdx)}
-                  visual={visual}
-                />
+                // Conexión del esclavo alineada bajo su propio cubo, no en
+                // una lista aparte — el número ya está en la ficha, así que
+                // aquí basta una señal de un solo color: verde conectado,
+                // roja sin conexión.
+                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                  <Cube
+                    id={cube.id}
+                    isSelected={selectedCubeId === cube.id && cube.id !== 0}
+                    onSelect={(id) => { if (id !== 0) setSelectedCubeId(id) }}
+                    isLegalTarget={cube.id === 0 && legalTargetsLive.includes(fullBoardIdx)}
+                    visual={visual}
+                  />
+                  {isEmpty ? (
+                    <div style={{ width: '8px', height: '8px' }} />
+                  ) : (
+                    <div
+                      title={`Cubo #${cube.id} — ${connected ? 'conectado' : 'sin conexión'}`}
+                      style={{ width: '8px', height: '8px', borderRadius: '50%', background: connected ? 'var(--color-online)' : 'var(--color-offline)' }}
+                    />
+                  )}
+                </div>
               )
             })}
-          </div>
-
-          {/* Esclavos: número de cada cubo visible, no solo un punto — el
-              operador necesita saber CUÁL cubo se desconectó, no solo
-              cuántos. */}
-          <div style={{ marginTop: '10px' }}>
-            <div style={{ fontSize: '11px', color: 'var(--color-paper-faint)', marginBottom: '6px', textAlign: 'center' }}>esclavos {esclavos.length}/10</div>
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              {Array.from({ length: 10 }, (_, i) => i + 1).map(id => {
-                const on = esclavos.includes(id)
-                return (
-                  <div key={id} title={`Cubo #${id} — ${on ? 'conectado' : 'sin conexión'}`} style={{
-                    display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 7px',
-                    border: `1px solid ${on ? 'var(--color-online)' : 'var(--color-offline)'}`,
-                    borderRadius: 'var(--radius)', background: on ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.06)',
-                  }}>
-                    <Electrode on={on} colorOn="var(--color-online)" colorOff="var(--color-offline)" />
-                    <span style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: on ? 'var(--color-online)' : 'var(--color-offline)' }}>{id}</span>
-                  </div>
-                )
-              })}
-            </div>
           </div>
 
           {Object.keys(cubeActions).length > 0 && (
@@ -957,10 +950,42 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
             acumulada y señal sonora/música cambian mientras se juega, así
             que quedan siempre a la vista junto al tablero y los botones. */}
         <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {/* ── Configuración: pares + operador — se ajustan antes de
+          {/* ── Configuración: operador + pares — se ajustan antes de
                jugar, así que van arriba de todo en la barra lateral, no
-               en la columna del tablero. ── */}
-          <div style={{ ...panel, display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+               en la columna del tablero. Operador va primero y resaltado:
+               es lo primero que debe resolver quien opera al entrar, antes
+               incluso de elegir cuántos pares jugar. ── */}
+          <div style={{ ...panel, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <div style={{ ...sectionLabel, color: 'var(--color-blue)', fontSize: '11px' }}>Operador Mago de Oz</div>
+              {operatorId ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                  <Electrode on />
+                  <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-paper)' }}>{operatorId}</span>
+                  <button onClick={() => setOperatorId('')} style={{
+                    marginLeft: 'auto', background: 'transparent', border: 'none', cursor: 'pointer',
+                    fontSize: '11px', color: 'var(--color-paper-faint)', textDecoration: 'underline', padding: 0,
+                  }}>cambiar</button>
+                </div>
+              ) : (
+                <div style={{ marginTop: '8px' }}>
+                  <input
+                    value={operatorInput}
+                    onChange={e => setOperatorInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && operatorInput.trim()) setOperatorId(operatorInput.trim()) }}
+                    placeholder="nombre + Enter"
+                    autoFocus
+                    title="Escribe tu nombre y confirma con Enter — queda en cada evento de la bitácora. No es un identificador oficial del proyecto (ver DECISIONES_PROYECTO.md)."
+                    style={{
+                      background: 'rgba(69,137,255,0.08)', border: '1px solid var(--color-blue)',
+                      borderRadius: 'var(--radius)', padding: '8px 10px', color: 'var(--color-paper)', fontSize: '14px',
+                      width: '100%', boxSizing: 'border-box',
+                    }} />
+                  <div style={{ fontSize: '10px', color: 'var(--color-blue)', marginTop: '5px' }}>Escribe tu nombre y presiona Enter para empezar</div>
+                </div>
+              )}
+            </div>
+
             <div>
               <div style={sectionLabel}>Pares</div>
               <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
@@ -973,25 +998,6 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
                     fontWeight: 700, fontSize: '12px',
                   }}>{n}</button>
                 ))}
-              </div>
-            </div>
-
-            <div>
-              <div style={sectionLabel}>Operador</div>
-              <div style={{ display: 'flex', gap: '6px', marginTop: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <input
-                  value={operatorInput}
-                  onChange={e => setOperatorInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && operatorInput.trim()) setOperatorId(operatorInput.trim()) }}
-                  placeholder="nombre + Enter"
-                  title="Escribe tu nombre y confirma con Enter — queda en cada evento de la bitácora. No es un identificador oficial del proyecto (ver DECISIONES_PROYECTO.md)."
-                  style={{
-                    background: 'var(--color-bg)', border: `1px solid ${operatorId && operatorInput.trim() === operatorId ? 'var(--color-blue)' : 'var(--color-line-strong)'}`,
-                    borderRadius: 'var(--radius)', padding: '6px 9px', color: 'var(--color-paper)', fontSize: '13px', width: '100%', boxSizing: 'border-box',
-                  }} />
-                <span style={{ fontSize: '11px', color: operatorId ? 'var(--color-blue)' : 'var(--color-paper-faint)' }}>
-                  {operatorId || 'sin confirmar'}
-                </span>
               </div>
             </div>
           </div>
