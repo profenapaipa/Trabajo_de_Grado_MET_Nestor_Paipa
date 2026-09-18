@@ -717,6 +717,14 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     fontWeight: 700, fontSize: '13px',
   })
 
+  // Cuenta regresiva como un semáforo real: rojo mientras se espera (3, 2),
+  // amarillo de aviso justo antes (1), verde al arrancar (0/"¡INICIA!") —
+  // los mismos 3 colores de un semáforo de calle, no una paleta nueva.
+  const countdownSemaforo = (t: number): { bg: string; text: string } =>
+    t === 0 ? { bg: 'var(--color-online)', text: '#ffffff' }
+      : t === 1 ? { bg: 'var(--color-caution)', text: '#1a1300' }
+        : { bg: 'var(--color-offline)', text: '#ffffff' }
+
   const signalBtn = (a: PPAPhase): React.CSSProperties => ({
     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px',
     padding: '14px 10px', borderRadius: 'var(--radius)', cursor: 'pointer',
@@ -840,11 +848,11 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           {countdownTick !== null && (
             <div style={{
               position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'var(--color-bg)', borderRadius: 'var(--radius)', zIndex: 5,
+              background: countdownSemaforo(countdownTick).bg, borderRadius: 'var(--radius)', zIndex: 5,
             }}>
               <span style={{
                 fontFamily: 'var(--font-mono)', fontSize: '52px', fontWeight: 700,
-                color: countdownTick === 0 ? 'var(--color-blue)' : 'var(--color-paper)',
+                color: countdownSemaforo(countdownTick).text,
               }}>
                 {countdownTick === 0 ? '¡INICIA!' : countdownTick}
               </span>

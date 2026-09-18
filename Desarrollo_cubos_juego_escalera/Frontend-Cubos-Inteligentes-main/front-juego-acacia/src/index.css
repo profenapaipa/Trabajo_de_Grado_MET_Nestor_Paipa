@@ -54,6 +54,12 @@
   --color-online: #42BE65;
   --color-offline: #FA4D56;
 
+  /* Único uso: la cuenta regresiva de Iniciar intento, que se pidió que
+     cambiara de colores "como un semáforo" (rojo/amarillo/verde) — Yellow
+     30 del mismo Carbon Design System que ya da los otros 3 acentos
+     (Blue 50, Red 50, Green 40), no un amarillo suelto de otra paleta. */
+  --color-caution: #F1C21B;
+
   --font-sans: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
