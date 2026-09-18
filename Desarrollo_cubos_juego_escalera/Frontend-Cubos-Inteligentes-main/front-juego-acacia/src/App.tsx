@@ -967,7 +967,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
         </button>
 
         {histOpen && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '12px' }}>
             <div style={panel}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                 <span style={sectionLabel}>Bitácora de eventos de los cubos · {cuboEvents.length}</span>
