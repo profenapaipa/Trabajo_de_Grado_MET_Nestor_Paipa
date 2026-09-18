@@ -73,7 +73,7 @@ function Logo({ size = 28 }: { size?: number }) {
   return (
     <svg width={size} height={size * (20 / 32)} viewBox="0 0 32 20" aria-hidden="true">
       <path d="M0,20 L5.3,20 L5.3,14 L10.6,14 L10.6,8 L16,8 L16,2 L16,20 Z" fill="var(--color-blue)" />
-      <path d="M16,2 L21.3,2 L21.3,8 L26.6,8 L26.6,14 L32,14 L32,20 L16,20 Z" fill="var(--color-red)" />
+      <path d="M16,2 L16,8 L21.3,8 L21.3,14 L26.7,14 L26.7,20 L32,20 L16,20 Z" fill="var(--color-red)" />
     </svg>
   )
 }
@@ -698,9 +698,16 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
             <Logo size={26} />
             <h1 style={{ fontSize: '18px', fontWeight: 700, margin: 0, letterSpacing: '-0.01em' }}>Escalera Inteligente</h1>
             <span style={{ ...sectionLabel, fontWeight: 500 }}>Control Mago de Oz</span>
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '7px', ...sectionLabel }}>
+            <div style={{
+              marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '7px',
+              padding: '5px 12px', borderRadius: '20px',
+              background: isBaseConnected ? 'rgba(42,109,245,0.14)' : 'rgba(212,105,74,0.14)',
+              border: `1px solid ${isBaseConnected ? 'var(--color-blue)' : 'var(--color-alert)'}`,
+              color: isBaseConnected ? 'var(--color-blue)' : 'var(--color-alert)',
+              fontSize: '13px', fontWeight: 600,
+            }}>
               <Electrode on={isBaseConnected} />
-              {isBaseConnected ? 'conectado' : 'desconectado'}
+              {isBaseConnected ? 'Conectado' : 'Desconectado'}
             </div>
           </div>
           <div style={{ marginTop: '8px' }}>
@@ -821,7 +828,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap', overflowX: 'auto' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap', overflowX: 'auto', justifyContent: 'center' }}>
             {visibleCubes.map((cube, idx) => {
               // visibleCubes está recortado del tablero completo de 11
               // posiciones (0-10); legalTargetsLive usa índices del
