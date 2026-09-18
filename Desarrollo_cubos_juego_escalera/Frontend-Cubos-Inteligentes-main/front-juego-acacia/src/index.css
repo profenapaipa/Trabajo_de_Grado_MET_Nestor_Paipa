@@ -42,6 +42,14 @@
 
   --color-alert: #D4694A;
 
+  /* Conectado/desconectado — verde/rojo estándar, igual para el maestro,
+     los cubos esclavos y cualquier otro estado de conexión física.
+     Semánticamente distinto de --color-red (marca del equipo B): el
+     contexto (texto "conectado"/"desconectado", o el propio panel de
+     conexión) los distingue. */
+  --color-online: #22C55E;
+  --color-offline: #EF4444;
+
   --font-sans: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 

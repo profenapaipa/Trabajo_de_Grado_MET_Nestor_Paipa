@@ -55,12 +55,15 @@ function EegTrace({ color }: { color: string }) {
 
 // Marcador tipo electrodo — reemplaza el punto circular genérico de estado
 // por el vocabulario visual de un sensor EEG (relleno = señal presente).
-function Electrode({ on }: { on: boolean }) {
+// Color por defecto (azul/alerta) para usos generales de "activo/inactivo"
+// (selección, victoria/derrota); los usos de conexión real pasan
+// verde/rojo explícito — ver colorOn/colorOff en cada llamado.
+function Electrode({ on, colorOn = 'var(--color-blue)', colorOff = 'var(--color-alert)' }: { on: boolean; colorOn?: string; colorOff?: string }) {
   return (
     <span style={{
       width: '7px', height: '7px', borderRadius: '50%', display: 'inline-block', flexShrink: 0,
-      background: on ? 'var(--color-blue)' : 'transparent',
-      border: `1.5px solid ${on ? 'var(--color-blue)' : 'var(--color-alert)'}`,
+      background: on ? colorOn : 'transparent',
+      border: `1.5px solid ${on ? colorOn : colorOff}`,
     }} />
   )
 }
@@ -701,17 +704,17 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
             <div style={{
               marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '7px',
               padding: '5px 12px', borderRadius: '20px',
-              background: isBaseConnected ? 'rgba(42,109,245,0.14)' : 'rgba(212,105,74,0.14)',
-              border: `1px solid ${isBaseConnected ? 'var(--color-blue)' : 'var(--color-alert)'}`,
-              color: isBaseConnected ? 'var(--color-blue)' : 'var(--color-alert)',
+              background: isBaseConnected ? 'rgba(34,197,94,0.14)' : 'rgba(239,68,68,0.14)',
+              border: `1px solid ${isBaseConnected ? 'var(--color-online)' : 'var(--color-offline)'}`,
+              color: isBaseConnected ? 'var(--color-online)' : 'var(--color-offline)',
               fontSize: '13px', fontWeight: 600,
             }}>
-              <Electrode on={isBaseConnected} />
+              <Electrode on={isBaseConnected} colorOn="var(--color-online)" colorOff="var(--color-offline)" />
               {isBaseConnected ? 'Conectado' : 'Desconectado'}
             </div>
           </div>
           <div style={{ marginTop: '8px' }}>
-            <EegTrace color={isBaseConnected ? 'var(--color-blue)' : 'var(--color-alert)'} />
+            <EegTrace color={isBaseConnected ? 'var(--color-online)' : 'var(--color-offline)'} />
           </div>
         </header>
 
@@ -871,11 +874,11 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
                 return (
                   <div key={id} title={`Cubo #${id} — ${on ? 'conectado' : 'sin conexión'}`} style={{
                     display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 7px',
-                    border: `1px solid ${on ? 'var(--color-blue)' : 'var(--color-line-strong)'}`,
-                    borderRadius: 'var(--radius)', background: on ? 'rgba(42,109,245,0.08)' : 'var(--color-bg)',
+                    border: `1px solid ${on ? 'var(--color-online)' : 'var(--color-offline)'}`,
+                    borderRadius: 'var(--radius)', background: on ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.06)',
                   }}>
-                    <Electrode on={on} />
-                    <span style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: on ? 'var(--color-blue)' : 'var(--color-paper-faint)' }}>{id}</span>
+                    <Electrode on={on} colorOn="var(--color-online)" colorOff="var(--color-offline)" />
+                    <span style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: on ? 'var(--color-online)' : 'var(--color-offline)' }}>{id}</span>
                   </div>
                 )
               })}
