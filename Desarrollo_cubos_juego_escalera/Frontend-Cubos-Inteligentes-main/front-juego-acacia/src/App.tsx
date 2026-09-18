@@ -826,14 +826,28 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
             <span style={{ fontSize: '12px', color: 'var(--color-paper-dim)' }}>{gameState.liftedCube !== null ? 'procesando' : 'listo'}</span>
             <span style={{ fontSize: '12px', color: 'var(--color-paper-dim)', fontFamily: 'var(--font-mono)' }}>mov. {moveCount}</span>
             <span style={{ fontSize: '12px', color: 'var(--color-paper-dim)' }}>vacía {gameState.emptyPosition != null ? gameState.emptyPosition + 1 : '—'}</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--color-paper-dim)' }}>
-              esclavos {esclavos.length}/10
-              <span style={{ display: 'flex', gap: '3px' }}>
-                {Array.from({ length: 10 }, (_, i) => i + 1).map(id => (
-                  <Electrode key={id} on={esclavos.includes(id)} />
-                ))}
-              </span>
-            </span>
+          </div>
+
+          {/* Esclavos: número de cada cubo visible, no solo un punto — el
+              operador necesita saber CUÁL cubo se desconectó, no solo
+              cuántos. */}
+          <div style={{ marginTop: '10px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--color-paper-faint)', marginBottom: '6px' }}>esclavos {esclavos.length}/10</div>
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+              {Array.from({ length: 10 }, (_, i) => i + 1).map(id => {
+                const on = esclavos.includes(id)
+                return (
+                  <div key={id} title={`Cubo #${id} — ${on ? 'conectado' : 'sin conexión'}`} style={{
+                    display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 7px',
+                    border: `1px solid ${on ? 'var(--color-blue)' : 'var(--color-line-strong)'}`,
+                    borderRadius: 'var(--radius)', background: on ? 'rgba(42,109,245,0.08)' : 'var(--color-bg)',
+                  }}>
+                    <Electrode on={on} />
+                    <span style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: on ? 'var(--color-blue)' : 'var(--color-paper-faint)' }}>{id}</span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
           {Object.keys(cubeActions).length > 0 && (
