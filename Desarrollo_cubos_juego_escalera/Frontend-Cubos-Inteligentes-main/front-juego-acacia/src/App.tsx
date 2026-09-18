@@ -729,17 +729,6 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
             <Logo size={46} />
             <h1 style={{ fontSize: '20px', fontWeight: 700, margin: 0, letterSpacing: '-0.01em' }}>Escalera Inteligente</h1>
             <span style={{ ...sectionLabel, fontWeight: 500 }}>Control Mago de Oz</span>
-            <div style={{
-              marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '7px',
-              padding: '5px 12px', borderRadius: '20px',
-              background: isBaseConnected ? 'rgba(34,197,94,0.14)' : 'rgba(239,68,68,0.14)',
-              border: `1px solid ${isBaseConnected ? 'var(--color-online)' : 'var(--color-offline)'}`,
-              color: isBaseConnected ? 'var(--color-online)' : 'var(--color-offline)',
-              fontSize: '13px', fontWeight: 600,
-            }}>
-              <Electrode on={isBaseConnected} colorOn="var(--color-online)" colorOff="var(--color-offline)" />
-              {isBaseConnected ? 'Conectado' : 'Desconectado'}
-            </div>
           </div>
           <div style={{ marginTop: '8px' }}>
             <EegTrace color={isBaseConnected ? 'var(--color-online)' : 'var(--color-offline)'} />
@@ -823,17 +812,33 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
         <div style={{ ...panel, flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <span style={{ ...sectionLabel, display: 'flex', alignItems: 'center', gap: '6px' }}><StepMark />Tablero · {pares} par{pares > 1 ? 'es' : ''} · {visibleCubes.length} posiciones · esclavos {esclavos.length}/10</span>
-            <div style={{ display: 'flex', gap: '14px' }}>
-              {[
-                { label: 'Equipo A', color: teamAColor },
-                { label: 'Equipo B', color: teamBColor },
-                { label: 'Vacío', color: 'transparent', border: '1px solid var(--color-line-strong)' },
-              ].map(({ label, color, border }) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <div style={{ width: '8px', height: '8px', background: color, border }} />
-                  <span style={{ fontSize: '11px', color: 'var(--color-paper-dim)' }}>{label}</span>
-                </div>
-              ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ display: 'flex', gap: '14px' }}>
+                {[
+                  { label: 'Equipo A', color: teamAColor },
+                  { label: 'Equipo B', color: teamBColor },
+                  { label: 'Vacío', color: 'transparent', border: '1px solid var(--color-line-strong)' },
+                ].map(({ label, color, border }) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <div style={{ width: '8px', height: '8px', background: color, border }} />
+                    <span style={{ fontSize: '11px', color: 'var(--color-paper-dim)' }}>{label}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Conectado/desconectado del maestro — vive en el propio
+                  panel del Tablero (es lo que directamente afecta), no
+                  suelto en el encabezado general de la página. */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '3px 10px', borderRadius: '20px',
+                background: isBaseConnected ? 'rgba(34,197,94,0.14)' : 'rgba(239,68,68,0.14)',
+                border: `1px solid ${isBaseConnected ? 'var(--color-online)' : 'var(--color-offline)'}`,
+                color: isBaseConnected ? 'var(--color-online)' : 'var(--color-offline)',
+                fontSize: '11px', fontWeight: 600,
+              }}>
+                <Electrode on={isBaseConnected} colorOn="var(--color-online)" colorOff="var(--color-offline)" />
+                {isBaseConnected ? 'Conectado' : 'Desconectado'}
+              </div>
             </div>
           </div>
 
@@ -944,6 +949,63 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           </div>
         </div>
 
+        {/* ── Histórico, colapsable — solo bitácoras: son registro de lo ya
+             ocurrido, a diferencia de la barra lateral de arriba. Va dentro
+             de la columna principal, con el mismo ancho que Señal PPA, en
+             vez de a todo el ancho de la página: así no queda un hueco
+             vacío debajo cuando la barra lateral es más alta que Tablero +
+             Señal PPA. Es un separador de sección, no otro panel más: sin
+             caja ni relleno, solo un filo inferior. ── */}
+        <button onClick={() => setHistOpen(o => !o)} style={{
+          background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-line)',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+          flexShrink: 0, textAlign: 'left', width: '100%', padding: '6px 2px',
+        }}>
+          <StepMark />
+          <span style={sectionLabel}>Histórico — bitácoras de eventos y decisiones</span>
+          <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--color-paper-faint)' }}>{histOpen ? '−' : '+'}</span>
+        </button>
+
+        {histOpen && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={panel}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                <span style={sectionLabel}>Bitácora de eventos de los cubos · {cuboEvents.length}</span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button onClick={exportCuboEventsCsv} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-bg)', border: '1px solid var(--color-line-strong)', borderRadius: 'var(--radius)', padding: '4px 8px', color: 'var(--color-paper)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> CSV</button>
+                  <button onClick={exportCuboEventsJson} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-bg)', border: '1px solid var(--color-line-strong)', borderRadius: 'var(--radius)', padding: '4px 8px', color: 'var(--color-paper)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> JSON</button>
+                </div>
+              </div>
+              <div style={{ maxHeight: '160px', overflowY: 'auto', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
+                {cuboEvents.length === 0 && <div style={{ color: 'var(--color-paper-faint)' }}>Sin eventos todavía — reportados por el hardware físico.</div>}
+                {[...cuboEvents].reverse().map((ev, i) => (
+                  <div key={i} style={{ padding: '3px 0', borderBottom: '1px solid var(--color-line)', color: 'var(--color-paper-dim)' }}>
+                    <span style={{ color: 'var(--color-paper-faint)' }}>{ev.timestamp}</span> · <span style={{ color: 'var(--color-blue)' }}>{ev.tipo}</span> · {ev.detalle}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={panel}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                <span style={sectionLabel}>Bitácora del operador (decisiones) · {operatorEvents.length}</span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button onClick={exportOperatorEventsCsv} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-bg)', border: '1px solid var(--color-line-strong)', borderRadius: 'var(--radius)', padding: '4px 8px', color: 'var(--color-paper)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> CSV</button>
+                  <button onClick={exportOperatorEventsJson} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-bg)', border: '1px solid var(--color-line-strong)', borderRadius: 'var(--radius)', padding: '4px 8px', color: 'var(--color-paper)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> JSON</button>
+                </div>
+              </div>
+              <div style={{ maxHeight: '160px', overflowY: 'auto', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
+                {operatorEvents.length === 0 && <div style={{ color: 'var(--color-paper-faint)' }}>Sin decisiones todavía — cada envío de Pausar/Pensar/Actuar queda aquí.</div>}
+                {[...operatorEvents].reverse().map((ev, i) => (
+                  <div key={i} style={{ padding: '3px 0', borderBottom: '1px solid var(--color-line)', color: 'var(--color-paper-dim)' }}>
+                    <span style={{ color: 'var(--color-paper-faint)' }}>{ev.timestamp}</span> · <span style={{ color: 'var(--color-blue)' }}>{ev.operadorId}</span> · {ev.detalle}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         </div>
 
         {/* Barra lateral "en vivo" — fija, no colapsable: condición
@@ -972,7 +1034,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
                   <input
                     value={operatorInput}
                     onChange={e => setOperatorInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && operatorInput.trim()) setOperatorId(operatorInput.trim()) }}
+                    onKeyDown={e => { if (e.key === 'Enter' && operatorInput.trim()) setOperatorId(operatorInput.trim().toUpperCase()) }}
                     placeholder="nombre + Enter"
                     autoFocus
                     title="Escribe tu nombre y confirma con Enter — queda en cada evento de la bitácora. No es un identificador oficial del proyecto (ver DECISIONES_PROYECTO.md)."
@@ -1033,64 +1095,6 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           </div>
         </div>
         </div>
-
-        {/* ── Histórico, colapsable — solo bitácoras: son registro de lo ya
-             ocurrido, a diferencia de la barra lateral de arriba. Es un
-             separador de sección, no otro panel más: sin caja ni relleno,
-             solo un filo inferior, para que se lea como encabezado y no
-             compita visualmente con los paneles de datos en vivo. ── */}
-        <button onClick={() => setHistOpen(o => !o)} style={{
-          background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-line)',
-          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
-          flexShrink: 0, textAlign: 'left', width: '100%', padding: '6px 2px',
-        }}>
-          <StepMark />
-          <span style={sectionLabel}>Histórico — bitácoras de eventos y decisiones</span>
-          <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--color-paper-faint)' }}>{histOpen ? '−' : '+'}</span>
-        </button>
-
-        {histOpen && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '12px' }}>
-              <div style={panel}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-                  <span style={sectionLabel}>Bitácora de eventos de los cubos · {cuboEvents.length}</span>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button onClick={exportCuboEventsCsv} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-bg)', border: '1px solid var(--color-line-strong)', borderRadius: 'var(--radius)', padding: '4px 8px', color: 'var(--color-paper)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> CSV</button>
-                    <button onClick={exportCuboEventsJson} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-bg)', border: '1px solid var(--color-line-strong)', borderRadius: 'var(--radius)', padding: '4px 8px', color: 'var(--color-paper)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> JSON</button>
-                  </div>
-                </div>
-                <div style={{ maxHeight: '160px', overflowY: 'auto', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
-                  {cuboEvents.length === 0 && <div style={{ color: 'var(--color-paper-faint)' }}>Sin eventos todavía — reportados por el hardware físico.</div>}
-                  {[...cuboEvents].reverse().map((ev, i) => (
-                    <div key={i} style={{ padding: '3px 0', borderBottom: '1px solid var(--color-line)', color: 'var(--color-paper-dim)' }}>
-                      <span style={{ color: 'var(--color-paper-faint)' }}>{ev.timestamp}</span> · <span style={{ color: 'var(--color-blue)' }}>{ev.tipo}</span> · {ev.detalle}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div style={panel}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-                  <span style={sectionLabel}>Bitácora del operador (decisiones) · {operatorEvents.length}</span>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button onClick={exportOperatorEventsCsv} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-bg)', border: '1px solid var(--color-line-strong)', borderRadius: 'var(--radius)', padding: '4px 8px', color: 'var(--color-paper)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> CSV</button>
-                    <button onClick={exportOperatorEventsJson} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-bg)', border: '1px solid var(--color-line-strong)', borderRadius: 'var(--radius)', padding: '4px 8px', color: 'var(--color-paper)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> JSON</button>
-                  </div>
-                </div>
-                <div style={{ maxHeight: '160px', overflowY: 'auto', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
-                  {operatorEvents.length === 0 && <div style={{ color: 'var(--color-paper-faint)' }}>Sin decisiones todavía — cada envío de Pausar/Pensar/Actuar queda aquí.</div>}
-                  {[...operatorEvents].reverse().map((ev, i) => (
-                    <div key={i} style={{ padding: '3px 0', borderBottom: '1px solid var(--color-line)', color: 'var(--color-paper-dim)' }}>
-                      <span style={{ color: 'var(--color-paper-faint)' }}>{ev.timestamp}</span> · <span style={{ color: 'var(--color-blue)' }}>{ev.operadorId}</span> · {ev.detalle}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
