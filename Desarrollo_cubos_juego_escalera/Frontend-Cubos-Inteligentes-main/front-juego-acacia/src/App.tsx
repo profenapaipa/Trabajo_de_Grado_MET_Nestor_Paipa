@@ -97,31 +97,43 @@ function Logo({ size = 28 }: { size?: number }) {
 
 type WatermarkLogo = { x: number; y: number; rotation: number; size: number }
 
+// Semi-diagonal del logo a un tamaño dado — el "radio" real que ocupa una
+// vez rotado, usado para separar cada copia según su propio tamaño en vez
+// de una distancia fija (deja que las copias chicas queden más juntas sin
+// que las grandes arriesguen tocarse).
+function logoRadius(size: number): number {
+  const h = size * (20 / 32)
+  return Math.sqrt(size * size + h * h) / 2
+}
+
 // Marca de agua del logo, esparcida al azar por el fondo — cada entrada a
-// la página genera una disposición nueva (posición y rotación de cada
-// copia), no un patrón fijo repetido: primero fue una sola copia en una
-// esquina (quedaba tapada por los paneles), luego un mosaico regular
-// (se veía cuadriculado); esta versión resuelve ambos con posiciones y
-// giros aleatorios por sesión, con separación mínima entre copias para
-// que nunca se superpongan ni se choquen entre sí.
+// la página genera una disposición nueva (posición, rotación y tamaño de
+// cada copia), no un patrón fijo repetido: primero fue una sola copia en
+// una esquina (quedaba tapada por los paneles), luego un mosaico regular
+// (se veía cuadriculado); esta versión resuelve ambos con posiciones,
+// giros y tamaños aleatorios por sesión, con separación mínima entre
+// copias (según el tamaño real de cada una) para que nunca se superpongan
+// ni se choquen entre sí.
 function generateWatermarkLogos(width: number, height: number): WatermarkLogo[] {
-  const COUNT = 14
-  const MARGIN = 60
-  const MIN_DIST = 130 // > 2x el semi-diagonal del logo más grande (tamaño 64) — nunca se tocan
-  const MAX_ATTEMPTS = 200
-  const logos: WatermarkLogo[] = []
+  const COUNT = 20
+  const MARGIN = 50
+  const GAP = 24 // aire extra entre bordes, además de la suma de radios
+  const MAX_ATTEMPTS = 300
+  const placed: (WatermarkLogo & { r: number })[] = []
   for (let i = 0; i < COUNT; i++) {
+    const size = 28 + Math.random() * 60
+    const r = logoRadius(size)
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const x = MARGIN + Math.random() * Math.max(width - MARGIN * 2, 1)
       const y = MARGIN + Math.random() * Math.max(height - MARGIN * 2, 1)
-      const collides = logos.some(l => Math.hypot(l.x - x, l.y - y) < MIN_DIST)
+      const collides = placed.some(l => Math.hypot(l.x - x, l.y - y) < l.r + r + GAP)
       if (!collides) {
-        logos.push({ x, y, rotation: Math.random() * 360, size: 40 + Math.random() * 24 })
+        placed.push({ x, y, rotation: Math.random() * 360, size, r })
         break
       }
     }
   }
-  return logos
+  return placed.map(({ x, y, rotation, size }) => ({ x, y, rotation, size }))
 }
 
 // Medio escalón, tomado directamente de la mitad izquierda del logo —
