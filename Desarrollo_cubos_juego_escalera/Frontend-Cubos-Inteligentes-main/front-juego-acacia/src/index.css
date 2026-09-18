@@ -2,72 +2,60 @@
 
 /* Tipografía autohospedada — sin llamada a red en tiempo de ejecución
    (antes: Google Fonts vía <link> en index.html). Regla dura #5. */
-@import "@fontsource-variable/fraunces/wght.css";
-@import "@fontsource/public-sans/400.css";
-@import "@fontsource/public-sans/500.css";
-@import "@fontsource/public-sans/600.css";
-@import "@fontsource/public-sans/700.css";
-@import "@fontsource/jetbrains-mono/400.css";
-@import "@fontsource/jetbrains-mono/500.css";
-@import "@fontsource/jetbrains-mono/600.css";
-@import "@fontsource/jetbrains-mono/700.css";
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-sans/700.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+@import "@fontsource/ibm-plex-mono/700.css";
 
-/* ── Design System v3 — "cuaderno de campo" ─────────────────────────────────
-   Reemplaza la v2 ("monitor clínico"): el usuario señaló que la v2, aunque
-   ya no usaba el boilerplate de shadcn, seguía leyendo como una interfaz
-   genérica — misma franja repetida por sección, un solo peso tipográfico,
-   ícono-en-círculo en cada control, sin asimetría, y el azul/rojo de los
-   equipos (la identidad real del proyecto: dos colores que se intercambian
-   en un tablero) solo vivía dentro de los cubos, en ningún otro lugar de la
-   interfaz. v3 trata la consola como un cuaderno de campo editorial: serif
-   con carácter para títulos y cifras, numeración de sección (01/02/03),
-   reglas de 1px en vez de cajas cerradas, y azul/rojo como marca. */
+/* ── Design System v4 — "consola neurocientífica" ───────────────────────────
+   v2 ("monitor clínico") tenía la estructura ordenada correcta — paneles
+   delimitados, tipografía sans, franjas claras — pero se sentía genérica
+   (ícono-en-círculo, sin identidad propia). v3 (editorial/serif) corrigió
+   la identidad pero perdió el orden: el usuario prefirió la estructura de
+   v2. v4 retoma los paneles delimitados de v2 y les suma la identidad real
+   del proyecto — no genérica: trazo EEG (el propio instrumento de la
+   tesis), glifos de señal neuronal por fase PPA en vez de íconos de
+   librería, marcadores tipo electrodo para los cubos conectados. IBM Plex
+   (Sans/Mono) en vez de un sans genérico: familia diseñada originalmente
+   para documentación técnica/científica global, no una serif editorial. */
 @theme {
-  /* Base — negro cálido, no grafito frío */
-  --color-ink: #0D0C0A;
-  --color-ink-raised: #17150F; /* uso mínimo: solo donde hace falta separar un plano físico real (overlay de cuenta regresiva) */
-  --color-rule: #2A271F; /* líneas de 1px — sustituyen la caja cerrada */
+  /* Base — grafito frío, la que ya funcionaba en v2 */
+  --color-bg: #0B0F10;
+  --color-panel: #12181A;
+  --color-line: #232C2F;
+  --color-line-strong: #3A464A;
 
-  /* Texto — hueso, no blanco puro */
-  --color-paper: #F2EEE6;
-  --color-paper-dim: #8C877C;
-  --color-paper-faint: #55524A;
+  --color-paper: #E7EDEE;
+  --color-paper-dim: #9FB0B3;
+  --color-paper-faint: #647275;
 
-  /* Marca — los dos colores reales del juego (equipo A/B, los mismos que
-     llevan los cubos físicos), usados con moderación: reglas finas,
-     numeración, la marca de dos cuadrados, nunca como relleno grande. */
-  --color-blue: #2A3EFF;
-  --color-red: #FF3B30;
+  /* Marca — azul/rojo reales de los dos equipos del juego */
+  --color-blue: #2A6DF5;
+  --color-red: #F5433A;
 
   /* Los 3 colores PPA NO se repiten aquí: fuente única en
      core/ppa/ppaColors.ts (PPA_HEX/PPA_TEXT/PPA_RGB). */
 
-  /* Alerta real: desconexión, movimiento inválido, error */
   --color-alert: #D4694A;
 
-  /* Tipografía */
-  --font-display: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
-  --font-sans: 'Public Sans', 'Segoe UI', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-sans: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
-  /* Radio: 0 en toda la interfaz de control — solo el cubo físico
-     (Cube.tsx) conserva un radio pequeño, porque representa un objeto real
-     con esquinas romas, no una tarjeta de UI. */
-  --radius-0: 0px;
+  --radius: 3px; /* discreto — ni caja hiperredondeada ni brutalismo a 0 */
 
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
   --space-6: 24px;
-  --space-8: 32px;
-  --space-12: 48px;
-
-  /* Ninguna sombra decorativa en el sistema. */
 }
 
 body {
-  background: var(--color-ink);
+  background: var(--color-bg);
   color: var(--color-paper);
   font-family: var(--font-sans);
 }
