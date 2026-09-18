@@ -871,11 +871,15 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
                     visual={visual}
                   />
                   {isEmpty ? (
-                    <div style={{ width: '8px', height: '8px' }} />
+                    <div style={{ width: '13px', height: '13px' }} />
                   ) : (
                     <div
                       title={`Cubo #${cube.id} — ${connected ? 'conectado' : 'sin conexión'}`}
-                      style={{ width: '8px', height: '8px', borderRadius: '50%', background: connected ? 'var(--color-online)' : 'var(--color-offline)' }}
+                      style={{
+                        width: '13px', height: '13px', borderRadius: '50%',
+                        background: connected ? 'var(--color-online)' : 'var(--color-offline)',
+                        boxShadow: `0 0 0 3px ${connected ? 'rgba(66,190,101,0.22)' : 'rgba(250,77,86,0.22)'}`,
+                      }}
                     />
                   )}
                 </div>
