@@ -95,18 +95,34 @@ function Logo({ size = 28 }: { size?: number }) {
   )
 }
 
-// Mismo logo, como mosaico de fondo repetido en toda la página — la marca de
-// agua centrada en una esquina quedaba casi siempre tapada por los paneles
-// (solo se veía en el margen sobrante en pantallas más anchas que los
-// 1400px de contenido). Como patrón CSS repetido sí se ve en cualquier
-// tamaño de ventana, detrás de los paneles y en los huecos entre ellos.
-// El azulejo que se repite mide 192x120 y trae 4 copias del logo, una por
-// cuadrante (0°, 180°, 90°, 270°) — así, aunque el azulejo en sí se repita,
-// cada copia visible mira hacia un lado distinto y el patrón no se lee
-// como una retícula pareja de siluetas idénticas. Cada cuadrante mide
-// 96x60, 3x el propio logo (32x20): ese margen es lo que separa cada
-// copia dentro del azulejo.
-const LOGO_TILE_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='120' viewBox='0 0 192 120'%3E%3Cg transform='translate(32,20)'%3E%3Cpath d='M0,20 L5.3,20 L5.3,14 L10.6,14 L10.6,8 L16,8 L16,2 L16,20 Z' fill='%234589FF' fill-opacity='0.075'/%3E%3Cpath d='M16,2 L16,8 L21.3,8 L21.3,14 L26.7,14 L26.7,20 L32,20 L16,20 Z' fill='%23FA4D56' fill-opacity='0.075'/%3E%3C/g%3E%3Cg transform='translate(144,30) rotate(180) translate(-16,-10)'%3E%3Cpath d='M0,20 L5.3,20 L5.3,14 L10.6,14 L10.6,8 L16,8 L16,2 L16,20 Z' fill='%234589FF' fill-opacity='0.075'/%3E%3Cpath d='M16,2 L16,8 L21.3,8 L21.3,14 L26.7,14 L26.7,20 L32,20 L16,20 Z' fill='%23FA4D56' fill-opacity='0.075'/%3E%3C/g%3E%3Cg transform='translate(48,90) rotate(90) translate(-16,-10)'%3E%3Cpath d='M0,20 L5.3,20 L5.3,14 L10.6,14 L10.6,8 L16,8 L16,2 L16,20 Z' fill='%234589FF' fill-opacity='0.075'/%3E%3Cpath d='M16,2 L16,8 L21.3,8 L21.3,14 L26.7,14 L26.7,20 L32,20 L16,20 Z' fill='%23FA4D56' fill-opacity='0.075'/%3E%3C/g%3E%3Cg transform='translate(144,90) rotate(270) translate(-16,-10)'%3E%3Cpath d='M0,20 L5.3,20 L5.3,14 L10.6,14 L10.6,8 L16,8 L16,2 L16,20 Z' fill='%234589FF' fill-opacity='0.075'/%3E%3Cpath d='M16,2 L16,8 L21.3,8 L21.3,14 L26.7,14 L26.7,20 L32,20 L16,20 Z' fill='%23FA4D56' fill-opacity='0.075'/%3E%3C/g%3E%3C/svg%3E")`
+type WatermarkLogo = { x: number; y: number; rotation: number; size: number }
+
+// Marca de agua del logo, esparcida al azar por el fondo — cada entrada a
+// la página genera una disposición nueva (posición y rotación de cada
+// copia), no un patrón fijo repetido: primero fue una sola copia en una
+// esquina (quedaba tapada por los paneles), luego un mosaico regular
+// (se veía cuadriculado); esta versión resuelve ambos con posiciones y
+// giros aleatorios por sesión, con separación mínima entre copias para
+// que nunca se superpongan ni se choquen entre sí.
+function generateWatermarkLogos(width: number, height: number): WatermarkLogo[] {
+  const COUNT = 14
+  const MARGIN = 60
+  const MIN_DIST = 130 // > 2x el semi-diagonal del logo más grande (tamaño 64) — nunca se tocan
+  const MAX_ATTEMPTS = 200
+  const logos: WatermarkLogo[] = []
+  for (let i = 0; i < COUNT; i++) {
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      const x = MARGIN + Math.random() * Math.max(width - MARGIN * 2, 1)
+      const y = MARGIN + Math.random() * Math.max(height - MARGIN * 2, 1)
+      const collides = logos.some(l => Math.hypot(l.x - x, l.y - y) < MIN_DIST)
+      if (!collides) {
+        logos.push({ x, y, rotation: Math.random() * 360, size: 40 + Math.random() * 24 })
+        break
+      }
+    }
+  }
+  return logos
+}
 
 // Medio escalón, tomado directamente de la mitad izquierda del logo —
 // marcador recurrente para títulos de sección en vez de una viñeta
@@ -123,6 +139,10 @@ export type ObservedCube = { id: number; team: 'A' | 'B' }
 
 function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeActions: Record<number, PPAPhase>) => void } = {}) {
   socket.connect()
+
+  // Disposición de la marca de agua: se calcula una sola vez por montaje
+  // (cada vez que se entra a la página), no en cada render.
+  const [watermarkLogos] = useState<WatermarkLogo[]>(() => generateWatermarkLogos(window.innerWidth, window.innerHeight))
 
   const teamBColor      = '#ff0000'
   const teamAColor      = '#0000ff'
@@ -764,17 +784,32 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
       display: 'flex',
       flexDirection: 'column',
       background: 'var(--color-bg)',
-      // Retícula de osciloscopio (puntos de 1px) + el logo como mosaico de
-      // marca de agua, ambos estáticos (sin animación, regla dura #1) y
-      // ambos capas del mismo backgroundImage — así el patrón del logo se
-      // ve en toda la página, no solo en el margen sobrante tras el
-      // contenido (ahí quedaba casi siempre tapado por los paneles).
-      backgroundImage: `radial-gradient(circle, var(--color-line) 1px, transparent 1px), ${LOGO_TILE_BG}`,
-      backgroundSize: '22px 22px, 192px 120px',
+      // Retícula de osciloscopio — puntos de 1px, estática (sin animación,
+      // regla dura #1), no un degradado difuso: la textura real de un
+      // instrumento de laboratorio, no decoración genérica.
+      backgroundImage: 'radial-gradient(circle, var(--color-line) 1px, transparent 1px)',
+      backgroundSize: '22px 22px',
       color: 'var(--color-paper)',
       fontFamily: 'var(--font-sans)',
       position: 'relative',
     }}>
+
+      {/* Marca de agua — logos esparcidos al azar (posición y rotación),
+          nunca superpuestos entre sí (ver generateWatermarkLogos). Capa
+          aparte del backgroundImage porque cada copia necesita su propia
+          rotación, algo que un solo backgroundImage repetido no puede
+          variar por instancia. */}
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        {watermarkLogos.map((l, i) => (
+          <div key={i} style={{
+            position: 'absolute', left: `${l.x}px`, top: `${l.y}px`,
+            transform: `translate(-50%, -50%) rotate(${l.rotation}deg)`,
+            opacity: 0.09,
+          }}>
+            <Logo size={l.size} />
+          </div>
+        ))}
+      </div>
 
       <div style={{
         flex: 1,
