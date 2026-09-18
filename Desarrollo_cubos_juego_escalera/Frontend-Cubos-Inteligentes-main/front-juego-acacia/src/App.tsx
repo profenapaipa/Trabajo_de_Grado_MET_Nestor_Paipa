@@ -718,8 +718,8 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           </div>
         </header>
 
-        {/* ── Sesión: pares, operador, control de partida, cronómetro ── */}
-        <div style={{ ...panel, flexShrink: 0, position: 'relative', display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'center' }}>
+        {/* ── Configuración: pares + operador, fila compacta aparte ── */}
+        <div style={{ ...panel, flexShrink: 0, display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'center' }}>
           <div>
             <div style={sectionLabel}>Pares</div>
             <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
@@ -753,8 +753,27 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
               </span>
             </div>
           </div>
+        </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+        {/* ── Control de partida: cronómetro grande centrado arriba, los 3
+             botones justo debajo — el patrón de un cronómetro real, no un
+             display de tiempo aislado en una esquina. ── */}
+        <div style={{ ...panel, flexShrink: 0, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '18px 16px' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={sectionLabel}>
+              {sessionState === 'inactivo' ? 'listo para iniciar'
+                : sessionState === 'cuenta_regresiva' ? 'cuenta regresiva…'
+                : sessionState === 'jugando' ? 'en curso'
+                : sessionState === 'pausado' ? 'en pausa'
+                : sessionState === 'victoria' ? 'victoria — reordena para seguir'
+                : 'bloqueado — reordena para seguir'}
+            </div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', fontSize: '40px', fontWeight: 600, lineHeight: 1.15 }}>
+              {sessionElapsedLabel}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px' }}>
             <button onClick={iniciarJuego} disabled={sessionState !== 'inactivo'} style={ghostBtn(sessionState === 'inactivo', 'var(--color-blue)')}>Iniciar</button>
             {sessionState === 'pausado' ? (
               <button onClick={reanudarJuego} style={ghostBtn(true, 'var(--color-blue)')}>Reanudar</button>
@@ -764,22 +783,8 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
             <button onClick={reiniciarJuego} disabled={sessionState === 'cuenta_regresiva' || sessionState === 'inactivo'} style={ghostBtn(!(sessionState === 'cuenta_regresiva' || sessionState === 'inactivo'), 'var(--color-paper-dim)')}>Reiniciar</button>
           </div>
 
-          <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-            <div style={sectionLabel}>
-              {sessionState === 'inactivo' ? 'listo para iniciar'
-                : sessionState === 'cuenta_regresiva' ? 'cuenta regresiva…'
-                : sessionState === 'jugando' ? 'en curso'
-                : sessionState === 'pausado' ? 'en pausa'
-                : sessionState === 'victoria' ? 'victoria — reordena para seguir'
-                : 'bloqueado — reordena para seguir'}
-            </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', fontSize: '28px', fontWeight: 600, lineHeight: 1.15 }}>
-              {sessionElapsedLabel}
-            </div>
-          </div>
-
           {sessionWarning && (
-            <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--color-alert)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--color-alert)' }}>
               <TriangleAlert size={13} /> {sessionWarning}
             </div>
           )}
@@ -811,9 +816,17 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           </div>
         )}
 
-        {/* ── Tablero — siempre en una sola fila (nowrap), incluso con 5
+        {/* ── Tablero + Señal PPA (columna principal) junto a una barra
+             lateral fija "en vivo" (condición acumulada + sonido/música) —
+             esta última no es colapsable: son datos que cambian mientras
+             se juega, no histórico. Solo Bitácoras queda en el
+             desplegable de más abajo. ── */}
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 0 }}>
+
+        {/* Tablero — siempre en una sola fila (nowrap), incluso con 5
              pares/11 posiciones: ancho completo del panel, no una columna
-             estrecha. ── */}
+             estrecha. */}
         <div style={{ ...panel, flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <span style={sectionLabel}>Tablero · {pares} par{pares > 1 ? 'es' : ''} · {visibleCubes.length} posiciones</span>
@@ -951,46 +964,55 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           </div>
         </div>
 
-        {/* ── Histórico, colapsable ── */}
+        </div>
+
+        {/* Barra lateral "en vivo" — fija, no colapsable: condición
+            acumulada y señal sonora/música cambian mientras se juega, así
+            que quedan siempre a la vista junto al tablero y los botones. */}
+        <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={panel}>
+            <div style={{ ...sectionLabel, marginBottom: '10px' }}>En vivo</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pausar} label={'Pausar — fallas reales detectadas'} />
+              <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pensar} label={'Pensar — mismo criterio, encadenado tras Pausar'} />
+              <PpaChargeMeter value={Math.min(Math.floor((Date.now() - turnStartRef.current) / 1000), actuarThresholdSec)} max={actuarThresholdSec} colorHex={PPA_HEX.actuar} label={`Actuar — latencia sin mover (umbral ${actuarThresholdSec}s, no oficial)`} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px' }}>
+              <span style={{ fontSize: '10px', color: 'var(--color-paper-dim)' }}>Umbral Actuar:</span>
+              <input type="range" min={2} max={30} value={actuarThresholdSec}
+                onChange={e => setActuarThresholdSec(Number(e.target.value))}
+                style={{ flex: 1, accentColor: 'var(--color-blue)' }} />
+              <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)' }}>{actuarThresholdSec}s</span>
+            </div>
+          </div>
+
+          <div style={{ ...panel, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <div style={sectionLabel}>Señal sonora PPA</div>
+              <span style={{ fontSize: '9px', color: activeAction ? 'var(--color-blue)' : 'var(--color-paper-faint)' }}>{activeAction ? 'activo' : 'en espera'}</span>
+            </div>
+            <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-end', height: '24px', marginBottom: '12px' }}>
+              {SND_H.map((h, i) => (
+                <div key={i} style={{ flex: 1, background: 'var(--color-line-strong)', height: `${activeAction ? h * 90 : h * 35}%` }} />
+              ))}
+            </div>
+            <div style={{ ...sectionLabel, marginBottom: '6px' }}>Música de fondo</div>
+            <AmbientMusicPanel accentColor="#2A6DF5" />
+          </div>
+        </div>
+        </div>
+
+        {/* ── Histórico, colapsable — solo bitácoras: son registro de lo ya
+             ocurrido, a diferencia de la barra lateral de arriba. ── */}
         <button onClick={() => setHistOpen(o => !o)} style={{
           ...panel, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px',
           flexShrink: 0, textAlign: 'left', width: '100%',
         }}>
-          <span style={sectionLabel}>{histOpen ? '−' : '+'} Histórico — bitácoras, condición acumulada, música ambiental</span>
+          <span style={sectionLabel}>{histOpen ? '−' : '+'} Histórico — bitácoras de eventos y decisiones</span>
         </button>
 
         {histOpen && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-
-            <div style={{ ...panel, flexShrink: 0 }}>
-              <div style={{ ...sectionLabel, marginBottom: '10px' }}>Condición acumulada por fase — informativo</div>
-              <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-                <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pausar} label={'Pausar — fallas reales detectadas'} />
-                <PpaChargeMeter value={fallaCount} max={FALLAS_PARA_PAUSAR} colorHex={PPA_HEX.pensar} label={'Pensar — mismo criterio, encadenado tras Pausar'} />
-                <PpaChargeMeter value={Math.min(Math.floor((Date.now() - turnStartRef.current) / 1000), actuarThresholdSec)} max={actuarThresholdSec} colorHex={PPA_HEX.actuar} label={`Actuar — latencia sin mover (umbral ${actuarThresholdSec}s, no oficial)`} />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--color-paper-dim)' }}>Umbral Actuar (s, no oficial):</span>
-                <input type="range" min={2} max={30} value={actuarThresholdSec}
-                  onChange={e => setActuarThresholdSec(Number(e.target.value))}
-                  style={{ flex: 1, maxWidth: '160px', accentColor: 'var(--color-blue)' }} />
-                <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)' }}>{actuarThresholdSec}s</span>
-              </div>
-            </div>
-
-            <div style={{ ...panel, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <div style={sectionLabel}>Señal sonora PPA — tono al enviar Pausar/Pensar/Actuar</div>
-                <span style={{ fontSize: '9px', color: activeAction ? 'var(--color-blue)' : 'var(--color-paper-faint)' }}>{activeAction ? 'activo' : 'en espera'}</span>
-              </div>
-              <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-end', height: '28px', marginBottom: '12px' }}>
-                {SND_H.map((h, i) => (
-                  <div key={i} style={{ flex: 1, background: 'var(--color-line-strong)', height: `${activeAction ? h * 90 : h * 35}%` }} />
-                ))}
-              </div>
-              <div style={{ ...sectionLabel, marginBottom: '6px' }}>Música de fondo (opcional)</div>
-              <AmbientMusicPanel accentColor="#2A6DF5" />
-            </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '12px' }}>
               <div style={panel}>
