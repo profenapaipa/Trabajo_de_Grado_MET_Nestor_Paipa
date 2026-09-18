@@ -65,6 +65,19 @@ function Electrode({ on }: { on: boolean }) {
   )
 }
 
+// Marca del proyecto: una escalera geométrica — dos tramos de escalón que
+// suben desde cada lado hasta un mismo pico central, mitad azul (equipo A)
+// y mitad roja (equipo B). No es un ícono de librería: es el mecanismo real
+// del juego (dos colores que ascienden y se cruzan) hecho logotipo.
+function Logo({ size = 28 }: { size?: number }) {
+  return (
+    <svg width={size} height={size * (20 / 32)} viewBox="0 0 32 20" aria-hidden="true">
+      <path d="M0,20 L5.3,20 L5.3,14 L10.6,14 L10.6,8 L16,8 L16,2 L16,20 Z" fill="var(--color-blue)" />
+      <path d="M16,2 L21.3,2 L21.3,8 L26.6,8 L26.6,14 L32,14 L32,20 L16,20 Z" fill="var(--color-red)" />
+    </svg>
+  )
+}
+
 export type ObservedCube = { id: number; team: 'A' | 'B' }
 
 function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeActions: Record<number, PPAPhase>) => void } = {}) {
@@ -647,9 +660,22 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
       display: 'flex',
       flexDirection: 'column',
       background: 'var(--color-bg)',
+      // Retícula de osciloscopio — puntos de 1px, estática (sin animación,
+      // regla dura #1), no un degradado difuso: la textura real de un
+      // instrumento de laboratorio, no decoración genérica.
+      backgroundImage: 'radial-gradient(circle, var(--color-line) 1px, transparent 1px)',
+      backgroundSize: '22px 22px',
       color: 'var(--color-paper)',
       fontFamily: 'var(--font-sans)',
+      position: 'relative',
     }}>
+      {/* Marca de agua — la misma escalera del encabezado, muy grande y casi
+          imperceptible, como ancla de identidad del fondo sin competir con
+          el contenido. */}
+      <div style={{ position: 'absolute', right: '-70px', bottom: '-50px', opacity: 0.07, pointerEvents: 'none' }}>
+        <Logo size={560} />
+      </div>
+
       <div style={{
         flex: 1,
         overflow: 'auto',
@@ -661,16 +687,15 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
         padding: '16px 20px',
         gap: '12px',
         boxSizing: 'border-box',
+        position: 'relative',
+        zIndex: 1,
       }}>
 
-        {/* ── Encabezado: marca (dos cuadrados azul/rojo — el mecanismo real
-             del juego) + trazo EEG como línea de estado de conexión ── */}
+        {/* ── Encabezado: marca (la escalera geométrica azul/rojo) + trazo
+             EEG como línea de estado de conexión ── */}
         <header style={{ flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', gap: '3px' }}>
-              <span style={{ width: '11px', height: '11px', background: 'var(--color-blue)', display: 'inline-block' }} />
-              <span style={{ width: '11px', height: '11px', background: 'var(--color-red)', display: 'inline-block' }} />
-            </div>
+            <Logo size={26} />
             <h1 style={{ fontSize: '18px', fontWeight: 700, margin: 0, letterSpacing: '-0.01em' }}>Escalera Inteligente</h1>
             <span style={{ ...sectionLabel, fontWeight: 500 }}>Control Mago de Oz</span>
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '7px', ...sectionLabel }}>
