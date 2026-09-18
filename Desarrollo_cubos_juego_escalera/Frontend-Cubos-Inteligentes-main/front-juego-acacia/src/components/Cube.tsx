@@ -34,25 +34,42 @@ function Cube({
   isSelected,
   action,
   onSelect,
+  isLegalTarget,
+  flashColor,
 }: {
   id: number
   color: string
   isSelected: boolean
   action?: CubeAction
   onSelect: (id: number) => void
+  // Casilla vacía a la que el cubo actualmente levantado SÍ puede bajar
+  // (resaltado en vivo, mismo criterio que ya usan las pestañas de
+  // Simulación — ver laEscaleraRules.legalMovesFor).
+  isLegalTarget?: boolean
+  // Color transitorio que refleja en el frontend, casi al instante, un
+  // efecto que el cubo físico también está mostrando en ese momento
+  // (naranja = movimiento inválido, blanco = pide reordenar). Tiene
+  // prioridad sobre el color de equipo/acción PPA mientras está activo.
+  flashColor?: string
 }) {
   const isEmpty = id === 0
   const meta    = action ? ACTION_META[action] : null
 
-  const bgColor    = meta ? meta.bg : color
-  const textColor  = meta ? meta.textColor : '#fff'
+  const bgColor    = flashColor ?? (meta ? meta.bg : color)
+  const textColor  = meta && !flashColor ? meta.textColor : '#fff'
 
-  // selection ring: white on action color, accent blue on default
+  // selection ring: white on action color, accent blue on default,
+  // verde-agua sobre casillas vacías que son un movimiento válido ahora
+  const LEGAL_TARGET_ACCENT = '#00e5a0'
   const selRing = isSelected
     ? `0 0 0 3px ${meta ? '#fff' : '#4fc3f7'}, 0 0 14px ${meta ? meta.bg + 'aa' : '#4fc3f7aa'}`
-    : meta
-      ? `0 0 10px ${meta.bg}66`
-      : '0 2px 8px rgba(0,0,0,0.5)'
+    : flashColor
+      ? `0 0 0 3px ${flashColor}, 0 0 16px ${flashColor}aa`
+      : isLegalTarget
+        ? `0 0 0 3px ${LEGAL_TARGET_ACCENT}, 0 0 12px ${LEGAL_TARGET_ACCENT}aa`
+        : meta
+          ? `0 0 10px ${meta.bg}66`
+          : '0 2px 8px rgba(0,0,0,0.5)'
 
   return (
     <div

@@ -1,0 +1,2170 @@
+[
+  {
+    "timestamp": "2026-09-12T00:16:40.013Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 1,
+    "posiciones": [
+      1,
+      null,
+      2
+    ],
+    "tipo": "reinicio",
+    "detalle": "Sesión de tutorial iniciada: 1 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:16:51.519Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 1,
+    "posiciones": [
+      null,
+      1,
+      2
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #1 movido de la posición 1 a la 2"
+  },
+  {
+    "timestamp": "2026-09-12T00:16:52.461Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 1,
+    "posiciones": [
+      2,
+      1,
+      null
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 3 a la 1"
+  },
+  {
+    "timestamp": "2026-09-12T00:16:53.291Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 1,
+    "posiciones": [
+      2,
+      null,
+      1
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #1 movido de la posición 2 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:16:53.291Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 1,
+    "posiciones": [
+      2,
+      null,
+      1
+    ],
+    "tipo": "victoria",
+    "detalle": "Intercambio completo en 3 movimientos"
+  },
+  {
+    "timestamp": "2026-09-12T00:16:56.205Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 1,
+    "posiciones": [
+      1,
+      null,
+      2
+    ],
+    "tipo": "reinicio",
+    "detalle": "Nuevo ejercicio: 1 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:16:57.404Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 1,
+    "posiciones": [
+      null,
+      1,
+      2
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #1 movido de la posición 1 a la 2"
+  },
+  {
+    "timestamp": "2026-09-12T00:16:58.058Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 1,
+    "posiciones": [
+      2,
+      1,
+      null
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 3 a la 1"
+  },
+  {
+    "timestamp": "2026-09-12T00:16:58.963Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 1,
+    "posiciones": [
+      2,
+      null,
+      1
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #1 movido de la posición 2 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:16:58.963Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 1,
+    "posiciones": [
+      2,
+      null,
+      1
+    ],
+    "tipo": "victoria",
+    "detalle": "Intercambio completo en 3 movimientos"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:00.518Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      2,
+      null,
+      3,
+      4
+    ],
+    "tipo": "reinicio",
+    "detalle": "Nuevo ejercicio: 2 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:02.109Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      null,
+      2,
+      3,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 2 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:03.631Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      null,
+      1,
+      2,
+      3,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #1 movido de la posición 1 a la 2"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:03.631Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      null,
+      1,
+      2,
+      3,
+      4
+    ],
+    "tipo": "derrota",
+    "detalle": "Ningún cubo tiene un movimiento legal disponible (bloqueo)"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:07.464Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      2,
+      null,
+      3,
+      4
+    ],
+    "tipo": "reinicio",
+    "detalle": "Nuevo ejercicio: 2 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:09.506Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      null,
+      2,
+      3,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 2 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:15.360Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      null,
+      1,
+      2,
+      3,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #1 movido de la posición 1 a la 2"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:15.360Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      null,
+      1,
+      2,
+      3,
+      4
+    ],
+    "tipo": "derrota",
+    "detalle": "Ningún cubo tiene un movimiento legal disponible (bloqueo)"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:18.640Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      2,
+      null,
+      3,
+      4
+    ],
+    "tipo": "reinicio",
+    "detalle": "Nuevo ejercicio: 2 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:20.549Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      2,
+      3,
+      null,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 4 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:21.938Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      2,
+      3,
+      null,
+      4
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #4 a la posición 1"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:22.742Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      2,
+      3,
+      null,
+      4
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #2 a la posición 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:23.843Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      2,
+      3,
+      null,
+      4
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #1 a la posición 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:24.958Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      2,
+      3,
+      null,
+      4
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #1 a la posición 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:28.417Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      null,
+      3,
+      2,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 2 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:30.954Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      null,
+      2,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 3 a la 2"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:32.239Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      4,
+      2,
+      null
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #4 movido de la posición 5 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:33.096Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      4,
+      null,
+      2
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 4 a la 5"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:33.096Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      4,
+      null,
+      2
+    ],
+    "tipo": "derrota",
+    "detalle": "Ningún cubo tiene un movimiento legal disponible (bloqueo)"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:38.404Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      2,
+      null,
+      3,
+      4
+    ],
+    "tipo": "reinicio",
+    "detalle": "Nuevo ejercicio: 2 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:41.650Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 1,
+    "posiciones": [
+      1,
+      null,
+      2
+    ],
+    "tipo": "reinicio",
+    "detalle": "Nuevo ejercicio: 1 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:46.245Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 1,
+    "posiciones": [
+      null,
+      1,
+      2
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #1 movido de la posición 1 a la 2"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:48.084Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 1,
+    "posiciones": [
+      2,
+      1,
+      null
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 3 a la 1"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:52.565Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 1,
+    "posiciones": [
+      2,
+      null,
+      1
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #1 movido de la posición 2 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:52.565Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 1,
+    "posiciones": [
+      2,
+      null,
+      1
+    ],
+    "tipo": "victoria",
+    "detalle": "Intercambio completo en 3 movimientos"
+  },
+  {
+    "timestamp": "2026-09-12T00:17:57.281Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      2,
+      null,
+      3,
+      4
+    ],
+    "tipo": "reinicio",
+    "detalle": "Nuevo ejercicio: 2 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:18:00.135Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      null,
+      2,
+      3,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 2 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:18:01.318Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      2,
+      null,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 4 a la 2"
+  },
+  {
+    "timestamp": "2026-09-12T00:18:14.132Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      2,
+      4,
+      null
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #4 movido de la posición 5 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:18:15.506Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      null,
+      4,
+      2
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 3 a la 5"
+  },
+  {
+    "timestamp": "2026-09-12T00:18:17.206Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      4,
+      null,
+      2
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #4 movido de la posición 4 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:18:17.206Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      4,
+      null,
+      2
+    ],
+    "tipo": "derrota",
+    "detalle": "Ningún cubo tiene un movimiento legal disponible (bloqueo)"
+  },
+  {
+    "timestamp": "2026-09-12T00:18:53.117Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      2,
+      null,
+      3,
+      4
+    ],
+    "tipo": "reinicio",
+    "detalle": "Nuevo ejercicio: 2 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:18:55.516Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      null,
+      2,
+      3,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 2 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:18:56.677Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      2,
+      null,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 4 a la 2"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:03.350Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      null,
+      2,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 3 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:05.430Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      null,
+      2,
+      4
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #3 a la posición 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:07.365Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      null,
+      3,
+      1,
+      2,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #1 movido de la posición 1 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:09.910Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      null,
+      3,
+      1,
+      2,
+      4
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #4 a la posición 1"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:11.575Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      null,
+      3,
+      1,
+      2,
+      4
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #4 a la posición 1"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:14.829Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      3,
+      null,
+      1,
+      2,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 2 a la 1"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:14.829Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      3,
+      null,
+      1,
+      2,
+      4
+    ],
+    "tipo": "derrota",
+    "detalle": "Ningún cubo tiene un movimiento legal disponible (bloqueo)"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:25.285Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      2,
+      null,
+      3,
+      4
+    ],
+    "tipo": "reinicio",
+    "detalle": "Nuevo ejercicio: 2 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:28.761Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      2,
+      3,
+      null,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 4 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:30.130Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      null,
+      3,
+      2,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 2 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:31.429Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      null,
+      2,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 3 a la 2"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:49.685Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      null,
+      2,
+      4
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #2 a la posición 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:50.514Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      null,
+      2,
+      4
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #2 a la posición 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:53.803Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      null,
+      2,
+      4
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #3 a la posición 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:56.146Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      4,
+      2,
+      null
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #4 movido de la posición 5 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:58.829Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      4,
+      null,
+      2
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 4 a la 5"
+  },
+  {
+    "timestamp": "2026-09-12T00:19:58.829Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      4,
+      null,
+      2
+    ],
+    "tipo": "derrota",
+    "detalle": "Ningún cubo tiene un movimiento legal disponible (bloqueo)"
+  },
+  {
+    "timestamp": "2026-09-12T00:20:06.896Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      2,
+      null,
+      3,
+      4
+    ],
+    "tipo": "reinicio",
+    "detalle": "Nuevo ejercicio: 2 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:20:08.558Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      null,
+      2,
+      3,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 2 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:20:09.733Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      2,
+      null,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 4 a la 2"
+  },
+  {
+    "timestamp": "2026-09-12T00:20:10.626Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      null,
+      2,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 3 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:20:13.284Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      null,
+      2,
+      4
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #4 a la posición 5"
+  },
+  {
+    "timestamp": "2026-09-12T00:20:14.346Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      4,
+      2,
+      null
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #4 movido de la posición 5 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:20:20.942Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      4,
+      null,
+      2
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 4 a la 5"
+  },
+  {
+    "timestamp": "2026-09-12T00:20:20.942Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      4,
+      null,
+      2
+    ],
+    "tipo": "derrota",
+    "detalle": "Ningún cubo tiene un movimiento legal disponible (bloqueo)"
+  },
+  {
+    "timestamp": "2026-09-12T00:20:27.387Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      2,
+      null,
+      3,
+      4
+    ],
+    "tipo": "reinicio",
+    "detalle": "Nuevo ejercicio: 2 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:20:32.613Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      null,
+      2,
+      3,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 2 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:20:34.691Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      2,
+      null,
+      4
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 4 a la 2"
+  },
+  {
+    "timestamp": "2026-09-12T00:20:41.039Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      2,
+      4,
+      null
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #4 movido de la posición 5 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:20:42.608Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      1,
+      3,
+      null,
+      4,
+      2
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 3 a la 5"
+  },
+  {
+    "timestamp": "2026-09-12T00:20:48.051Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      null,
+      3,
+      1,
+      4,
+      2
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #1 movido de la posición 1 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:20:54.296Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      3,
+      null,
+      1,
+      4,
+      2
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 2 a la 1"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:02.454Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      3,
+      4,
+      1,
+      null,
+      2
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #4 movido de la posición 4 a la 2"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:03.233Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      3,
+      4,
+      null,
+      1,
+      2
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #1 movido de la posición 3 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:03.233Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 2,
+    "posiciones": [
+      3,
+      4,
+      null,
+      1,
+      2
+    ],
+    "tipo": "victoria",
+    "detalle": "Intercambio completo en 8 movimientos"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:11.926Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      3,
+      null,
+      4,
+      5,
+      6
+    ],
+    "tipo": "reinicio",
+    "detalle": "Nuevo ejercicio: 3 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:18.500Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      null,
+      3,
+      4,
+      5,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 3 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:19.898Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      4,
+      3,
+      null,
+      5,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #4 movido de la posición 5 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:21.992Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      4,
+      null,
+      3,
+      5,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 4 a la 5"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:23.598Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      4,
+      5,
+      3,
+      null,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #5 movido de la posición 6 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:25.058Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      4,
+      5,
+      3,
+      6,
+      null
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #6 movido de la posición 7 a la 6"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:26.215Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      4,
+      5,
+      null,
+      6,
+      3
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 5 a la 7"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:31.601Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      4,
+      5,
+      null,
+      6,
+      3
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #5 a la posición 5"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:32.443Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      4,
+      5,
+      null,
+      6,
+      3
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #5 a la posición 5"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:38.750Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      3,
+      null,
+      4,
+      5,
+      6
+    ],
+    "tipo": "reinicio",
+    "detalle": "Nuevo ejercicio: 3 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:43.266Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      null,
+      5,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #4 movido de la posición 5 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:48.457Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      null,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #5 movido de la posición 6 a la 5"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:49.702Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      null,
+      6
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #5 a la posición 6"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:51.160Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      null,
+      6
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #5 a la posición 6"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:55.479Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      null,
+      6
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #3 a la posición 6"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:56.275Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      3,
+      null,
+      4,
+      5,
+      6
+    ],
+    "tipo": "reinicio",
+    "detalle": "Nuevo ejercicio: 3 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:21:59.678Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      null,
+      3,
+      4,
+      5,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 3 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:02.222Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      4,
+      3,
+      null,
+      5,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #4 movido de la posición 5 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:04.120Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      4,
+      null,
+      3,
+      5,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 4 a la 5"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:08.243Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      null,
+      4,
+      2,
+      3,
+      5,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 2 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:11.008Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      4,
+      null,
+      2,
+      3,
+      5,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #4 movido de la posición 3 a la 2"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:13.071Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      4,
+      null,
+      2,
+      3,
+      5,
+      6
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #2 a la posición 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:17.063Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      4,
+      null,
+      2,
+      3,
+      5,
+      6
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #2 a la posición 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:24.355Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      4,
+      null,
+      2,
+      3,
+      5,
+      6
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #4 a la posición 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:25.943Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      3,
+      null,
+      4,
+      5,
+      6
+    ],
+    "tipo": "reinicio",
+    "detalle": "Nuevo ejercicio: 3 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:38.023Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      null,
+      3,
+      4,
+      5,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 3 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:39.188Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      4,
+      3,
+      null,
+      5,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #4 movido de la posición 5 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:40.414Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      4,
+      3,
+      5,
+      null,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #5 movido de la posición 6 a la 5"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:41.627Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      4,
+      null,
+      5,
+      3,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 4 a la 6"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:42.897Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      null,
+      4,
+      2,
+      5,
+      3,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 2 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:43.761Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      4,
+      null,
+      2,
+      5,
+      3,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #4 movido de la posición 3 a la 2"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:44.825Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      4,
+      5,
+      2,
+      null,
+      3,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #5 movido de la posición 5 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:46.201Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      3,
+      null,
+      4,
+      5,
+      6
+    ],
+    "tipo": "reinicio",
+    "detalle": "Nuevo ejercicio: 3 par(es) de cubos"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:47.584Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      null,
+      3,
+      4,
+      5,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 3 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:49.331Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      4,
+      3,
+      null,
+      5,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #4 movido de la posición 5 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:53.688Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      4,
+      3,
+      5,
+      null,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #5 movido de la posición 6 a la 5"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:54.916Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      2,
+      4,
+      null,
+      5,
+      3,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 4 a la 6"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:56.677Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      1,
+      null,
+      4,
+      2,
+      5,
+      3,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 2 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:58.538Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      null,
+      1,
+      4,
+      2,
+      5,
+      3,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #1 movido de la posición 1 a la 2"
+  },
+  {
+    "timestamp": "2026-09-12T00:22:59.803Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      4,
+      1,
+      null,
+      2,
+      5,
+      3,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #4 movido de la posición 3 a la 1"
+  },
+  {
+    "timestamp": "2026-09-12T00:23:00.833Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      4,
+      1,
+      5,
+      2,
+      null,
+      3,
+      6
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #5 movido de la posición 5 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:23:01.918Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      4,
+      1,
+      5,
+      2,
+      6,
+      3,
+      null
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #6 movido de la posición 7 a la 5"
+  },
+  {
+    "timestamp": "2026-09-12T00:23:05.775Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      4,
+      1,
+      5,
+      2,
+      6,
+      null,
+      3
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #3 movido de la posición 6 a la 7"
+  },
+  {
+    "timestamp": "2026-09-12T00:23:06.976Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      4,
+      1,
+      5,
+      2,
+      6,
+      null,
+      3
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #6 a la posición 6"
+  },
+  {
+    "timestamp": "2026-09-12T00:23:07.899Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      4,
+      1,
+      5,
+      2,
+      6,
+      null,
+      3
+    ],
+    "tipo": "falla",
+    "detalle": "Intento inválido: mover el cubo #6 a la posición 5"
+  },
+  {
+    "timestamp": "2026-09-12T00:23:08.763Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      4,
+      1,
+      5,
+      null,
+      6,
+      2,
+      3
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #2 movido de la posición 4 a la 6"
+  },
+  {
+    "timestamp": "2026-09-12T00:23:11.810Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      4,
+      null,
+      5,
+      1,
+      6,
+      2,
+      3
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #1 movido de la posición 2 a la 4"
+  },
+  {
+    "timestamp": "2026-09-12T00:23:12.951Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      4,
+      5,
+      null,
+      1,
+      6,
+      2,
+      3
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #5 movido de la posición 3 a la 2"
+  },
+  {
+    "timestamp": "2026-09-12T00:23:13.839Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      4,
+      5,
+      6,
+      1,
+      null,
+      2,
+      3
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #6 movido de la posición 5 a la 3"
+  },
+  {
+    "timestamp": "2026-09-12T00:23:14.360Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      4,
+      5,
+      6,
+      null,
+      1,
+      2,
+      3
+    ],
+    "tipo": "movimiento",
+    "detalle": "Cubo #1 movido de la posición 4 a la 5"
+  },
+  {
+    "timestamp": "2026-09-12T00:23:14.360Z",
+    "esSimulacion": true,
+    "operadorId": "(sin asignar)",
+    "versionConfiguracion": "sim-config-v0.1",
+    "pares": 3,
+    "posiciones": [
+      4,
+      5,
+      6,
+      null,
+      1,
+      2,
+      3
+    ],
+    "tipo": "victoria",
+    "detalle": "Intercambio completo en 15 movimientos"
+  }
+]

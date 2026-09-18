@@ -107,6 +107,15 @@ export function playPpaFeedback(fase: 'pausar' | 'pensar' | 'actuar', totalDurat
   } catch { /* audio no disponible */ }
 }
 
+// Beep de la cuenta regresiva sincronizada (3, 2, 1, ¡Inicia!): tono
+// corto de tono ascendente por tick, más largo/agudo en el último para
+// que se distinga claramente del resto.
+export function playCountdownBeep(tick: 3 | 2 | 1 | 0) {
+  const freqs: Record<3 | 2 | 1 | 0, number> = { 3: 440, 2: 550, 1: 660, 0: 880 }
+  const duration = tick === 0 ? 0.35 : 0.18
+  playTone(freqs[tick], duration, tick === 0 ? 0.5 : 0.35)
+}
+
 // Zumbido corto y grave para movimientos ilegales — distinto de los 3
 // tonos de PPA para no confundirse con una fase real.
 export function playError() {

@@ -1,0 +1,1289 @@
+[
+  {
+    "timestamp": "2026-09-18T03:16:26.728Z",
+    "pares": 5,
+    "tipo": "base_conectada",
+    "detalle": "La base física reporta conexión activa"
+  },
+  {
+    "timestamp": "2026-09-18T03:16:26.728Z",
+    "pares": 5,
+    "tipo": "esclavo_conectado",
+    "detalle": "Cubo esclavo #1 conectado"
+  },
+  {
+    "timestamp": "2026-09-18T03:16:26.728Z",
+    "pares": 5,
+    "tipo": "esclavo_conectado",
+    "detalle": "Cubo esclavo #2 conectado"
+  },
+  {
+    "timestamp": "2026-09-18T03:16:26.728Z",
+    "pares": 5,
+    "tipo": "esclavo_conectado",
+    "detalle": "Cubo esclavo #3 conectado"
+  },
+  {
+    "timestamp": "2026-09-18T03:16:26.728Z",
+    "pares": 5,
+    "tipo": "esclavo_conectado",
+    "detalle": "Cubo esclavo #4 conectado"
+  },
+  {
+    "timestamp": "2026-09-18T03:16:26.728Z",
+    "pares": 5,
+    "tipo": "esclavo_conectado",
+    "detalle": "Cubo esclavo #5 conectado"
+  },
+  {
+    "timestamp": "2026-09-18T03:16:26.728Z",
+    "pares": 5,
+    "tipo": "esclavo_conectado",
+    "detalle": "Cubo esclavo #6 conectado"
+  },
+  {
+    "timestamp": "2026-09-18T03:16:26.728Z",
+    "pares": 5,
+    "tipo": "esclavo_conectado",
+    "detalle": "Cubo esclavo #7 conectado"
+  },
+  {
+    "timestamp": "2026-09-18T03:16:26.728Z",
+    "pares": 5,
+    "tipo": "esclavo_conectado",
+    "detalle": "Cubo esclavo #8 conectado"
+  },
+  {
+    "timestamp": "2026-09-18T03:16:26.728Z",
+    "pares": 5,
+    "tipo": "esclavo_conectado",
+    "detalle": "Cubo esclavo #9 conectado"
+  },
+  {
+    "timestamp": "2026-09-18T03:16:26.728Z",
+    "pares": 5,
+    "tipo": "esclavo_conectado",
+    "detalle": "Cubo esclavo #10 conectado"
+  },
+  {
+    "timestamp": "2026-09-18T03:16:26.742Z",
+    "pares": 5,
+    "tipo": "base_desconectada",
+    "detalle": "Conexión con el backend perdida (evento disconnect)"
+  },
+  {
+    "timestamp": "2026-09-18T03:16:27.741Z",
+    "pares": 5,
+    "tipo": "base_conectada",
+    "detalle": "La base física reporta conexión activa"
+  },
+  {
+    "timestamp": "2026-09-18T03:16:53.043Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      0,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:16:57.651Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:10.859Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:11.580Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:11.689Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:12.197Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:12.446Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:12.937Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:13.589Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:14.672Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:14.791Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:15.014Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:15.103Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:15.876Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:16.078Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:17.046Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:17.562Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:17.945Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:18.644Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:19.772Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:19.975Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:21.783Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:22.075Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:22.224Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:22.440Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:22.638Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:22.731Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:23.246Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:24.181Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:24.590Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:25.919Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:26.063Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:26.140Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:27.346Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:27.731Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:28.060Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:28.270Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:29.193Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:29.703Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:30.018Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:30.111Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:33.447Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:17:34.060Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:18:39.235Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:18:39.311Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:21:13.158Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:21:13.335Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:21:13.845Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:21:14.477Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:21:33.635Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:21:33.718Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:22:14.351Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:22:14.684Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:22:16.954Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:22:17.765Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:23:24.096Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:23:24.518Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:24:49.146Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:24:49.320Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:24:49.617Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:24:49.718Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:24:50.998Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:24:51.163Z",
+    "pares": 5,
+    "tipo": "posiciones",
+    "detalle": "Actualización de posiciones reportada por la base",
+    "posiciones": [
+      1,
+      0,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "timestamp": "2026-09-18T03:25:13.816Z",
+    "pares": 5,
+    "tipo": "base_desconectada",
+    "detalle": "La base física reporta desconexión"
+  },
+  {
+    "timestamp": "2026-09-18T03:26:01.574Z",
+    "pares": 5,
+    "tipo": "base_desconectada",
+    "detalle": "Conexión con el backend perdida (evento disconnect)"
+  }
+]

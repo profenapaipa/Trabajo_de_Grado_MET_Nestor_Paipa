@@ -1,0 +1,79 @@
+timestamp,pares,tipo,detalle,posiciones
+"2026-09-18T03:16:26.728Z","5","base_conectada","La base física reporta conexión activa",
+"2026-09-18T03:16:26.728Z","5","esclavo_conectado","Cubo esclavo #1 conectado",
+"2026-09-18T03:16:26.728Z","5","esclavo_conectado","Cubo esclavo #2 conectado",
+"2026-09-18T03:16:26.728Z","5","esclavo_conectado","Cubo esclavo #3 conectado",
+"2026-09-18T03:16:26.728Z","5","esclavo_conectado","Cubo esclavo #4 conectado",
+"2026-09-18T03:16:26.728Z","5","esclavo_conectado","Cubo esclavo #5 conectado",
+"2026-09-18T03:16:26.728Z","5","esclavo_conectado","Cubo esclavo #6 conectado",
+"2026-09-18T03:16:26.728Z","5","esclavo_conectado","Cubo esclavo #7 conectado",
+"2026-09-18T03:16:26.728Z","5","esclavo_conectado","Cubo esclavo #8 conectado",
+"2026-09-18T03:16:26.728Z","5","esclavo_conectado","Cubo esclavo #9 conectado",
+"2026-09-18T03:16:26.728Z","5","esclavo_conectado","Cubo esclavo #10 conectado",
+"2026-09-18T03:16:26.742Z","5","base_desconectada","Conexión con el backend perdida (evento disconnect)",
+"2026-09-18T03:16:27.741Z","5","base_conectada","La base física reporta conexión activa",
+"2026-09-18T03:16:53.043Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,0,5,0,6,7,8,9,10]"
+"2026-09-18T03:16:57.651Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:10.859Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:11.580Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:11.689Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:12.197Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:12.446Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:12.937Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:13.589Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:14.672Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:14.791Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:15.014Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:15.103Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:15.876Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:16.078Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:17.046Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:17.562Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:17.945Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:18.644Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:19.772Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:19.975Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:21.783Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:22.075Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:22.224Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:22.440Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:22.638Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:22.731Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:23.246Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:24.181Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:24.590Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:25.919Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:26.063Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:26.140Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:27.346Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:27.731Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:28.060Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:28.270Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:29.193Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:29.703Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:30.018Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:30.111Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:33.447Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:17:34.060Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:18:39.235Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:18:39.311Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:21:13.158Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:21:13.335Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:21:13.845Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:21:14.477Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:21:33.635Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:21:33.718Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:22:14.351Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:22:14.684Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:22:16.954Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:22:17.765Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:23:24.096Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:23:24.518Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:24:49.146Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:24:49.320Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:24:49.617Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:24:49.718Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:24:50.998Z","5","posiciones","Actualización de posiciones reportada por la base","[1,2,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:24:51.163Z","5","posiciones","Actualización de posiciones reportada por la base","[1,0,3,4,5,0,6,7,8,9,10]"
+"2026-09-18T03:25:13.816Z","5","base_desconectada","La base física reporta desconexión",
+"2026-09-18T03:26:01.574Z","5","base_desconectada","Conexión con el backend perdida (evento disconnect)",

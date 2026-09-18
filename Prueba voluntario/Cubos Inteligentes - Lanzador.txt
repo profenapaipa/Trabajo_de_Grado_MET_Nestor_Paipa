@@ -1,0 +1,18 @@
+
+ =====================================================
+   CUBOS INTELIGENTES - Iniciando Sistema
+ =====================================================
+
+ [0/4] Liberando puertos 5173 y 3000 si estan ocupados...
+ [1/4] Abriendo ventana FRONTEND...
+ [2/4] Esperando que Vite inicie (12 segundos)...
+ [3/4] Abriendo navegador en http://localhost:5173 ...
+ [4/4] Abriendo ventana BACKEND...
+
+ =====================================================
+  Listo. Revisa las ventanas abiertas:
+  - Frontend : http://localhost:5173
+  - Backend  : http://localhost:3000
+ =====================================================
+
+Presione una tecla para continuar . . .

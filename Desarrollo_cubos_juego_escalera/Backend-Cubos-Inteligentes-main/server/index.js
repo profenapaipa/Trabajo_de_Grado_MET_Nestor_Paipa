@@ -24,8 +24,13 @@ app.use(express.json())
 app.use(logger('dev'))
 app.use(cors())
 
-let cuboModificado = null;
-let cubosRestaurados = null;
+// Cola de comandos pendientes para el maestro. Antes era un único objeto
+// (cuboModificado) que se sobrescribía en cada emit — si el frontend
+// mandaba varios comandos casi seguidos (p. ej. una señal a "todos los
+// cubos"), los anteriores se perdían antes de que el maestro llegara a
+// pedirlos. /api/obtenerComando ahora drena la cola completa en cada
+// llamada, así que ningún comando se pierde por una ráfaga.
+let comandoQueue = [];
 let comandoGlobal = null;
 
 let lastBaseSeen = 0;
@@ -56,12 +61,12 @@ io.on("connection", (socket) => {
 
   socket.on("comandoCubo", (data) => {
     console.log("Cubo a modificar enviado desde el front:", data);
-    cuboModificado = data;
+    comandoQueue.push(data);
   });
 
   socket.on("restaurarCubos", (data) => {
     console.log("Restaurar cubos solicitado desde el front:", data);
-    cubosRestaurados = data;
+    comandoQueue.push({ mensaje: "restaurar" });
   });
 
   socket.on("comandoGlobal", (data) => {
@@ -79,16 +84,11 @@ app.get('/', (req, res) => {
 
 app.get("/api/obtenerComando", (req, res) => {
   markBaseActivity();
-  if (cuboModificado) {
-    res.json(cuboModificado);
-    //el comando se borre una vez entregado
-    cuboModificado = null;
-  } else if (cubosRestaurados) {
-    res.json(cubosRestaurados);
-    cubosRestaurados = null;
-  } else {
-    res.json({ mensaje: "sin_comando" });
-  }
+  // Drena toda la cola de una vez (Node es de un solo hilo: no hay
+  // condición de carrera entre este drenado y los push() de comandoCubo).
+  const comandos = comandoQueue;
+  comandoQueue = [];
+  res.json({ comandos });
 });
 
 app.get("/api/obtenerComandoGlobal", (req, res) => {

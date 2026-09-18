@@ -8,15 +8,15 @@ import {
   Activity, Hand, Grid2X2, Shuffle,
   Wifi, WifiOff,
   Pause, Lightbulb, Zap, Power, Box, TriangleAlert, Download, ClipboardList, Check,
-  Trophy, Ban,
+  Trophy, Ban, Play, RotateCcw, PauseCircle, PlayCircle,
 } from 'lucide-react'
 import {
   type EventoCubo, type DecisionOperador,
   toCsvEventosCubo, toCsvDecisionesOperador, downloadFile, nowIso,
 } from './core/control/bitacoraControl'
 import hexToRgbArray from './core/utils/hextToRgb'
-import { playPpaFeedback, playError } from './core/utils/ppaTones'
-import { PPA_RGB, PPA_HEX, PPA_TEXT, PPA_VIBRATION, PPA_VIB_PATTERN, PPA_SOUND_LABEL, PPA_LABEL, PPA_FRASE, ppaRgba, AUTO_OFF_MS, FALLAS_PARA_PAUSAR, type PPAPhase } from './core/ppa/ppaColors'
+import { playPpaFeedback, playError, playCountdownBeep } from './core/utils/ppaTones'
+import { PPA_RGB, PPA_HEX, PPA_TEXT, PPA_VIBRATION, PPA_VIB_PATTERN, PPA_SOUND_LABEL, PPA_LABEL, PPA_FRASE, ppaRgba, AUTO_OFF_MS, FALLAS_PARA_PAUSAR, type PPAPhase, EFECTOS, INVALIDO_HEX, BLANCO_HEX } from './core/ppa/ppaColors'
 import { type Board, legalMovesFor, computeWinBoard, boardsEqual, isStuck } from './core/simulation/laEscaleraRules'
 import PpaChargeMeter from './components/simulation/PpaChargeMeter'
 
@@ -74,6 +74,20 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   const [actuarThresholdSec, setActuarThresholdSec] = useState(8)
   const [tick,            setTick]            = useState(0)
 
+  // ── Control de partida (Iniciar/Pausar/Reiniciar) ──────────────────────────
+  type SessionState = 'inactivo' | 'cuenta_regresiva' | 'jugando' | 'pausado' | 'bloqueado' | 'victoria'
+  const [sessionState,   setSessionState]   = useState<SessionState>('inactivo')
+  const [countdownTick,  setCountdownTick]  = useState<number | null>(null) // 3,2,1,0("¡Inicia!") mientras cuenta
+  const [flashCubeId,    setFlashCubeId]    = useState<number | null>(null) // reacción inmediata a movimiento inválido, en espejo con EF=3 del cubo físico
+  const [sessionWarning, setSessionWarning] = useState<string | null>(null)
+
+  const intentoIdRef        = useRef<string | null>(null)
+  const sessionStartRef     = useRef<number>(0)   // Date.now() del arranque del tramo "jugando" actual
+  const sessionAccumMsRef   = useRef<number>(0)   // tiempo acumulado de tramos "jugando" anteriores del mismo intento
+  const countdownTimersRef  = useRef<ReturnType<typeof setTimeout>[]>([])
+  const flashTimerRef       = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const sessionWarnTimer    = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const actionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const warnTimer   = useRef<ReturnType<typeof setTimeout> | null>(null)
   const esclavosRef  = useRef<number[]>([])
@@ -90,11 +104,11 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   }, [])
   void tick // fuerza el re-render del medidor de Actuar cada 500ms; su valor no se muestra
 
-  function logCuboEvent(entry: Omit<EventoCubo, 'timestamp' | 'pares'>) {
-    setCuboEvents(prev => [...prev, { timestamp: nowIso(), pares: paresRef.current, ...entry }])
+  function logCuboEvent(entry: Omit<EventoCubo, 'timestamp' | 'pares' | 'intentoId'>) {
+    setCuboEvents(prev => [...prev, { timestamp: nowIso(), pares: paresRef.current, intentoId: intentoIdRef.current ?? undefined, ...entry }])
   }
-  function logOperatorEvent(entry: Omit<DecisionOperador, 'timestamp' | 'pares' | 'operadorId'>) {
-    setOperatorEvents(prev => [...prev, { timestamp: nowIso(), pares: paresRef.current, operadorId: operatorIdRef.current || '(sin asignar)', ...entry }])
+  function logOperatorEvent(entry: Omit<DecisionOperador, 'timestamp' | 'pares' | 'operadorId' | 'intentoId'>) {
+    setOperatorEvents(prev => [...prev, { timestamp: nowIso(), pares: paresRef.current, operadorId: operatorIdRef.current || '(sin asignar)', intentoId: intentoIdRef.current ?? undefined, ...entry }])
   }
 
   useEffect(() => {
@@ -118,9 +132,13 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
       const antes = esclavosRef.current
       for (const id of nuevos) if (!antes.includes(id)) {
         logCuboEvent({ tipo: 'esclavo_conectado', detalle: `Cubo esclavo #${id} conectado` })
-        // Color de reposo del equipo (azul/rojo) al conectar, para que el
-        // cubo nunca quede en el color natural del MDF sin señal — ver
-        // PENDIENTES_TESIS.md, "Cubos sin color por defecto".
+        // Color de reposo del equipo (azul/rojo) al conectar, directo y
+        // sin etapa intermedia — ver PENDIENTES_TESIS.md, "Cubos sin
+        // color por defecto". Antes se enviaba primero una señal EF=2
+        // (cyberpunk lila 3s), pero en la prueba con hardware real del
+        // 2026-09-18 los cubos se quedaron pegados en ese color y dejaron
+        // de responder a Pausar/Pensar/Actuar; se retiró esa etapa
+        // intermedia y se volvió a esta versión, que sí funcionaba.
         socket.emit('comandoCubo', estadoInicialPayload(id))
       }
       for (const id of antes) if (!nuevos.includes(id)) logCuboEvent({ tipo: 'esclavo_desconectado', detalle: `Cubo esclavo #${id} desconectado` })
@@ -139,6 +157,17 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     const d = cubesData.find(c => c.id === id)
     return d ?? { id: 0, color: emptySpaceColor, vibrationIntensity: 0, iluminationFrequency: 0 }
   })
+
+  // Movimientos válidos del cubo actualmente levantado, en vivo — mismo
+  // criterio y misma fuente (lastSettledPositionsRef) que ya usa la
+  // detección de fallas más abajo, replicando el resaltado que ya existe
+  // en las pestañas de Simulación (ControladorSimulado/JuegoSimulado).
+  const legalTargetsLive: number[] = (() => {
+    if (gameState.emptyPosition === null) return []
+    const prevBoard: Board = lastSettledPositionsRef.current
+      .map(id => id === 0 ? null : { id, team: id <= 5 ? 'A' as const : 'B' as const })
+    return legalMovesFor(prevBoard, gameState.emptyPosition)
+  })()
   // El tablero físico siempre tiene 11 posiciones fijas (0-10, vacío en el
   // centro). Para un ejercicio de menos pares, se muestran solo las
   // posiciones más cercanas al centro (las mismas que ocuparía ese
@@ -156,6 +185,12 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     boardsEqual(currentBoardControl, winBoardControl) ? 'victoria'
       : isStuck(currentBoardControl, winBoardControl) ? 'derrota'
       : 'jugando'
+
+  // El tablero volvió a la posición inicial del nivel (5 azules + 5 rojos
+  // en orden, para pares=5) — es la señal de "listo para iniciar" y la
+  // condición que saca a los cubos del blanco ("reordenen") tras un
+  // bloqueo o una victoria.
+  const isBoardAtInitial = boardsEqual(currentBoardControl, initialBoardForPares)
 
   // Reporta el estado visible de los cubos hacia AppShell, para que la
   // pestaña "Vista de observador" (ahora principal, no anidada en
@@ -205,6 +240,15 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
             playError()
             logCuboEvent({ tipo: 'falla_movimiento', detalle: `Movimiento inválido detectado: cubo #${cuboImplicado} de la posición ${fromIdx + 1} a la ${toIdx + 1}` })
             setFallaCount(nf => (nf + 1 >= FALLAS_PARA_PAUSAR ? 0 : nf + 1))
+            // Reacción física casi inmediata: el cubo implicado se pone
+            // naranja y vibra por su cuenta (EF=3, un solo mensaje, sin
+            // ida y vuelta repetida) — y se refleja lo mismo en el
+            // frontend de inmediato, sin esperar a que el hardware
+            // reporte el color de vuelta.
+            socket.emit('comandoCubo', { id: cuboImplicado, efecto: EFECTOS.INVALIDO })
+            setFlashCubeId(cuboImplicado)
+            if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
+            flashTimerRef.current = setTimeout(() => setFlashCubeId(null), 1000)
           } else {
             logCuboEvent({ tipo: 'cubo_no_detectado', detalle: `Cubo #${cuboImplicado} no aparece conectado (esclavosConectados) — cambio de posición desde la ${fromIdx + 1} no se cuenta como falla` })
           }
@@ -265,6 +309,76 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     logOperatorEvent({ cuboId: cubeId, fase: 'estado_inicial', detalle: `Operador apagó manualmente la señal del cubo #${cubeId} (estado inicial)` })
   }
 
+  function showSessionWarning(msg: string) {
+    if (sessionWarnTimer.current) clearTimeout(sessionWarnTimer.current)
+    setSessionWarning(msg)
+    sessionWarnTimer.current = setTimeout(() => setSessionWarning(null), 3000)
+  }
+
+  // Cuenta regresiva sincronizada (3,2,1,¡Inicia!): cada tick manda UN
+  // único mensaje de difusión (id:"all") a los 10 cubos — el destello
+  // corre entero dentro de cada cubo (EF=6/7), sin depender de que el
+  // frontend mande varios comandos seguidos.
+  function iniciarJuego() {
+    if (sessionState !== 'inactivo') return
+    if (!isBoardAtInitial) { showSessionWarning('Reordena los cubos (5 azules + 5 rojos) antes de iniciar'); return }
+
+    intentoIdRef.current = `intento-${Date.now()}`
+    sessionAccumMsRef.current = 0
+    setFallaCount(0)
+    setPath([[...gameState.cubesPositions]])
+    logCuboEvent({ tipo: 'intento_iniciado', detalle: `Nuevo intento iniciado (${pares} pares)` })
+    setSessionState('cuenta_regresiva')
+
+    countdownTimersRef.current.forEach(clearTimeout)
+    countdownTimersRef.current = [];
+    ([3, 2, 1, 0] as const).forEach((t, i) => {
+      countdownTimersRef.current.push(setTimeout(() => {
+        setCountdownTick(t)
+        playCountdownBeep(t)
+        socket.emit('comandoCubo', { id: 'all', efecto: t === 0 ? EFECTOS.CUENTA_INICIA : EFECTOS.CUENTA_TICK })
+        if (t === 0) {
+          sessionStartRef.current = Date.now()
+          setSessionState('jugando')
+          setTimeout(() => setCountdownTick(null), 600)
+        }
+      }, i * 1000))
+    })
+  }
+
+  function pausarJuego() {
+    if (sessionState !== 'jugando') return
+    sessionAccumMsRef.current += Date.now() - sessionStartRef.current
+    socket.emit('comandoCubo', { id: 'all', color: PPA_RGB.pausar, vibrationIntensity: PPA_VIBRATION.pausar, iluminationFrequency: 0.50 })
+    logOperatorEvent({ cuboId: 0, fase: 'pausar', detalle: 'Operador pausó la partida (señal Pausar a los 10 cubos)' })
+    setSessionState('pausado')
+  }
+
+  function reanudarJuego() {
+    if (sessionState !== 'pausado') return
+    for (const cubo of originalCubes) if (cubo.id !== 0) socket.emit('comandoCubo', estadoInicialPayload(cubo.id))
+    sessionStartRef.current = Date.now()
+    logOperatorEvent({ cuboId: 0, fase: 'estado_inicial', detalle: 'Operador reanudó la partida' })
+    setSessionState('jugando')
+  }
+
+  // Reinicio manual, disponible en cualquier momento: pone los 10 cubos
+  // en blanco de inmediato (mismo código que "pide reordenar" de un
+  // bloqueo/victoria) y cierra el intento en curso. La misma detección
+  // de "tablero reordenado" ya existente los libera de vuelta a su color
+  // de equipo en cuanto el operador los reacomoda.
+  function reiniciarJuego() {
+    countdownTimersRef.current.forEach(clearTimeout)
+    countdownTimersRef.current = []
+    socket.emit('comandoCubo', { id: 'all', color: [255, 255, 255], vibrationIntensity: 0, iluminationFrequency: 0 })
+    logCuboEvent({ tipo: 'reinicio_manual', detalle: 'Operador reinició manualmente el intento — cubos en blanco, pendiente de reordenar' })
+    intentoIdRef.current = null
+    sessionAccumMsRef.current = 0
+    setFallaCount(0)
+    setCountdownTick(null)
+    setSessionState('bloqueado') // reutiliza la espera de reorden ya existente (ver useEffect de isBoardAtInitial)
+  }
+
   function exportCuboEventsCsv() { downloadFile(`bitacora-cubos-control-${Date.now()}.csv`, toCsvEventosCubo(cuboEvents), 'text/csv;charset=utf-8') }
   function exportCuboEventsJson() { downloadFile(`bitacora-cubos-control-${Date.now()}.json`, JSON.stringify(cuboEvents, null, 2), 'application/json') }
   function exportOperatorEventsCsv() { downloadFile(`bitacora-operador-control-${Date.now()}.csv`, toCsvDecisionesOperador(operatorEvents), 'text/csv;charset=utf-8') }
@@ -273,6 +387,11 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   // ── Derived display values ──────────────────────────────────────────────────
   const moveCount    = path.length - 1
   const selAction    = selectedCubeId !== null ? cubeActions[selectedCubeId] : undefined
+  // El cronómetro se apoya en el mismo re-render de 500ms de `tick` (arriba).
+  const sessionElapsedMs = sessionState === 'jugando'
+    ? sessionAccumMsRef.current + (Date.now() - sessionStartRef.current)
+    : sessionAccumMsRef.current
+  const sessionElapsedLabel = `${Math.floor(sessionElapsedMs / 60000)}:${String(Math.floor((sessionElapsedMs % 60000) / 1000)).padStart(2, '0')}`
 
   // Registra victoria/derrota una sola vez por partida (al pasar de
   // "jugando" a un estado final), no en cada render.
@@ -283,10 +402,37 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           ? { tipo: 'victoria', detalle: `Intercambio completo en ${moveCount} movimientos` }
           : { tipo: 'derrota', detalle: 'Ningún cubo tiene ya un movimiento legal disponible (bloqueo)' }
       )
+      // Fin de partida: señal física a los 10 cubos (un solo mensaje,
+      // toda la secuencia corre en el propio cubo) + cierre del intento
+      // en curso en la bitácora + detener el cronómetro.
+      if (sessionState === 'jugando' || sessionState === 'pausado') {
+        sessionAccumMsRef.current += sessionState === 'jugando' ? Date.now() - sessionStartRef.current : 0
+        const elapsedSec = Math.round(sessionAccumMsRef.current / 1000)
+        socket.emit('comandoCubo', { id: 'all', efecto: controlStatus === 'victoria' ? EFECTOS.VICTORIA : EFECTOS.BLOQUEO })
+        logCuboEvent({
+          tipo: 'intento_finalizado',
+          detalle: `Intento ${controlStatus === 'victoria' ? 'ganado' : 'bloqueado'} en ${elapsedSec}s y ${moveCount} movimientos`,
+        })
+        setSessionState(controlStatus === 'victoria' ? 'victoria' : 'bloqueado')
+      }
     }
     prevControlStatusRef.current = controlStatus
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [controlStatus])
+
+  // Tras un bloqueo/victoria (cubos en blanco, "reordenen"), detecta que
+  // el operador ya devolvió el tablero a la posición inicial del nivel y
+  // libera los cubos de vuelta a su color de equipo — quedan listos para
+  // un nuevo "Iniciar juego".
+  useEffect(() => {
+    if ((sessionState === 'bloqueado' || sessionState === 'victoria') && isBoardAtInitial) {
+      for (const cubo of originalCubes) if (cubo.id !== 0) socket.emit('comandoCubo', estadoInicialPayload(cubo.id))
+      logCuboEvent({ tipo: 'tablero_reordenado', detalle: 'El tablero volvió a la posición inicial — listo para un nuevo intento' })
+      intentoIdRef.current = null
+      setSessionState('inactivo')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionState, isBoardAtInitial])
 
   // ── Shared styles ───────────────────────────────────────────────────────────
   const card: React.CSSProperties = {
@@ -413,6 +559,74 @@ Escribe tu nombre y confirma con Enter — queda en cada evento de la bitácora.
           </div>
         </div>
 
+        {/* ── Control de partida: Iniciar / Pausar / Reiniciar ── */}
+        <div style={{ ...card, flexShrink: 0, position: 'relative' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+            <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em' }}>CONTROL DE PARTIDA</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '10px', color: '#666' }}>
+                {sessionState === 'inactivo' ? 'listo para iniciar'
+                  : sessionState === 'cuenta_regresiva' ? 'cuenta regresiva...'
+                  : sessionState === 'jugando' ? 'en curso'
+                  : sessionState === 'pausado' ? 'en pausa'
+                  : sessionState === 'victoria' ? 'victoria — reordena para el siguiente intento'
+                  : 'bloqueado — reordena para el siguiente intento'}
+              </span>
+              <span style={{ fontSize: '22px', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{sessionElapsedLabel}</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button onClick={iniciarJuego} disabled={sessionState !== 'inactivo'} style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '8px',
+              background: sessionState === 'inactivo' ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)',
+              border: `1px solid ${sessionState === 'inactivo' ? 'rgba(34,197,94,0.5)' : 'rgba(255,255,255,0.1)'}`,
+              color: sessionState === 'inactivo' ? '#22c55e' : '#555',
+              cursor: sessionState === 'inactivo' ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: '13px',
+            }}><Play size={15} /> Iniciar juego</button>
+
+            {sessionState === 'pausado' ? (
+              <button onClick={reanudarJuego} style={{
+                display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '8px',
+                background: 'rgba(0,191,255,0.15)', border: '1px solid rgba(0,191,255,0.5)', color: '#5fd4ff',
+                cursor: 'pointer', fontWeight: 700, fontSize: '13px',
+              }}><PlayCircle size={15} /> Reanudar</button>
+            ) : (
+              <button onClick={pausarJuego} disabled={sessionState !== 'jugando'} style={{
+                display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '8px',
+                background: sessionState === 'jugando' ? 'rgba(0,191,255,0.15)' : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${sessionState === 'jugando' ? 'rgba(0,191,255,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                color: sessionState === 'jugando' ? '#5fd4ff' : '#555',
+                cursor: sessionState === 'jugando' ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: '13px',
+              }}><PauseCircle size={15} /> Pausar</button>
+            )}
+
+            <button onClick={reiniciarJuego} disabled={sessionState === 'cuenta_regresiva' || sessionState === 'inactivo'} style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '8px',
+              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)',
+              color: sessionState === 'cuenta_regresiva' || sessionState === 'inactivo' ? '#555' : '#ccc',
+              cursor: sessionState === 'cuenta_regresiva' || sessionState === 'inactivo' ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '13px',
+            }}><RotateCcw size={15} /> Reiniciar</button>
+          </div>
+
+          {sessionWarning && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', fontSize: '12px', color: '#f59e0b' }}>
+              <TriangleAlert size={13} /> {sessionWarning}
+            </div>
+          )}
+
+          {countdownTick !== null && (
+            <div style={{
+              position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(8,4,0,0.88)', borderRadius: '12px', zIndex: 5,
+            }}>
+              <span style={{ fontSize: '56px', fontWeight: 800, color: countdownTick === 0 ? '#22c55e' : '#00f0ff', textShadow: '0 0 24px currentColor' }}>
+                {countdownTick === 0 ? '¡INICIA!' : countdownTick}
+              </span>
+            </div>
+          )}
+        </div>
+
         {/* ── Esclavos conectados ── */}
         <div style={{ ...card, flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -498,16 +712,29 @@ Escribe tu nombre y confirma con Enter — queda en cada evento de la bitácora.
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', flexWrap: 'wrap' }}>
-            {visibleCubes.map((cube, idx) => (
-              <Cube
-                key={idx}
-                id={cube.id}
-                color={cube.color}
-                isSelected={selectedCubeId === cube.id && cube.id !== 0}
-                action={cubeActions[cube.id]}
-                onSelect={(id) => { if (id !== 0) setSelectedCubeId(id) }}
-              />
-            ))}
+            {visibleCubes.map((cube, idx) => {
+              // visibleCubes está recortado del tablero completo de 11
+              // posiciones (0-10); legalTargetsLive usa índices del
+              // tablero completo, así que hay que sumar el mismo offset
+              // que ya usa el recorte de arriba (5 - pares).
+              const fullBoardIdx = idx + (5 - pares)
+              return (
+                <Cube
+                  key={idx}
+                  id={cube.id}
+                  color={cube.color}
+                  isSelected={selectedCubeId === cube.id && cube.id !== 0}
+                  action={cubeActions[cube.id]}
+                  onSelect={(id) => { if (id !== 0) setSelectedCubeId(id) }}
+                  isLegalTarget={cube.id === 0 && legalTargetsLive.includes(fullBoardIdx)}
+                  flashColor={
+                    flashCubeId === cube.id ? INVALIDO_HEX
+                      : (sessionState === 'bloqueado' || sessionState === 'victoria') && cube.id !== 0 ? BLANCO_HEX
+                      : undefined
+                  }
+                />
+              )
+            })}
           </div>
           {/* Cube action legend */}
           {Object.keys(cubeActions).length > 0 && (

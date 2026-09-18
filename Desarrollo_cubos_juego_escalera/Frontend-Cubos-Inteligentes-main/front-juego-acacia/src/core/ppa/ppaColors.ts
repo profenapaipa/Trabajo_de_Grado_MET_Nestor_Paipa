@@ -77,3 +77,29 @@ export function ppaRgba(a: PPAPhase, alpha: number): string {
   const [r, g, b] = PPA_RGB[a]
   return `rgba(${r},${g},${b},${alpha})`
 }
+
+// Códigos de los efectos enlatados que corren DENTRO del cubo esclavo
+// (Cubo_Esclavo_v3.ino, EF=<n>): secuencias de color+vibración de varios
+// pasos que el cubo ejecuta solo tras un único comando, para que la
+// respuesta sea casi inmediata y no dependa de que el frontend mande
+// varios comandos seguidos (ver plan "Señalización de conexión, control
+// de partida y detección de movimientos"). Deben coincidir exactamente
+// con el switch de iniciarEfecto() en el firmware.
+export const EFECTOS = {
+  CONEXION_BACK:   1, // cyberpunk azul 3s -> color de equipo (lo dispara el maestro al conectar)
+  CONEXION_FRONT:  2, // cyberpunk lila 3s -> color de equipo (lo dispara el frontend al confirmar)
+  INVALIDO:        3, // naranja + vibración 1s -> color de equipo
+  BLOQUEO:         4, // rojo + vibración descendente -> blanco (fijo, pide reordenar)
+  VICTORIA:        5, // verde/dorado festivo -> blanco (fijo, pide reordenar)
+  CUENTA_TICK:     6, // destello cian breve -> color de equipo (cuenta regresiva 3,2,1)
+  CUENTA_INICIA:   7, // destello verde breve -> color de equipo (¡Inicia!)
+} as const
+
+// Mismos colores que ve el cubo físico, para que el frontend pinte lo
+// mismo en pantalla (requisito: lo físico y lo digital deben coincidir).
+export const CYBERPUNK_BACK_HEX  = '#00f0ff'
+export const CYBERPUNK_FRONT_HEX = '#b026ff'
+export const INVALIDO_HEX        = '#ff8c00'
+export const BLOQUEO_HEX         = '#ff0000'
+export const VICTORIA_HEX        = '#00ff00'
+export const BLANCO_HEX          = '#ffffff'

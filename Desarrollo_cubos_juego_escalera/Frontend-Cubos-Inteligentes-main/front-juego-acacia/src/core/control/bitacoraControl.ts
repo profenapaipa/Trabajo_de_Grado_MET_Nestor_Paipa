@@ -11,6 +11,8 @@ export type EventoCuboTipo =
   | 'posiciones' | 'esclavo_conectado' | 'esclavo_desconectado'
   | 'base_conectada' | 'base_desconectada' | 'senal_apagada_automatica' | 'falla_movimiento'
   | 'victoria' | 'derrota' | 'cubo_no_detectado'
+  // Control de partida ("intentos"): agrupados por intentoId, ver App.tsx.
+  | 'intento_iniciado' | 'intento_finalizado' | 'reinicio_manual' | 'tablero_reordenado'
 
 export type EventoCubo = {
   timestamp: string
@@ -18,6 +20,10 @@ export type EventoCubo = {
   tipo: EventoCuboTipo
   detalle: string
   posiciones?: (number | null)[]
+  // Agrupa las filas de un mismo intento de partida (Iniciar -> victoria/
+  // bloqueo/reinicio). Ausente en eventos que no pertenecen a un intento
+  // en curso (p. ej. señales de conexión antes de iniciar).
+  intentoId?: string
 }
 
 export type DecisionOperador = {
@@ -27,10 +33,11 @@ export type DecisionOperador = {
   cuboId: number
   fase: 'pausar' | 'pensar' | 'actuar' | 'estado_inicial'
   detalle: string
+  intentoId?: string
 }
 
-const EVENTO_CUBO_COLS: (keyof EventoCubo)[] = ['timestamp', 'pares', 'tipo', 'detalle', 'posiciones']
-const DECISION_OPERADOR_COLS: (keyof DecisionOperador)[] = ['timestamp', 'pares', 'operadorId', 'cuboId', 'fase', 'detalle']
+const EVENTO_CUBO_COLS: (keyof EventoCubo)[] = ['timestamp', 'pares', 'tipo', 'detalle', 'posiciones', 'intentoId']
+const DECISION_OPERADOR_COLS: (keyof DecisionOperador)[] = ['timestamp', 'pares', 'operadorId', 'cuboId', 'fase', 'detalle', 'intentoId']
 
 export function toCsvEventosCubo(rows: EventoCubo[]): string {
   return toCsvGeneric(rows, EVENTO_CUBO_COLS)
