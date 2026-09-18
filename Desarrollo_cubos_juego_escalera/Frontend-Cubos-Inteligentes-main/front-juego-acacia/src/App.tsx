@@ -749,11 +749,14 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
       fontFamily: 'var(--font-sans)',
       position: 'relative',
     }}>
-      {/* Marca de agua — la misma escalera del encabezado, muy grande y casi
-          imperceptible, como ancla de identidad del fondo sin competir con
-          el contenido. */}
-      <div style={{ position: 'absolute', right: '-70px', bottom: '-50px', opacity: 0.07, pointerEvents: 'none' }}>
-        <Logo size={560} />
+      {/* Marca de agua — la misma escalera del encabezado, casi imperceptible,
+          como ancla de identidad del fondo sin competir con el contenido.
+          Antes vivía centrada tras el contenido (maxWidth 1400px) y quedaba
+          tapada por los paneles; ahora va pegada al borde derecho real de
+          la ventana, en el margen vertical que sobra cuando la pantalla es
+          más ancha que esos 1400px — el único sitio donde de verdad se ve. */}
+      <div style={{ position: 'absolute', top: '50%', right: '24px', transform: 'translateY(-50%)', opacity: 0.09, pointerEvents: 'none' }}>
+        <Logo size={200} />
       </div>
 
       <div style={{
