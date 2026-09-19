@@ -115,10 +115,10 @@ function logoRadius(size: number): number {
 // copias (según el tamaño real de cada una) para que nunca se superpongan
 // ni se choquen entre sí.
 function generateWatermarkLogos(width: number, height: number): WatermarkLogo[] {
-  const COUNT = 20
-  const MARGIN = 50
-  const GAP = 24 // aire extra entre bordes, además de la suma de radios
-  const MAX_ATTEMPTS = 300
+  const COUNT = 38
+  const MARGIN = 40
+  const GAP = 18 // aire extra entre bordes, además de la suma de radios
+  const MAX_ATTEMPTS = 500
   const placed: (WatermarkLogo & { r: number })[] = []
   for (let i = 0; i < COUNT; i++) {
     const size = 28 + Math.random() * 60
@@ -243,16 +243,13 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   // listener de socket, montado una sola vez más abajo, lea sessionState
   // sin cerrarse sobre un valor obsoleto.
   //
-  // Caché sembrada con "color de equipo en reposo" para los 10 cubos: ese es
-  // el punto de partida REAL de cada cubo, porque el propio firmware se lo
-  // asigna solo desde su IP al conectar al WiFi (Cubo_Esclavo_v3.ino), sin
-  // que el frontend mande nada. Así el efecto de despacho no reenvía el
-  // color de equipo al cargar la página — decisión del autor (2026-09-18):
-  // el color de equipo lo maneja solo el cubo; el frontend solo manda
-  // eventos extraordinarios (PPA, bloqueo/victoria/pausa, inválido).
-  const lastSentSustainedRef = useRef<Record<number, string>>(
-    Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(id => [id, JSON.stringify({ tier: 'equipo_reposo' })])),
-  )
+  // Caché vacía a propósito (2026-09-18, 2ª corrección): el cubo arranca en
+  // NARANJA por defecto (firmware, esperando confirmación) y NO se asienta
+  // solo en su color de equipo — necesita que el frontend se lo confirme en
+  // cuanto lo vea de verdad conectado (esclavos, más abajo). Si esta caché
+  // empezara ya en "equipo_reposo" para todos, ese primer envío de
+  // confirmación nunca saldría (la caché ya "creería" que no hace falta).
+  const lastSentSustainedRef = useRef<Record<number, string>>({})
   const lastSentSessionRef   = useRef<string | null>(null)
   const sessionStateRef      = useRef<SessionState>('inactivo')
   useEffect(() => { paresRef.current = pares }, [pares])
@@ -306,14 +303,19 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   }
 
   // Difunde un estado de nivel SESIÓN (bloqueo/victoria/pausado) a los 10
-  // cubos con un solo mensaje ("all"). Invalida la caché por-cubo: en
-  // cuanto la sesión vuelva a 'normal', cada cubo debe reafirmarse sí o sí,
-  // porque "all" les cambió el estado sin que sendSustained se enterara.
+  // cubos con un solo mensaje ("all"). Marca como al día, en la caché
+  // por-cubo, solo a los que YA están conectados (esclavosRef) — llega casi
+  // al instante por los sockets persistentes, así que el efecto de
+  // reconciliación de nivel cubo no les reenvía el mismo comando por
+  // separado. A los que todavía no están conectados los deja SIN marcar a
+  // propósito: en cuanto aparezcan en esclavos, ese mismo efecto se los
+  // manda solo (por ejemplo, un cubo que se reconecta a mitad de un
+  // bloqueo/victoria/pausa).
   function sendSustainedAll(v: SustainedCubeVisual) {
     const key = JSON.stringify(v)
     if (lastSentSessionRef.current === key) return
     lastSentSessionRef.current = key
-    lastSentSustainedRef.current = {}
+    for (const id of esclavosRef.current) lastSentSustainedRef.current[id] = key
     socket.emit('comandoCubo', { id: 'all', ...sustainedVisualToCommand(v) })
   }
 
@@ -336,19 +338,14 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     socket.on('esclavosConectados', (data: { esclavos: number[] }) => {
       const nuevos = data.esclavos ?? []
       const antes = esclavosRef.current
+      // Este handler ya NO decide qué mandarle a un cubo recién conectado:
+      // solo lleva el registro (bitácora + esclavosRef/esclavos). Confirmarle
+      // el color de equipo (o la señal de sesión vigente, si la hay) es
+      // trabajo del efecto de despacho de nivel cubo, más abajo — que
+      // depende de `esclavos` y por eso reacciona igual apenas este estado
+      // cambie, sin duplicar el criterio en dos sitios distintos.
       for (const id of nuevos) if (!antes.includes(id)) {
         logCuboEvent({ tipo: 'esclavo_conectado', detalle: `Cubo esclavo #${id} conectado` })
-        // Al conectar NO se le manda el color de equipo: el propio firmware
-        // ya se lo asigna solo desde su IP (decisión del autor, 2026-09-18,
-        // tras prueba con hardware real — menos condicionales en el momento
-        // de conexión, para no arriesgar la baja latencia ni pisar el color
-        // que el cubo ya puso bien). Única excepción: si se reconecta en
-        // medio de un bloqueo/victoria/pausa, se le reafirma esa señal de
-        // sesión (forzado: al reconectar, el cubo volvió a su color de
-        // equipo y la caché ya no refleja lo que muestra). sessionStateRef en
-        // vez de sessionState porque este listener se monta una sola vez.
-        const tier = sessionVisualTier(sessionStateRef.current)
-        if (tier !== 'normal') sendSustained(id, resolveSustainedVisual(tier), true)
       }
       for (const id of antes) if (!nuevos.includes(id)) logCuboEvent({ tipo: 'esclavo_desconectado', detalle: `Cubo esclavo #${id} desconectado` })
       esclavosRef.current = nuevos
@@ -702,18 +699,27 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionState])
 
-  // ── Efecto de despacho: nivel CUBO (señal PPA manual / color de equipo) ─────
-  // Solo corre en juego normal (nivel sesión ya cubierto arriba). Se salta
-  // el cubo que esté en pleno pulso de "movimiento inválido" (ver el efecto
-  // siguiente) para no pisarlo mientras dura.
+  // ── Efecto de despacho: nivel CUBO + confirmación de conexión ───────────────
+  // Itera sobre `esclavos` (los cubos que el maestro reporta conectados de
+  // verdad), no sobre los 10 "virtuales" — así un cubo que arranca en
+  // NARANJA por defecto (firmware, a la espera) recibe su color de equipo
+  // en cuanto queda confirmado, y no antes. Corre para CUALQUIER nivel de
+  // sesión, no solo 'normal': si la sesión ya está en bloqueo/victoria/
+  // pausa, un cubo recién conectado también necesita esa señal (no la
+  // recibió del broadcast "all" porque todavía no estaba conectado cuando
+  // se mandó). La caché de sendSustained evita reenviar de más a los que ya
+  // están al día, así que esto también se autocorrige solo si el enlace
+  // maestro↔backend se cae un rato y vuelve (como "Base física
+  // desconectada", ya visto en la prueba del 2026-09-18) — no depende de
+  // que la confirmación llegue a la primera.
   useEffect(() => {
-    if (sessionVisualTier(sessionState) !== 'normal') return
-    for (const cubo of originalCubes) {
-      if (cubo.id === 0 || cubo.id === flashCubeId) continue
-      sendSustained(cubo.id, resolveSustainedVisual('normal', cubeActions[cubo.id]))
+    const tier = sessionVisualTier(sessionState)
+    for (const id of esclavos) {
+      if (tier === 'normal' && id === flashCubeId) continue // el pulso de inválido tiene prioridad temporal
+      sendSustained(id, resolveSustainedVisual(tier, tier === 'normal' ? cubeActions[id] : undefined))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionState, cubeActions, flashCubeId])
+  }, [sessionState, cubeActions, flashCubeId, esclavos])
 
   // ── Efecto de pulso: movimiento inválido (EF=3, ~1s) ────────────────────────
   // Solo se dispara en juego normal (tier 1/2/4 ya ganaron arriba). Al
@@ -816,7 +822,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           <div key={i} style={{
             position: 'absolute', left: `${l.x}px`, top: `${l.y}px`,
             transform: `translate(-50%, -50%) rotate(${l.rotation}deg)`,
-            opacity: 0.09,
+            opacity: 0.16,
           }}>
             <Logo size={l.size} />
           </div>
