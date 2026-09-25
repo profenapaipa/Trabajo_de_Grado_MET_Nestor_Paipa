@@ -1,67 +1,74 @@
 import { useState } from 'react'
-import { Gamepad2, SlidersHorizontal, Eye } from 'lucide-react'
 import App, { type ObservedCube } from './App'
 import SimulationTab from './components/SimulationTab'
-import ObservadorTab, { OBS_ACCENT } from './components/ObservadorTab'
-import { SIM_ACCENT } from './core/simulation/theme'
+import ObservadorTab from './components/ObservadorTab'
 import type { PPAPhase } from './core/ppa/ppaColors'
-
-// Azul de Control Mago de Oz — mismo tono que src/index.css --color-blue
-// (IBM Carbon Blue 50), para que la pestaña combine con la identidad
-// nueva de esa vista en vez del naranja heredado del diseño anterior.
-const CONTROL_ACCENT = '#4589FF'
+import { StepMark } from './ui/brand'
 
 type Tab = 'control' | 'simulacion' | 'observador'
+
+const TABS: { id: Tab; label: string; mode: string; modeColor: string }[] = [
+  { id: 'control', label: '1 · Control Mago de Oz', mode: 'Hardware real', modeColor: 'var(--color-online)' },
+  { id: 'simulacion', label: '2 · Simulación', mode: 'Sin hardware — práctica', modeColor: 'var(--color-blue)' },
+  { id: 'observador', label: '3 · Vista de observador', mode: 'Solo lectura', modeColor: 'var(--color-paper-dim)' },
+]
 
 function AppShell() {
   const [tab, setTab] = useState<Tab>('control')
   const [observedCubes, setObservedCubes] = useState<ObservedCube[]>([])
   const [observedActions, setObservedActions] = useState<Record<number, PPAPhase>>({})
+  // Un solo operador para toda la aplicación: se escribe una vez al entrar.
+  const [operatorId, setOperatorId] = useState('')
 
-  const accent = tab === 'control' ? CONTROL_ACCENT : tab === 'simulacion' ? SIM_ACCENT : OBS_ACCENT
-
-  const tabBtn = (active: boolean, color: string): React.CSSProperties => ({
-    display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px',
-    borderRadius: '8px', border: `1px solid ${active ? color : 'rgba(255,255,255,0.12)'}`,
-    background: active ? `${color}2e` : 'rgba(255,255,255,0.05)',
-    color: active ? color : '#aaa', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-  })
+  const current = TABS.find(t => t.id === tab)!
 
   return (
     <div style={{
-      height: '100vh',
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column',
-      background: 'var(--color-bg, #0a0a0a)',
-      color: '#fff',
+      height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+      background: 'var(--color-bg)', color: 'var(--color-paper)', fontFamily: 'var(--font-sans)',
     }}>
-      <div style={{
-        flexShrink: 0,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', padding: '10px 20px',
-        borderBottom: `1px solid ${accent}33`, maxWidth: '1200px', margin: '0 auto', width: '100%', boxSizing: 'border-box',
-      }}>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button style={tabBtn(tab === 'control', CONTROL_ACCENT)} onClick={() => setTab('control')}>
-            <SlidersHorizontal size={14} /> 1. Control Mago de Oz
-          </button>
-          <button style={tabBtn(tab === 'simulacion', SIM_ACCENT)} onClick={() => setTab('simulacion')}>
-            <Gamepad2 size={14} /> 2. Simulación
-          </button>
-          <button style={tabBtn(tab === 'observador', OBS_ACCENT)} onClick={() => setTab('observador')}>
-            <Eye size={14} /> 3. Vista de observador
-          </button>
+      {/* Pestañas con el mismo lenguaje del resto: etiqueta mono en
+          mayúsculas, la activa marcada con el medio escalón azul y un filo
+          inferior — no botones redondeados de colores sueltos. */}
+      <div style={{ flexShrink: 0, borderBottom: '1px solid var(--color-line)' }}>
+        <div style={{
+          display: 'flex', alignItems: 'stretch', gap: '4px', maxWidth: '1400px', margin: '0 auto',
+          padding: '0 20px', boxSizing: 'border-box',
+        }}>
+          {TABS.map(t => {
+            const active = t.id === tab
+            return (
+              <button key={t.id} onClick={() => setTab(t.id)} style={{
+                display: 'flex', alignItems: 'center', gap: '7px', padding: '12px 14px 10px',
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                borderBottom: `2px solid ${active ? 'var(--color-blue)' : 'transparent'}`,
+                color: active ? 'var(--color-paper)' : 'var(--color-paper-faint)',
+                fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600,
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+              }}>
+                <StepMark color={active ? 'var(--color-blue)' : 'var(--color-line-strong)'} size={11} />
+                {t.label}
+              </button>
+            )
+          })}
+          <span style={{
+            marginLeft: 'auto', alignSelf: 'center', display: 'flex', alignItems: 'center', gap: '6px',
+            fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase',
+            color: current.modeColor,
+          }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: current.modeColor }} />
+            {current.mode}
+          </span>
         </div>
-        <span style={{ fontSize: '11px', color: accent, letterSpacing: '0.05em' }}>
-          {tab === 'control' ? '● HARDWARE REAL' : tab === 'simulacion' ? '● SIN HARDWARE — PRÁCTICA' : '● SOLO LECTURA'}
-        </span>
       </div>
 
       {/* Cada pestaña maneja su propio scroll interno dentro de esta región
-          de altura fija — así queda un único scrollbar visible por
-          pestaña, nunca uno para el contenido y otro para toda la página. */}
+          de altura fija — un único scrollbar visible por pestaña. Control
+          queda siempre montado (display none) para no perder la conexión. */}
       <div style={{ display: tab === 'control' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-        <App onCubesUpdate={(cubes, actions) => { setObservedCubes(cubes); setObservedActions(actions) }} />
+        <App
+          operatorId={operatorId} setOperatorId={setOperatorId}
+          onCubesUpdate={(cubes, actions) => { setObservedCubes(cubes); setObservedActions(actions) }} />
       </div>
       {tab === 'simulacion' && (
         <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>

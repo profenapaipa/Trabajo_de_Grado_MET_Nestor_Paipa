@@ -4,7 +4,7 @@ import Cube, { CubeAction } from './components/Cube'
 import AmbientMusicPanel from './components/AmbientMusicPanel'
 import { GameState } from './core/GameState'
 import socket from './client-socket/sockets'
-import { TriangleAlert, Download } from 'lucide-react'
+import { TriangleAlert } from 'lucide-react'
 import {
   type EventoCubo, type DecisionOperador,
   toCsvEventosCubo, toCsvDecisionesOperador, downloadFile, nowIso,
@@ -18,143 +18,22 @@ import {
   sessionVisualTier, resolveSustainedVisual, sustainedVisualToCommand, resolveCubeDisplay,
 } from './core/ppa/cubeVisualState'
 import PpaChargeMeter from './components/simulation/PpaChargeMeter'
+import { SignalGlyph, Electrode, StepMark, PageFrame, PersonField, ParesPicker, Collapsible, Badge, LogPanel } from './ui/brand'
+import { panel, sectionLabel, sessionBtn, countdownSemaforo } from './ui/styles'
 
 const SND_H = [0.55, 0.75, 0.95, 0.60, 1.00, 0.80, 0.70, 0.90]
 const INITIAL_POSITIONS = [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10]
 
-// Glifos de señal neuronal, uno por fase PPA — no íconos de librería
-// genéricos: cada trazo ilustra literalmente el concepto cognitivo de su
-// fase (Pausar = actividad calma, Pensar = búsqueda irregular, Actuar = un
-// potencial de acción — el disparo súbito de una neurona), tomado del
-// vocabulario visual real de EEG que atraviesa toda la tesis.
-const SIGNAL_PATH: Record<PPAPhase, string> = {
-  pausar: 'M2,13 Q9,7 16,13 Q23,7 30,13',
-  pensar: 'M2,13 L7,5 L12,17 L17,7 L22,15 L27,9 L30,13',
-  actuar: 'M2,13 L11,13 L13.5,2 L16,20 L18.5,13 L30,13',
-}
-function SignalGlyph({ phase, color }: { phase: PPAPhase; color: string }) {
-  return (
-    <svg width="32" height="22" viewBox="0 0 32 22" fill="none" aria-hidden="true">
-      <path d={SIGNAL_PATH[phase]} stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-// Trazo EEG usado como línea de estado bajo el encabezado — el propio
-// instrumento de la tesis como elemento de identidad, no un ícono de
-// librería. El color refleja el estado real de conexión, así que informa
-// además de decorar. Única excepción deliberada a la regla de "nada de
-// animación decorativa": un destello periódico (no un loop constante) que
-// recorre el trazo cada ~7s, pedido explícitamente para dar vida a este
-// elemento sin caer en movimiento gratuito — ver @keyframes eeg-sweep en
-// index.css. pathLength=100 normaliza el dasharray/dashoffset a un 0-100
-// fijo sin depender de la longitud geométrica real del trazo en zigzag.
-const EEG_TRACE = '0,10 22,10 28,3 34,17 40,10 74,10 80,4 86,16 92,10 130,10 137,2 144,18 151,10 190,10 196,5 202,15 208,10 250,10 256,3 262,17 268,10 310,10 316,4 322,16 328,10 370,10 376,3 383,17 390,10 400,10'
-function EegTrace({ color }: { color: string }) {
-  return (
-    <svg width="100%" height="18" viewBox="0 0 400 20" preserveAspectRatio="none" style={{ display: 'block', overflow: 'visible' }} aria-hidden="true">
-      <polyline points={EEG_TRACE} fill="none" stroke={color} strokeWidth="1.1" />
-      <polyline
-        points={EEG_TRACE}
-        fill="none"
-        stroke="#fff"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        pathLength={100}
-        style={{ mixBlendMode: 'screen', animation: 'eeg-sweep 7s linear infinite' }}
-      />
-    </svg>
-  )
-}
-
-// Marcador tipo electrodo — reemplaza el punto circular genérico de estado
-// por el vocabulario visual de un sensor EEG (relleno = señal presente).
-// Color por defecto (azul/alerta) para usos generales de "activo/inactivo"
-// (selección, victoria/derrota); los usos de conexión real pasan
-// verde/rojo explícito — ver colorOn/colorOff en cada llamado.
-function Electrode({ on, colorOn = 'var(--color-blue)', colorOff = 'var(--color-offline)' }: { on: boolean; colorOn?: string; colorOff?: string }) {
-  return (
-    <span style={{
-      width: '7px', height: '7px', borderRadius: '50%', display: 'inline-block', flexShrink: 0,
-      background: on ? colorOn : 'transparent',
-      border: `1.5px solid ${on ? colorOn : colorOff}`,
-    }} />
-  )
-}
-
-// Marca del proyecto: una escalera geométrica — dos tramos de escalón que
-// suben desde cada lado hasta un mismo pico central, mitad azul (equipo A)
-// y mitad roja (equipo B). No es un ícono de librería: es el mecanismo real
-// del juego (dos colores que ascienden y se cruzan) hecho logotipo.
-function Logo({ size = 28 }: { size?: number }) {
-  return (
-    <svg width={size} height={size * (20 / 32)} viewBox="0 0 32 20" aria-hidden="true">
-      <path d="M0,20 L5.3,20 L5.3,14 L10.6,14 L10.6,8 L16,8 L16,2 L16,20 Z" fill="var(--color-blue)" />
-      <path d="M16,2 L16,8 L21.3,8 L21.3,14 L26.7,14 L26.7,20 L32,20 L16,20 Z" fill="var(--color-red)" />
-    </svg>
-  )
-}
-
-type WatermarkLogo = { x: number; y: number; rotation: number; size: number }
-
-// Semi-diagonal del logo a un tamaño dado — el "radio" real que ocupa una
-// vez rotado, usado para separar cada copia según su propio tamaño en vez
-// de una distancia fija (deja que las copias chicas queden más juntas sin
-// que las grandes arriesguen tocarse).
-function logoRadius(size: number): number {
-  const h = size * (20 / 32)
-  return Math.sqrt(size * size + h * h) / 2
-}
-
-// Marca de agua del logo, esparcida al azar por el fondo — cada entrada a
-// la página genera una disposición nueva (posición, rotación y tamaño de
-// cada copia), no un patrón fijo repetido: primero fue una sola copia en
-// una esquina (quedaba tapada por los paneles), luego un mosaico regular
-// (se veía cuadriculado); esta versión resuelve ambos con posiciones,
-// giros y tamaños aleatorios por sesión, con separación mínima entre
-// copias (según el tamaño real de cada una) para que nunca se superpongan
-// ni se choquen entre sí.
-function generateWatermarkLogos(width: number, height: number): WatermarkLogo[] {
-  const COUNT = 38
-  const MARGIN = 40
-  const GAP = 18 // aire extra entre bordes, además de la suma de radios
-  const MAX_ATTEMPTS = 500
-  const placed: (WatermarkLogo & { r: number })[] = []
-  for (let i = 0; i < COUNT; i++) {
-    const size = 28 + Math.random() * 60
-    const r = logoRadius(size)
-    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-      const x = MARGIN + Math.random() * Math.max(width - MARGIN * 2, 1)
-      const y = MARGIN + Math.random() * Math.max(height - MARGIN * 2, 1)
-      const collides = placed.some(l => Math.hypot(l.x - x, l.y - y) < l.r + r + GAP)
-      if (!collides) {
-        placed.push({ x, y, rotation: Math.random() * 360, size, r })
-        break
-      }
-    }
-  }
-  return placed.map(({ x, y, rotation, size }) => ({ x, y, rotation, size }))
-}
-
-// Medio escalón, tomado directamente de la mitad izquierda del logo —
-// marcador recurrente para títulos de sección en vez de una viñeta
-// genérica. Monocromo a propósito: no compite con el azul/rojo de marca.
-function StepMark({ color = 'var(--color-paper-faint)', size = 13 }: { color?: string; size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" style={{ flexShrink: 0 }}>
-      <path d="M0,16 L5.3,16 L5.3,10.7 L10.6,10.7 L10.6,5.3 L16,5.3 L16,16 Z" fill={color} />
-    </svg>
-  )
-}
-
 export type ObservedCube = { id: number; team: 'A' | 'B' }
 
-function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeActions: Record<number, PPAPhase>) => void } = {}) {
+function App({ onCubesUpdate, operatorId, setOperatorId }: {
+  onCubesUpdate?: (cubes: ObservedCube[], cubeActions: Record<number, PPAPhase>) => void
+  // El operador es uno solo para toda la aplicación (vive en AppShell): se
+  // escribe una vez al entrar y lo usan Control y Simulación por igual.
+  operatorId: string
+  setOperatorId: (name: string) => void
+}) {
   socket.connect()
-
-  // Disposición de la marca de agua: se calcula una sola vez por montaje
-  // (cada vez que se entra a la página), no en cada render.
-  const [watermarkLogos] = useState<WatermarkLogo[]>(() => generateWatermarkLogos(window.innerWidth, window.innerHeight))
 
   const teamBColor      = '#ff0000'
   const teamAColor      = '#0000ff'
@@ -194,8 +73,6 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   const [cubeActions,    setCubeActions]    = useState<Record<number, CubeAction>>({})
   const [esclavos,       setEsclavos]       = useState<number[]>([])
   const [pares,          setPares]          = useState(5)
-  const [operatorId,     setOperatorId]     = useState('')
-  const [operatorInput,  setOperatorInput]  = useState('')
   const [cuboEvents,     setCuboEvents]     = useState<EventoCubo[]>([])
   const [operatorEvents, setOperatorEvents] = useState<DecisionOperador[]>([])
   // Condición acumulada hacia Pausar/Pensar: fallas reales detectadas
@@ -749,44 +626,6 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
     socket.emit('comandoCubo', { id: 'all', efecto: countdownTick === 0 ? EFECTOS.CUENTA_INICIA : EFECTOS.CUENTA_TICK })
   }, [countdownTick])
 
-  // ── Shared styles — v4 "consola neurocientífica" ────────────────────────────
-  // Retoma los paneles delimitados de v2 (el usuario los prefirió por
-  // ordenados) y les suma identidad propia: trazo EEG, glifos de señal
-  // neuronal, electrodos — nada de esto es un ícono de librería genérico.
-  // Sin `transition` en ningún estilo (regla dura #1).
-  const panel: React.CSSProperties = {
-    background: 'var(--color-panel)',
-    border: '1px solid var(--color-line)',
-    borderRadius: 'var(--radius)',
-    padding: '14px 16px',
-  }
-
-  const sectionLabel: React.CSSProperties = {
-    fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 600,
-    letterSpacing: '0.1em', color: 'var(--color-paper-faint)', textTransform: 'uppercase',
-  }
-
-  // Botones de Iniciar/Pausar/Reanudar/Reiniciar: únicos del sistema con
-  // relleno sólido y forma de píldora — el resto de la interfaz usa bordes
-  // discretos a propósito, pero estos 3 son la acción principal de toda la
-  // sesión (arrancan/paran el cronómetro real), así que se resaltan aparte.
-  const sessionBtn = (enabled: boolean, tone: string): React.CSSProperties => ({
-    display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px',
-    borderRadius: '999px', cursor: enabled ? 'pointer' : 'not-allowed',
-    background: enabled ? tone : 'var(--color-line)',
-    border: `1px solid ${enabled ? tone : 'var(--color-line-strong)'}`,
-    color: enabled ? '#fff' : 'var(--color-paper-faint)',
-    fontWeight: 700, fontSize: '13px',
-  })
-
-  // Cuenta regresiva como un semáforo real: rojo mientras se espera (3, 2),
-  // amarillo de aviso justo antes (1), verde al arrancar (0/"¡INICIA!") —
-  // los mismos 3 colores de un semáforo de calle, no una paleta nueva.
-  const countdownSemaforo = (t: number): { bg: string; text: string } =>
-    t === 0 ? { bg: 'var(--color-online)', text: '#ffffff' }
-      : t === 1 ? { bg: 'var(--color-caution)', text: '#1a1300' }
-        : { bg: 'var(--color-offline)', text: '#ffffff' }
-
   const signalBtn = (a: PPAPhase): React.CSSProperties => ({
     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px',
     padding: '14px 10px', borderRadius: 'var(--radius)', cursor: 'pointer',
@@ -796,69 +635,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
   })
 
   return (
-    <div style={{
-      height: '100%',
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column',
-      background: 'var(--color-bg)',
-      // Retícula de osciloscopio — puntos de 1px, estática (sin animación,
-      // regla dura #1), no un degradado difuso: la textura real de un
-      // instrumento de laboratorio, no decoración genérica.
-      backgroundImage: 'radial-gradient(circle, var(--color-line) 1px, transparent 1px)',
-      backgroundSize: '22px 22px',
-      color: 'var(--color-paper)',
-      fontFamily: 'var(--font-sans)',
-      position: 'relative',
-    }}>
-
-      {/* Marca de agua — logos esparcidos al azar (posición y rotación),
-          nunca superpuestos entre sí (ver generateWatermarkLogos). Capa
-          aparte del backgroundImage porque cada copia necesita su propia
-          rotación, algo que un solo backgroundImage repetido no puede
-          variar por instancia. */}
-      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-        {watermarkLogos.map((l, i) => (
-          <div key={i} style={{
-            position: 'absolute', left: `${l.x}px`, top: `${l.y}px`,
-            transform: `translate(-50%, -50%) rotate(${l.rotation}deg)`,
-            opacity: 0.16,
-          }}>
-            <Logo size={l.size} />
-          </div>
-        ))}
-      </div>
-
-      <div style={{
-        flex: 1,
-        overflow: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        maxWidth: '1400px',
-        width: '100%',
-        margin: '0 auto',
-        padding: '16px 20px',
-        gap: '12px',
-        boxSizing: 'border-box',
-        position: 'relative',
-        zIndex: 1,
-      }}>
-
-        {/* ── Encabezado: marca (la escalera geométrica azul/rojo) + trazo
-             EEG como línea de estado de conexión ── */}
-        <header style={{ flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            {/* Logo con presencia propia de marca, no un ícono más de la
-                fila — a la altura del bloque completo del título, no solo
-                de la caja de la "E". */}
-            <Logo size={46} />
-            <h1 style={{ fontSize: '20px', fontWeight: 700, margin: 0, letterSpacing: '-0.01em' }}>Escalera Inteligente</h1>
-            <span style={{ ...sectionLabel, fontWeight: 500 }}>Control Mago de Oz</span>
-          </div>
-          <div style={{ marginTop: '8px' }}>
-            <EegTrace color={isBaseConnected ? 'var(--color-online)' : 'var(--color-offline)'} />
-          </div>
-        </header>
+    <PageFrame subtitle="Control Mago de Oz" traceColor={isBaseConnected ? 'var(--color-online)' : 'var(--color-offline)'}>
 
         {/* ── Tablero + Señal PPA (columna principal), con Control de
              partida al mismo ancho arriba de ellos, junto a una barra
@@ -967,17 +744,10 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
               {/* Conectado/desconectado del maestro — vive en el propio
                   panel del Tablero (es lo que directamente afecta), no
                   suelto en el encabezado general de la página. */}
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '3px 10px', borderRadius: '20px',
-                background: isBaseConnected ? 'rgba(34,197,94,0.14)' : 'rgba(239,68,68,0.14)',
-                border: `1px solid ${isBaseConnected ? 'var(--color-online)' : 'var(--color-offline)'}`,
-                color: isBaseConnected ? 'var(--color-online)' : 'var(--color-offline)',
-                fontSize: '11px', fontWeight: 600,
-              }}>
+              <Badge color={isBaseConnected ? 'var(--color-online)' : 'var(--color-offline)'}>
                 <Electrode on={isBaseConnected} colorOn="var(--color-online)" colorOff="var(--color-offline)" />
                 {isBaseConnected ? 'Conectado' : 'Desconectado'}
-              </div>
+              </Badge>
             </div>
           </div>
 
@@ -1099,55 +869,20 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
              vacío debajo cuando la barra lateral es más alta que Tablero +
              Señal PPA. Es un separador de sección, no otro panel más: sin
              caja ni relleno, solo un filo inferior. ── */}
-        <button onClick={() => setHistOpen(o => !o)} style={{
-          background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-line)',
-          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
-          flexShrink: 0, textAlign: 'left', width: '100%', padding: '6px 2px',
-        }}>
-          <StepMark />
-          <span style={sectionLabel}>Histórico — bitácoras de eventos y decisiones</span>
-          <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--color-paper-faint)' }}>{histOpen ? '−' : '+'}</span>
-        </button>
-
-        {histOpen && (
+        <Collapsible title="Histórico — bitácoras de eventos y decisiones" open={histOpen} onToggle={() => setHistOpen(o => !o)}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '12px' }}>
-            <div style={panel}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-                <span style={sectionLabel}>Bitácora de eventos de los cubos · {cuboEvents.length}</span>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button onClick={exportCuboEventsCsv} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-bg)', border: '1px solid var(--color-line-strong)', borderRadius: 'var(--radius)', padding: '4px 8px', color: 'var(--color-paper)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> CSV</button>
-                  <button onClick={exportCuboEventsJson} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-bg)', border: '1px solid var(--color-line-strong)', borderRadius: 'var(--radius)', padding: '4px 8px', color: 'var(--color-paper)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> JSON</button>
-                </div>
-              </div>
-              <div style={{ maxHeight: '160px', overflowY: 'auto', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
-                {cuboEvents.length === 0 && <div style={{ color: 'var(--color-paper-faint)' }}>Sin eventos todavía — reportados por el hardware físico.</div>}
-                {[...cuboEvents].reverse().map((ev, i) => (
-                  <div key={i} style={{ padding: '3px 0', borderBottom: '1px solid var(--color-line)', color: 'var(--color-paper-dim)' }}>
-                    <span style={{ color: 'var(--color-paper-faint)' }}>{ev.timestamp}</span> · <span style={{ color: 'var(--color-blue)' }}>{ev.tipo}</span> · {ev.detalle}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={panel}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-                <span style={sectionLabel}>Bitácora del operador (decisiones) · {operatorEvents.length}</span>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button onClick={exportOperatorEventsCsv} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-bg)', border: '1px solid var(--color-line-strong)', borderRadius: 'var(--radius)', padding: '4px 8px', color: 'var(--color-paper)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> CSV</button>
-                  <button onClick={exportOperatorEventsJson} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-bg)', border: '1px solid var(--color-line-strong)', borderRadius: 'var(--radius)', padding: '4px 8px', color: 'var(--color-paper)', fontSize: '11px', cursor: 'pointer' }}><Download size={11} /> JSON</button>
-                </div>
-              </div>
-              <div style={{ maxHeight: '160px', overflowY: 'auto', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
-                {operatorEvents.length === 0 && <div style={{ color: 'var(--color-paper-faint)' }}>Sin decisiones todavía — cada envío de Pausar/Pensar/Actuar queda aquí.</div>}
-                {[...operatorEvents].reverse().map((ev, i) => (
-                  <div key={i} style={{ padding: '3px 0', borderBottom: '1px solid var(--color-line)', color: 'var(--color-paper-dim)' }}>
-                    <span style={{ color: 'var(--color-paper-faint)' }}>{ev.timestamp}</span> · <span style={{ color: 'var(--color-blue)' }}>{ev.operadorId}</span> · {ev.detalle}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <LogPanel
+              title="Bitácora de eventos de los cubos"
+              rows={cuboEvents.map(ev => ({ ts: ev.timestamp, tag: ev.tipo, text: ev.detalle }))}
+              empty="Sin eventos todavía — reportados por el hardware físico."
+              onCsv={exportCuboEventsCsv} onJson={exportCuboEventsJson} />
+            <LogPanel
+              title="Bitácora del operador (decisiones)"
+              rows={operatorEvents.map(ev => ({ ts: ev.timestamp, tag: ev.operadorId, text: ev.detalle }))}
+              empty="Sin decisiones todavía — cada envío de Pausar/Pensar/Actuar queda aquí."
+              onCsv={exportOperatorEventsCsv} onJson={exportOperatorEventsJson} />
           </div>
-        )}
+        </Collapsible>
 
         </div>
 
@@ -1161,50 +896,8 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
                es lo primero que debe resolver quien opera al entrar, antes
                incluso de elegir cuántos pares jugar. ── */}
           <div style={{ ...panel, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <div style={{ ...sectionLabel, color: 'var(--color-blue)', fontSize: '11px' }}>Operador Mago de Oz</div>
-              {operatorId ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                  <Electrode on />
-                  <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-paper)' }}>{operatorId}</span>
-                  <button onClick={() => setOperatorId('')} style={{
-                    marginLeft: 'auto', background: 'transparent', border: 'none', cursor: 'pointer',
-                    fontSize: '11px', color: 'var(--color-paper-faint)', textDecoration: 'underline', padding: 0,
-                  }}>cambiar</button>
-                </div>
-              ) : (
-                <div style={{ marginTop: '8px' }}>
-                  <input
-                    value={operatorInput}
-                    onChange={e => setOperatorInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && operatorInput.trim()) setOperatorId(operatorInput.trim().toUpperCase()) }}
-                    placeholder="nombre + Enter"
-                    autoFocus
-                    title="Escribe tu nombre y confirma con Enter — queda en cada evento de la bitácora. No es un identificador oficial del proyecto (ver DECISIONES_PROYECTO.md)."
-                    style={{
-                      background: 'rgba(69,137,255,0.08)', border: '1px solid var(--color-blue)',
-                      borderRadius: 'var(--radius)', padding: '8px 10px', color: 'var(--color-paper)', fontSize: '14px',
-                      width: '100%', boxSizing: 'border-box',
-                    }} />
-                  <div style={{ fontSize: '10px', color: 'var(--color-blue)', marginTop: '5px' }}>Escribe tu nombre y presiona Enter para empezar</div>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <div style={sectionLabel}>Pares</div>
-              <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
-                {[1, 2, 3, 4, 5].map(n => (
-                  <button key={n} onClick={() => setPares(n)} style={{
-                    width: '26px', height: '26px', cursor: 'pointer', borderRadius: 'var(--radius)',
-                    background: pares === n ? 'var(--color-blue)' : 'var(--color-bg)',
-                    color: pares === n ? '#fff' : 'var(--color-paper-dim)',
-                    border: `1px solid ${pares === n ? 'var(--color-blue)' : 'var(--color-line-strong)'}`,
-                    fontWeight: 700, fontSize: '12px',
-                  }}>{n}</button>
-                ))}
-              </div>
-            </div>
+            <PersonField label="Operador Mago de Oz" value={operatorId} onConfirm={setOperatorId} onClear={() => setOperatorId('')} />
+            <ParesPicker value={pares} onChange={setPares} />
           </div>
 
           <div style={panel}>
@@ -1238,8 +931,7 @@ function App({ onCubesUpdate }: { onCubesUpdate?: (cubes: ObservedCube[], cubeAc
           </div>
         </div>
         </div>
-      </div>
-    </div>
+    </PageFrame>
   )
 }
 
