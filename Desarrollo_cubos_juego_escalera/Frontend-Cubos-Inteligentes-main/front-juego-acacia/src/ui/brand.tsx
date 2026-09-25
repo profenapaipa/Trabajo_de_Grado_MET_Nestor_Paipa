@@ -295,6 +295,17 @@ export function LogPanel({ title, rows, empty, onCsv, onJson, maxHeight = 160 }:
   )
 }
 
+// Columna principal + barra lateral fija de 280px — la misma proporción de
+// Control Mago de Oz, para que las 3 pestañas se lean igual.
+export function TwoColumn({ main, side }: { main: ReactNode; side: ReactNode }) {
+  return (
+    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 0 }}>{main}</div>
+      <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>{side}</div>
+    </div>
+  )
+}
+
 // Panel con el estilo base — atajo para no repetir `{...panel, ...}`.
 export function Panel({ children, style }: { children: ReactNode; style?: React.CSSProperties }) {
   return <div style={{ ...panel, ...style }}>{children}</div>

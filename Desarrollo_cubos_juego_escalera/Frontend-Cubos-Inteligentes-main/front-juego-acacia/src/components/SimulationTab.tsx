@@ -1,145 +1,130 @@
-import { useRef, useState } from 'react'
-import { Check, GraduationCap, Gamepad2, SlidersHorizontal } from 'lucide-react'
-import { SIM_BG, SIM_ACCENT, simCard, simLabel } from '../core/simulation/theme'
-import { playPpaFeedback } from '../core/utils/ppaTones'
-import { AUTO_OFF_MS } from '../core/ppa/ppaColors'
-import { type DecisionOperador, nowIso } from '../core/control/bitacoraControl'
-import ControladorSimulado, { type CubeAction } from './simulation/ControladorSimulado'
-import JuegoSimulado from './simulation/JuegoSimulado'
+import { useState } from 'react'
+import { PageFrame, Panel, PersonField, ParesPicker, Badge, SectionTitle, TwoColumn } from '../ui/brand'
+import { sectionLabel } from '../ui/styles'
+import { LEVELS } from '../core/simulation/tutor'
+import Tutorial from './simulation/Tutorial'
+import PracticaLibre from './simulation/PracticaLibre'
+import ControlSimulado from './simulation/ControlSimulado'
 
-type SubMode = 'tutorial' | 'libre' | 'controlSimulado'
+// Pestaña de Simulación — misma identidad visual que Control Mago de Oz
+// (marco, barra lateral, paneles). Se distingue de una sesión real por el
+// distintivo "sin hardware" y el trazo EEG en azul (no en verde/rojo de
+// conexión), en vez de una paleta de color aparte como antes.
 
-function SimulationTab() {
-  const [subMode, setSubMode] = useState<SubMode>('tutorial')
+type Mode = 'tutorial' | 'libre' | 'control'
+
+const MODES: { id: Mode; title: string; desc: string }[] = [
+  { id: 'tutorial', title: 'Tutorial por niveles', desc: 'Aprende las reglas paso a paso, de 1 a 5 pares.' },
+  { id: 'libre', title: 'Práctica libre', desc: 'El juego completo por intentos, sin ayudas.' },
+  { id: 'control', title: 'Control simulado', desc: 'Practica el rol de operador con los botones PPA.' },
+]
+
+// Progreso del tutorial (mejores estrellas por nivel): comodidad por
+// navegador — si el almacenamiento no está disponible, se empieza de cero.
+const PROGRESS_KEY = 'escalera.tutorial.progreso.v1'
+function loadProgress(): Record<number, number> {
+  try { return JSON.parse(localStorage.getItem(PROGRESS_KEY) ?? '{}') } catch { return {} }
+}
+function saveProgress(p: Record<number, number>) {
+  try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(p)) } catch { /* sin almacenamiento: el progreso dura la sesión */ }
+}
+
+function SimulationTab({ operatorId, setOperatorId }: { operatorId: string; setOperatorId: (name: string) => void }) {
+  const [mode, setMode] = useState<Mode>('tutorial')
   const [pares, setPares] = useState(1)
-  const [operatorId, setOperatorId] = useState('')
-  const [operatorInput, setOperatorInput] = useState('')
+  const [progress, setProgress] = useState<Record<number, number>>(loadProgress)
+  const [unlockAll, setUnlockAll] = useState(false)
+  const firstPending = [1, 2, 3, 4, 5].find(n => !progress[n]) ?? 5
+  const [level, setLevel] = useState(firstPending)
 
-  const [selectedCubeId, setSelectedCubeId] = useState<number | null>(null)
-  const [cubeActions, setCubeActions] = useState<Record<number, CubeAction>>({})
-  const [controlEvents, setControlEvents] = useState<DecisionOperador[]>([])
-  const offTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
+  const isUnlocked = (n: number) => unlockAll || n === 1 || (progress[n - 1] ?? 0) > 0
 
-  function logControl(entry: Omit<DecisionOperador, 'timestamp' | 'pares' | 'operadorId'>) {
-    setControlEvents(prev => [...prev, { timestamp: nowIso(), pares, operadorId: operatorId || '(sin nombre)', ...entry }])
+  function handleComplete(n: number, stars: number) {
+    setProgress(prev => {
+      const next = { ...prev, [n]: Math.max(prev[n] ?? 0, stars) }
+      saveProgress(next)
+      return next
+    })
   }
 
-  function handleSend(a: CubeAction) {
-    if (selectedCubeId === null) return
-    const cubeId = selectedCubeId
-    if (offTimers.current[cubeId]) clearTimeout(offTimers.current[cubeId])
-    setCubeActions(prev => ({ ...prev, [cubeId]: a }))
-    playPpaFeedback(a, AUTO_OFF_MS / 1000)
-    logControl({ cuboId: cubeId, fase: a, detalle: `Operador envió ${a.toUpperCase()} (simulado) al cubo #${cubeId}` })
-    offTimers.current[cubeId] = setTimeout(() => {
-      setCubeActions(prev => { const next = { ...prev }; delete next[cubeId]; return next })
-      logControl({ cuboId: cubeId, fase: 'estado_inicial', detalle: `Señal del cubo #${cubeId} apagada automáticamente tras ${AUTO_OFF_MS / 1000}s (simulado)` })
-    }, AUTO_OFF_MS)
-  }
+  const sidebarTop = (
+    <>
+      <Panel style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <PersonField label="Operador Mago de Oz" value={operatorId} onConfirm={setOperatorId} onClear={() => setOperatorId('')} />
+        <div>
+          <div style={{ ...sectionLabel, marginBottom: '6px' }}>Modo</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {MODES.map(m => (
+              <button key={m.id} onClick={() => setMode(m.id)} style={{
+                textAlign: 'left', cursor: 'pointer', padding: '8px 10px', borderRadius: 'var(--radius)',
+                background: mode === m.id ? 'rgba(69,137,255,0.10)' : 'transparent',
+                border: '1px solid transparent', borderLeft: `3px solid ${mode === m.id ? 'var(--color-blue)' : 'var(--color-line)'}`,
+                color: 'var(--color-paper)',
+              }}>
+                <div style={{ fontWeight: 700, fontSize: '13px', color: mode === m.id ? 'var(--color-paper)' : 'var(--color-paper-dim)' }}>{m.title}</div>
+                <div style={{ fontSize: '11px', color: 'var(--color-paper-faint)', marginTop: '2px' }}>{m.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+        {mode !== 'tutorial' && <ParesPicker value={pares} onChange={setPares} />}
+      </Panel>
 
-  function handleApagar() {
-    if (selectedCubeId === null) return
-    const cubeId = selectedCubeId
-    if (offTimers.current[cubeId]) clearTimeout(offTimers.current[cubeId])
-    setCubeActions(prev => { const next = { ...prev }; delete next[cubeId]; return next })
-    logControl({ cuboId: cubeId, fase: 'estado_inicial', detalle: `Operador apagó manualmente la señal del cubo #${cubeId} (simulado)` })
-  }
+      {mode === 'tutorial' && (
+        <Panel>
+          <SectionTitle right={<span style={{ fontSize: '11px', color: 'var(--color-paper-faint)' }}>{Object.keys(progress).length}/5</span>}>Niveles</SectionTitle>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {[1, 2, 3, 4, 5].map(n => {
+              const open = isUnlocked(n)
+              const stars = progress[n] ?? 0
+              const active = n === level
+              return (
+                <button key={n} disabled={!open} onClick={() => setLevel(n)} style={{
+                  display: 'flex', alignItems: 'center', gap: '10px', textAlign: 'left', padding: '8px 10px',
+                  borderRadius: 'var(--radius)', cursor: open ? 'pointer' : 'not-allowed',
+                  background: active ? 'rgba(69,137,255,0.10)' : 'var(--color-bg)',
+                  border: `1px solid ${active ? 'var(--color-blue)' : 'var(--color-line)'}`,
+                  color: 'var(--color-paper)', opacity: open ? 1 : 0.45,
+                }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '14px', width: '14px', color: active ? 'var(--color-blue)' : 'var(--color-paper-dim)' }}>{n}</span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: '13px', fontWeight: 600 }}>{LEVELS[n].titulo}</span>
+                    <span style={{ display: 'block', fontSize: '11px', color: 'var(--color-paper-faint)' }}>{n} par{n > 1 ? 'es' : ''}</span>
+                  </span>
+                  <span style={{ fontSize: '13px', letterSpacing: '1px' }} aria-label={open ? `${stars} estrellas` : 'bloqueado'}>
+                    {open
+                      ? [1, 2, 3].map(i => <span key={i} style={{ color: i <= stars ? 'var(--color-caution)' : 'var(--color-line-strong)' }}>★</span>)
+                      : <span style={{ fontSize: '11px', color: 'var(--color-paper-faint)', fontFamily: 'var(--font-mono)' }}>BLOQUEADO</span>}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+          {!unlockAll && (
+            <button onClick={() => setUnlockAll(true)} style={{ marginTop: '10px', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', fontSize: '11px', color: 'var(--color-paper-faint)', textDecoration: 'underline' }}>
+              Desbloquear todos (para el operador)
+            </button>
+          )}
+        </Panel>
+      )}
+    </>
+  )
 
   return (
-    <div style={{ minHeight: '100%', background: SIM_BG, padding: '4px 2px 24px' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '1200px', margin: '0 auto', padding: '12px 20px 0' }}>
-
-        <div style={simCard}>
-          <div style={{ fontWeight: 700, fontSize: '16px' }}>Simulación — sin cubos físicos</div>
-          <div style={{ color: '#9088ab', fontSize: '12px', marginTop: '2px' }}>
-            Toda señal requiere confirmación o envío manual del operador — el sistema nunca activa nada por sí solo.
-          </div>
-        </div>
-
-        <div style={{ ...simCard, display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
-          <div>
-            <div style={simLabel}>NIVEL · PARES DE CUBOS</div>
-            <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-              {[1, 2, 3, 4, 5].map(n => (
-                <button key={n} onClick={() => setPares(n)} style={{
-                  width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer',
-                  background: pares === n ? SIM_ACCENT : 'rgba(255,255,255,0.07)',
-                  border: `1px solid ${pares === n ? SIM_ACCENT : 'rgba(255,255,255,0.12)'}`,
-                  color: '#fff', fontWeight: 700, fontSize: '13px',
-                }}>{n}</button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div style={simLabel}>OPERADOR · NOMBRE DE QUIEN ENVÍA O CONFIRMA</div>
-            <div style={{ marginTop: '6px', display: 'flex', gap: '6px' }}>
-              <input
-                value={operatorInput}
-                onChange={e => setOperatorInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && operatorInput.trim()) setOperatorId(operatorInput.trim()) }}
-                placeholder="escribe el nombre y confirma"
-                style={{
-                  background: 'rgba(0,0,0,0.3)',
-                  border: `1px solid ${operatorId && operatorInput.trim() === operatorId ? '#22c55e77' : 'rgba(255,255,255,0.12)'}`,
-                  borderRadius: '6px', padding: '6px 10px', color: '#fff', fontSize: '13px', width: '170px',
-                }} />
-              <button
-                onClick={() => operatorInput.trim() && setOperatorId(operatorInput.trim())}
-                disabled={!operatorInput.trim()}
-                title="Confirmar nombre (o presiona Enter)"
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', borderRadius: '6px',
-                  background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.4)',
-                  color: '#22c55e', fontSize: '12px', cursor: operatorInput.trim() ? 'pointer' : 'not-allowed',
-                  opacity: operatorInput.trim() ? 1 : 0.4,
-                }}>
-                <Check size={13} /> Confirmar
-              </button>
-            </div>
-            <div style={{ marginTop: '4px', fontSize: '11px' }}>
-              {operatorId
-                ? <span style={{ color: '#22c55e' }}>✓ Operador confirmado: {operatorId}</span>
-                : <span style={{ color: '#f59e0b' }}>Sin confirmar — los eventos quedan como "(sin nombre)" hasta que confirmes</span>}
-            </div>
-          </div>
-          <div style={{ color: '#665e80', fontSize: '11px', flex: 1, minWidth: '200px' }}>
-            No es un identificador oficial del proyecto (ver DECISIONES_PROYECTO.md) — es libre para pruebas.
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          <button onClick={() => setSubMode('tutorial')} style={{
-            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer',
-            background: subMode === 'tutorial' ? SIM_ACCENT : 'rgba(255,255,255,0.06)',
-            border: `1px solid ${subMode === 'tutorial' ? SIM_ACCENT : 'rgba(255,255,255,0.12)'}`,
-            color: '#fff', fontSize: '13px', fontWeight: 600,
-          }}><GraduationCap size={14} /> Tutorial guiado</button>
-          <button onClick={() => setSubMode('libre')} style={{
-            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer',
-            background: subMode === 'libre' ? SIM_ACCENT : 'rgba(255,255,255,0.06)',
-            border: `1px solid ${subMode === 'libre' ? SIM_ACCENT : 'rgba(255,255,255,0.12)'}`,
-            color: '#fff', fontSize: '13px', fontWeight: 600,
-          }}><Gamepad2 size={14} /> Simulación libre</button>
-          <button onClick={() => setSubMode('controlSimulado')} style={{
-            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer',
-            background: subMode === 'controlSimulado' ? SIM_ACCENT : 'rgba(255,255,255,0.06)',
-            border: `1px solid ${subMode === 'controlSimulado' ? SIM_ACCENT : 'rgba(255,255,255,0.12)'}`,
-            color: '#fff', fontSize: '13px', fontWeight: 600,
-          }}><SlidersHorizontal size={14} /> Control simulado</button>
-        </div>
-
-        {subMode === 'tutorial' && <JuegoSimulado key="tutorial" pares={pares} operatorId={operatorId} guiado modo="tutorial" />}
-        {subMode === 'libre' && <JuegoSimulado key="libre" pares={pares} operatorId={operatorId} modo="simulacion-libre" />}
-        {subMode === 'controlSimulado' && (
-          <ControladorSimulado
-            pares={pares}
-            selectedCubeId={selectedCubeId} setSelectedCubeId={setSelectedCubeId}
-            cubeActions={cubeActions} events={controlEvents}
-            onSend={handleSend} onApagar={handleApagar}
-          />
-        )}
-      </div>
-    </div>
+    <PageFrame
+      subtitle="Simulación"
+      traceColor="var(--color-blue)"
+      badge={<Badge color="var(--color-blue)">SIMULACIÓN · SIN HARDWARE</Badge>}
+    >
+      {mode === 'tutorial' && (
+        <TwoColumn
+          main={<Tutorial level={level} operatorId={operatorId} onComplete={handleComplete}
+            onGoToLevel={n => setLevel(n)} onFinishAll={() => { setPares(5); setMode('libre') }} />}
+          side={sidebarTop} />
+      )}
+      {mode === 'libre' && <PracticaLibre pares={pares} operatorId={operatorId} sidebarTop={sidebarTop} />}
+      {mode === 'control' && <ControlSimulado pares={pares} operatorId={operatorId} sidebarTop={sidebarTop} />}
+    </PageFrame>
   )
 }
 

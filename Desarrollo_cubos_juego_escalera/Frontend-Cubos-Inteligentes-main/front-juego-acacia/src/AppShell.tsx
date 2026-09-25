@@ -71,8 +71,8 @@ function AppShell() {
           onCubesUpdate={(cubes, actions) => { setObservedCubes(cubes); setObservedActions(actions) }} />
       </div>
       {tab === 'simulacion' && (
-        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-          <SimulationTab />
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+          <SimulationTab operatorId={operatorId} setOperatorId={setOperatorId} />
         </div>
       )}
       {tab === 'observador' && (
