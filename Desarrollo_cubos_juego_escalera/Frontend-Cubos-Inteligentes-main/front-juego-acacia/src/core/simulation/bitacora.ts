@@ -21,6 +21,12 @@ export type BitacoraEventType =
   | 'victoria'
   | 'derrota'
   | 'reinicio'
+  // Tutorial por niveles y práctica con intentos numerados
+  | 'pista'
+  | 'deshacer'
+  | 'callejon_sin_salida'
+  | 'nivel_superado'
+  | 'intento_iniciado'
 
 export type BitacoraEvent = {
   timestamp: string
@@ -36,6 +42,11 @@ export type BitacoraEvent = {
   motivoDescarte?: string
   activacionEfectiva?: boolean
   posiciones: (number | null)[]
+  // Qué regla se rompió en una falla (ver tutor.ts: ocupada, atras, lejos,
+  // salto_propio, salto_hueco) — antes la falla solo decía la posición.
+  errorTipo?: string
+  nivel?: number
+  intentoNum?: number
 }
 
 export function nowIso(): string {
@@ -46,7 +57,7 @@ export function toCsv(events: BitacoraEvent[]): string {
   const cols: (keyof BitacoraEvent)[] = [
     'timestamp', 'esSimulacion', 'operadorId', 'versionConfiguracion', 'pares',
     'tipo', 'detalle', 'fase', 'motivo', 'decision', 'motivoDescarte',
-    'activacionEfectiva', 'posiciones',
+    'activacionEfectiva', 'posiciones', 'errorTipo', 'nivel', 'intentoNum',
   ]
   const esc = (v: unknown) => {
     if (v === undefined || v === null) return ''
