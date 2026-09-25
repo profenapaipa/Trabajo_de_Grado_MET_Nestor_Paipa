@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import App, { type ControlSnapshot } from './App'
-import SimulationTab from './components/SimulationTab'
+import TutorialTab from './components/TutorialTab'
+import SimulacionLibreTab from './components/SimulacionLibreTab'
 import ObservadorTab from './components/ObservadorTab'
 import { StepMark } from './ui/brand'
 
-type Tab = 'control' | 'simulacion' | 'observador'
+type Tab = 'control' | 'tutorial' | 'libre' | 'observador'
 
 const TABS: { id: Tab; label: string; mode: string; modeColor: string }[] = [
   { id: 'control', label: '1 · Control Mago de Oz', mode: 'Hardware real', modeColor: 'var(--color-online)' },
-  { id: 'simulacion', label: '2 · Simulación', mode: 'Sin hardware — práctica', modeColor: 'var(--color-blue)' },
-  { id: 'observador', label: '3 · Vista de observador', mode: 'Solo lectura', modeColor: 'var(--color-paper-dim)' },
+  { id: 'tutorial', label: '2 · Tutorial guiado', mode: 'Sin hardware — aprendizaje', modeColor: 'var(--color-blue)' },
+  { id: 'libre', label: '3 · Simulación libre', mode: 'Sin hardware — práctica', modeColor: 'var(--color-blue)' },
+  { id: 'observador', label: '4 · Vista de observador', mode: 'Solo lectura', modeColor: 'var(--color-paper-dim)' },
 ]
 
 function AppShell() {
@@ -18,6 +20,10 @@ function AppShell() {
   const [snapshot, setSnapshot] = useState<ControlSnapshot | null>(null)
   // Un solo operador para toda la aplicación: se escribe una vez al entrar.
   const [operatorId, setOperatorId] = useState('')
+  // Quién hace el tutorial o la simulación libre — uno solo para ambas
+  // pestañas, para no reescribirlo al pasar del tutorial a la práctica.
+  const [participante, setParticipante] = useState('')
+  const [simPares, setSimPares] = useState(1)
 
   const current = TABS.find(t => t.id === tab)!
 
@@ -69,9 +75,16 @@ function AppShell() {
           operatorId={operatorId} setOperatorId={setOperatorId}
           onSnapshot={setSnapshot} />
       </div>
-      {tab === 'simulacion' && (
+      {tab === 'tutorial' && (
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-          <SimulationTab operatorId={operatorId} setOperatorId={setOperatorId} />
+          <TutorialTab operatorId={operatorId} participante={participante} setParticipante={setParticipante}
+            onGoToFreeSim={() => { setSimPares(5); setTab('libre') }} />
+        </div>
+      )}
+      {tab === 'libre' && (
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+          <SimulacionLibreTab operatorId={operatorId} participante={participante} setParticipante={setParticipante}
+            pares={simPares} setPares={setSimPares} />
         </div>
       )}
       {tab === 'observador' && (

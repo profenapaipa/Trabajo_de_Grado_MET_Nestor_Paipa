@@ -32,6 +32,9 @@ export type BitacoraEvent = {
   timestamp: string
   esSimulacion: true
   operadorId: string
+  // Quién hace la simulación o el tutorial (puede no ser el operador: un
+  // estudiante, un familiar, alguien que está aprendiendo el juego).
+  participanteId: string
   versionConfiguracion: string
   pares: number
   tipo: BitacoraEventType
@@ -55,7 +58,7 @@ export function nowIso(): string {
 
 export function toCsv(events: BitacoraEvent[]): string {
   const cols: (keyof BitacoraEvent)[] = [
-    'timestamp', 'esSimulacion', 'operadorId', 'versionConfiguracion', 'pares',
+    'timestamp', 'esSimulacion', 'operadorId', 'participanteId', 'versionConfiguracion', 'pares',
     'tipo', 'detalle', 'fase', 'motivo', 'decision', 'motivoDescarte',
     'activacionEfectiva', 'posiciones', 'errorTipo', 'nivel', 'intentoNum',
   ]

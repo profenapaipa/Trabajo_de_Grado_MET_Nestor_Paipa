@@ -21,7 +21,7 @@ import SimBoard from './SimBoard'
 type SessionState = 'inactivo' | 'cuenta' | 'jugando' | 'victoria' | 'bloqueado'
 const VERSION = 'sim-config-v0.2'
 
-function PracticaLibre({ pares, operatorId, sidebarTop }: { pares: number; operatorId: string; sidebarTop: ReactNode }) {
+function PracticaLibre({ pares, operatorId, participante, sidebarTop }: { pares: number; operatorId: string; participante: string; sidebarTop: ReactNode }) {
   const [session, setSession] = useState<SessionState>('inactivo')
   const [countdown, setCountdown] = useState<number | null>(null)
   const [board, setBoard] = useState<Board>(() => createInitialBoard(pares))
@@ -61,9 +61,9 @@ function PracticaLibre({ pares, operatorId, sidebarTop }: { pares: number; opera
 
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
 
-  function log(partial: Omit<BitacoraEvent, 'timestamp' | 'esSimulacion' | 'operadorId' | 'versionConfiguracion' | 'pares' | 'posiciones' | 'intentoNum'>, b: Board) {
+  function log(partial: Omit<BitacoraEvent, 'timestamp' | 'esSimulacion' | 'operadorId' | 'participanteId' | 'versionConfiguracion' | 'pares' | 'posiciones' | 'intentoNum'>, b: Board) {
     setEvents(prev => [...prev, {
-      timestamp: nowIso(), esSimulacion: true, operadorId: operatorId || '(sin asignar)',
+      timestamp: nowIso(), esSimulacion: true, operadorId: operatorId || '(sin asignar)', participanteId: participante || '(sin nombre)',
       versionConfiguracion: VERSION, pares, posiciones: b.map(c => c?.id ?? null),
       intentoNum: intentoRef.current || undefined, ...partial,
     }])
@@ -269,7 +269,7 @@ function PracticaLibre({ pares, operatorId, sidebarTop }: { pares: number; opera
       <Collapsible title="Histórico — bitácora de la práctica" open={logOpen} onToggle={() => setLogOpen(o => !o)}>
         <LogPanel
           title="Bitácora de práctica libre (simulación)"
-          rows={events.map(e => ({ ts: e.timestamp, tag: e.intentoNum ? `#${e.intentoNum} ${e.tipo}` : e.tipo, text: e.detalle + (e.decision ? ` · decisión: ${e.decision}${e.motivoDescarte ? ` (${e.motivoDescarte})` : ''}` : '') }))}
+          rows={events.map(e => ({ ts: e.timestamp, tag: e.intentoNum ? `#${e.intentoNum} ${e.tipo}` : e.tipo, text: e.participanteId + " · " + e.detalle + (e.decision ? ` · decisión: ${e.decision}${e.motivoDescarte ? ` (${e.motivoDescarte})` : ''}` : '') }))}
           empty="Sin eventos todavía."
           onCsv={exportCsv} onJson={exportJson} maxHeight={220} />
       </Collapsible>

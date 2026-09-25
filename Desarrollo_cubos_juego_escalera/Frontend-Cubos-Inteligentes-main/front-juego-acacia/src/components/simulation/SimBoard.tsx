@@ -39,6 +39,11 @@ function SimBoard({
   const cellRefs = useRef<(HTMLDivElement | null)[]>([])
   const rects = useRef<(DOMRect | null)[]>([])
 
+  // Con pocos pares las fichas crecen: el tablero de 1 par (3 casillas)
+  // quedaba diminuto en un panel pensado para 11. Con 5 pares vuelven al
+  // tamaño de los cubos de Control (72x80) para caber en una sola fila.
+  const scale = board.length <= 3 ? 1.45 : board.length <= 5 ? 1.3 : board.length <= 7 ? 1.12 : 1
+
   const legalTargets = selected !== null && board[selected] ? legalMovesFor(board, selected) : []
 
   function attempt(from: number, to: number) {
@@ -122,7 +127,7 @@ function SimBoard({
             : isHintFrom || isHintTo ? '0 0 0 3px var(--color-caution)'
               : '0 2px 8px rgba(0,0,0,0.45)'
     return {
-      width: '72px', height: '80px', borderRadius: '10px', flexShrink: 0,
+      width: `${Math.round(72 * scale)}px`, height: `${Math.round(80 * scale)}px`, borderRadius: '10px', flexShrink: 0,
       background: empty ? EMPTY_HEX : action ? PPA_HEX[action] : TEAM_HEX[cell!.team],
       opacity: empty && !isLegal && !isHintTo && errorCell !== i ? 0.55 : 1,
       boxShadow: ring,
@@ -148,9 +153,9 @@ function SimBoard({
     }
     return (
       <>
-        <span style={{ fontSize: '20px', fontWeight: 700, lineHeight: 1, textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>{cell.id}</span>
+        <span style={{ fontSize: `${Math.round(20 * scale)}px`, fontWeight: 700, lineHeight: 1, textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>{cell.id}</span>
         {showArrows && (
-          <span aria-hidden="true" style={{ fontSize: '18px', lineHeight: 1, opacity: 0.8 }}>{cell.team === 'A' ? '→' : '←'}</span>
+          <span aria-hidden="true" style={{ fontSize: `${Math.round(18 * scale)}px`, lineHeight: 1, opacity: 0.8 }}>{cell.team === 'A' ? '→' : '←'}</span>
         )}
       </>
     )
@@ -158,7 +163,7 @@ function SimBoard({
 
   return (
     <div style={{ position: 'relative' }}>
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap', overflowX: 'auto', justifyContent: 'center', padding: '6px 4px', touchAction: 'none' }}>
+      <div style={{ display: 'flex', gap: `${Math.round(6 * scale)}px`, flexWrap: 'nowrap', overflowX: 'auto', justifyContent: 'center', padding: '8px 4px', touchAction: 'none' }}>
         {board.map((_, i) => (
           <div key={i} data-cell={i}
             ref={el => { cellRefs.current[i] = el }}

@@ -37,9 +37,10 @@ function Stars({ n, size = 28 }: { n: number; size?: number }) {
   )
 }
 
-function Tutorial({ level, operatorId, onComplete, onGoToLevel, onFinishAll }: {
+function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, onFinishAll }: {
   level: number
   operatorId: string
+  participante: string
   onComplete: (level: number, stars: number) => void
   onGoToLevel: (level: number) => void
   onFinishAll: () => void
@@ -55,7 +56,7 @@ function Tutorial({ level, operatorId, onComplete, onGoToLevel, onFinishAll }: {
   const [feedback, setFeedback] = useState<Feedback>(introFeedback())
   const [events, setEvents] = useState<BitacoraEvent[]>([])
   const [rulesOpen, setRulesOpen] = useState(level === 1)
-  const [logOpen, setLogOpen] = useState(false)
+  const [logOpen, setLogOpen] = useState(true)
 
   const win = computeWinBoard(createInitialBoard(level))
   const optimal = optimalMoves(level)
@@ -65,9 +66,9 @@ function Tutorial({ level, operatorId, onComplete, onGoToLevel, onFinishAll }: {
     return { tone: 'info', titulo: 'Tu turno', texto: 'Toca una ficha para ver a dónde puede ir, y luego toca la casilla marcada AQUÍ. También puedes arrastrarla.' }
   }
 
-  function log(partial: Omit<BitacoraEvent, 'timestamp' | 'esSimulacion' | 'operadorId' | 'versionConfiguracion' | 'pares' | 'posiciones' | 'nivel'>, b: Board) {
+  function log(partial: Omit<BitacoraEvent, 'timestamp' | 'esSimulacion' | 'operadorId' | 'participanteId' | 'versionConfiguracion' | 'pares' | 'posiciones' | 'nivel'>, b: Board) {
     setEvents(prev => [...prev, {
-      timestamp: nowIso(), esSimulacion: true, operadorId: operatorId || '(sin asignar)',
+      timestamp: nowIso(), esSimulacion: true, operadorId: operatorId || '(sin asignar)', participanteId: participante || '(sin nombre)',
       versionConfiguracion: VERSION, pares: level, nivel: level, posiciones: b.map(c => c?.id ?? null), ...partial,
     }])
   }
@@ -282,7 +283,7 @@ function Tutorial({ level, operatorId, onComplete, onGoToLevel, onFinishAll }: {
             <button onClick={() => reset('jugando')} style={sessionBtn(true, 'var(--color-line-strong)')}>Repetir nivel</button>
             {level < 5
               ? <button onClick={() => onGoToLevel(level + 1)} style={{ ...sessionBtn(true, 'var(--color-blue)'), fontSize: '15px' }}>Siguiente nivel →</button>
-              : <button onClick={onFinishAll} style={{ ...sessionBtn(true, 'var(--color-blue)'), fontSize: '15px' }}>Ir a práctica libre →</button>}
+              : <button onClick={onFinishAll} style={{ ...sessionBtn(true, 'var(--color-blue)'), fontSize: '15px' }}>Ir a simulación libre →</button>}
           </div>
         </Panel>
       )}
@@ -320,7 +321,7 @@ function Tutorial({ level, operatorId, onComplete, onGoToLevel, onFinishAll }: {
       <Collapsible title="Bitácora del tutorial" open={logOpen} onToggle={() => setLogOpen(o => !o)}>
         <LogPanel
           title="Bitácora del tutorial (simulación)"
-          rows={events.map(e => ({ ts: e.timestamp, tag: e.tipo, text: e.detalle }))}
+          rows={events.map(e => ({ ts: e.timestamp, tag: `N${e.nivel} ${e.tipo}`, text: `${e.participanteId} · ${e.detalle}` }))}
           empty="Sin eventos todavía."
           onCsv={exportCsv} onJson={exportJson} maxHeight={220} />
       </Collapsible>
