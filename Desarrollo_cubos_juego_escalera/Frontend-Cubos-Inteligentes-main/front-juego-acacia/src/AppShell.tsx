@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import App, { type ObservedCube } from './App'
+import App, { type ControlSnapshot } from './App'
 import SimulationTab from './components/SimulationTab'
 import ObservadorTab from './components/ObservadorTab'
-import type { PPAPhase } from './core/ppa/ppaColors'
 import { StepMark } from './ui/brand'
 
 type Tab = 'control' | 'simulacion' | 'observador'
@@ -15,8 +14,8 @@ const TABS: { id: Tab; label: string; mode: string; modeColor: string }[] = [
 
 function AppShell() {
   const [tab, setTab] = useState<Tab>('control')
-  const [observedCubes, setObservedCubes] = useState<ObservedCube[]>([])
-  const [observedActions, setObservedActions] = useState<Record<number, PPAPhase>>({})
+  // Estado de Control que la Vista de observador ve en espejo (solo lectura).
+  const [snapshot, setSnapshot] = useState<ControlSnapshot | null>(null)
   // Un solo operador para toda la aplicación: se escribe una vez al entrar.
   const [operatorId, setOperatorId] = useState('')
 
@@ -68,7 +67,7 @@ function AppShell() {
       <div style={{ display: tab === 'control' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0 }}>
         <App
           operatorId={operatorId} setOperatorId={setOperatorId}
-          onCubesUpdate={(cubes, actions) => { setObservedCubes(cubes); setObservedActions(actions) }} />
+          onSnapshot={setSnapshot} />
       </div>
       {tab === 'simulacion' && (
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
@@ -76,8 +75,8 @@ function AppShell() {
         </div>
       )}
       {tab === 'observador' && (
-        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-          <ObservadorTab cubes={observedCubes} cubeActions={observedActions} />
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+          <ObservadorTab snapshot={snapshot} operatorId={operatorId} />
         </div>
       )}
     </div>

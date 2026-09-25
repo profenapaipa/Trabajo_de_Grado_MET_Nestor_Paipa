@@ -24,10 +24,23 @@ import { panel, sectionLabel, sessionBtn, countdownSemaforo } from './ui/styles'
 const SND_H = [0.55, 0.75, 0.95, 0.60, 1.00, 0.80, 0.70, 0.90]
 const INITIAL_POSITIONS = [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10]
 
-export type ObservedCube = { id: number; team: 'A' | 'B' }
+// Foto del estado de Control que se comparte con la Vista de observador —
+// solo lectura: el observador ve lo mismo que el operador sin duplicar el
+// socket ni poder alterar nada.
+export type ControlSnapshot = {
+  board: number[] // ids por posición visible, 0 = casilla vacía
+  cubeActions: Record<number, PPAPhase>
+  connected: boolean
+  esclavos: number[]
+  status: string
+  elapsed: string
+  intento: number
+  moveCount: number
+  pares: number
+}
 
-function App({ onCubesUpdate, operatorId, setOperatorId }: {
-  onCubesUpdate?: (cubes: ObservedCube[], cubeActions: Record<number, PPAPhase>) => void
+function App({ onSnapshot, operatorId, setOperatorId }: {
+  onSnapshot?: (snapshot: ControlSnapshot) => void
   // El operador es uno solo para toda la aplicación (vive en AppShell): se
   // escribe una vez al entrar y lo usan Control y Simulación por igual.
   operatorId: string
@@ -275,14 +288,6 @@ function App({ onCubesUpdate, operatorId, setOperatorId }: {
   // bloqueo o una victoria.
   const isBoardAtInitial = boardsEqual(currentBoardControl, initialBoardForPares)
 
-  // Reporta el estado visible de los cubos hacia AppShell, para que la
-  // pestaña "Vista de observador" (ahora principal, no anidada en
-  // Simulación) pueda mostrar en vivo los mismos cubos y colores PPA sin
-  // duplicar el estado del socket.
-  useEffect(() => {
-    onCubesUpdate?.(visibleCubes.filter(c => c.id !== 0).map(c => ({ id: c.id, team: c.id <= 5 ? 'A' as const : 'B' as const })), cubeActions)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState.cubesPositions, pares, cubeActions])
 
   async function SimDataReceived(positions: number[]) { await handleStateChange([...positions]) }
 
@@ -518,6 +523,23 @@ function App({ onCubesUpdate, operatorId, setOperatorId }: {
     ? sessionAccumMsRef.current + (Date.now() - sessionStartRef.current)
     : sessionAccumMsRef.current
   const sessionElapsedLabel = `${Math.floor(sessionElapsedMs / 60000)}:${String(Math.floor((sessionElapsedMs % 60000) / 1000)).padStart(2, '0')}`
+  const sessionStatusLabel = sessionState === 'inactivo' ? 'listo para iniciar'
+    : sessionState === 'cuenta_regresiva' ? 'cuenta regresiva…'
+      : sessionState === 'jugando' ? 'en curso'
+        : sessionState === 'pausado' ? 'en pausa'
+          : sessionState === 'victoria' ? 'victoria — reordena para seguir'
+            : 'bloqueado — reordena para seguir'
+
+  // Foto del estado hacia AppShell para la Vista de observador (ver
+  // ControlSnapshot). Incluye la casilla vacía para conservar el orden real.
+  const boardIds = visibleCubes.map(c => c.id).join(',')
+  useEffect(() => {
+    onSnapshot?.({
+      board: visibleCubes.map(c => c.id), cubeActions, connected: isBaseConnected, esclavos,
+      status: sessionStatusLabel, elapsed: sessionElapsedLabel, intento: intentoCount, moveCount, pares,
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boardIds, cubeActions, isBaseConnected, esclavos, sessionStatusLabel, sessionElapsedLabel, intentoCount, moveCount, pares])
 
   // Registra victoria/derrota una sola vez por partida (al pasar de
   // "jugando" a un estado final), no en cada render.
@@ -653,12 +675,7 @@ function App({ onCubesUpdate, operatorId, setOperatorId }: {
         <div style={{ ...panel, flexShrink: 0, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '18px 16px' }}>
           <div style={{ textAlign: 'center' }}>
             <div style={sectionLabel}>
-              {sessionState === 'inactivo' ? 'listo para iniciar'
-                : sessionState === 'cuenta_regresiva' ? 'cuenta regresiva…'
-                : sessionState === 'jugando' ? 'en curso'
-                : sessionState === 'pausado' ? 'en pausa'
-                : sessionState === 'victoria' ? 'victoria — reordena para seguir'
-                : 'bloqueado — reordena para seguir'}
+              {sessionStatusLabel}
               {intentoCount > 0 ? ` · intento ${intentoCount}` : ''}
             </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', fontSize: '40px', fontWeight: 600, lineHeight: 1.15 }}>
