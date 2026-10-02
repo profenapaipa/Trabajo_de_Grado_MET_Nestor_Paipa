@@ -116,11 +116,16 @@ function generateWatermarkLogos(width: number, height: number): WatermarkLogo[] 
 // Marco común de cada pestaña: fondo con retícula de osciloscopio, marca
 // de agua aleatoria, encabezado de marca con trazo EEG, y una única región
 // con scroll (la pestaña nunca agrega un segundo scrollbar).
-export function PageFrame({ subtitle, traceColor, badge, children }: {
+// Ancho máximo de las pantallas de trabajo (Tutorial y Simulación libre).
+export const WIDE_MAX = '1840px'
+
+export function PageFrame({ subtitle, traceColor, badge, children, wide = false }: {
   subtitle: string
   traceColor: string
   badge?: ReactNode
   children: ReactNode
+  // Contenedor más ancho para las pantallas de trabajo (tablero + grafo).
+  wide?: boolean
 }) {
   const [watermark] = useState(() => generateWatermarkLogos(window.innerWidth, window.innerHeight))
   return (
@@ -145,7 +150,7 @@ export function PageFrame({ subtitle, traceColor, badge, children }: {
 
       <div style={{
         flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column',
-        maxWidth: '1400px', width: '100%', margin: '0 auto', padding: '16px 20px', gap: '12px',
+        maxWidth: wide ? WIDE_MAX : '1400px', width: '100%', margin: '0 auto', padding: '16px 20px', gap: '12px',
         boxSizing: 'border-box', position: 'relative', zIndex: 1,
       }}>
         <header style={{ flexShrink: 0 }}>

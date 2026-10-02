@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { TriangleAlert } from 'lucide-react'
 import {
   type Board, createInitialBoard, computeWinBoard, boardsEqual, isStuck, applyMove,
@@ -15,6 +15,7 @@ import { Panel, SectionTitle, Collapsible, LogPanel, TwoColumn, SignalGlyph, Ele
 import { sectionLabel, smallBtn, TEAM_HEX } from '../../ui/styles'
 import PpaChargeMeter from './PpaChargeMeter'
 import SimBoard from './SimBoard'
+import EndBanner from './EndBanner'
 
 // Réplica de Control Mago de Oz para practicar el rol de operador sin
 // hardware: mismos botones PPA, misma barra lateral. La diferencia, a
@@ -24,8 +25,9 @@ import SimBoard from './SimBoard'
 
 const SND_H = [0.55, 0.75, 0.95, 0.60, 1.00, 0.80, 0.70, 0.90]
 
-function ControlSimulado({ pares, operatorId, sidebarTop }: { pares: number; operatorId: string; sidebarTop: ReactNode }) {
+function ControlSimulado({ pares, operatorId }: { pares: number; operatorId: string }) {
   const [board, setBoard] = useState<Board>(() => createInitialBoard(pares))
+  const [prevBoard, setPrevBoard] = useState<Board | null>(null) // Regla 2
   const [selectedPos, setSelectedPos] = useState<number | null>(null)
   const [selectedCubeId, setSelectedCubeId] = useState<number | null>(null)
   const [status, setStatus] = useState<'jugando' | 'victoria' | 'bloqueado'>('jugando')
@@ -53,6 +55,7 @@ function ControlSimulado({ pares, operatorId, sidebarTop }: { pares: number; ope
 
   function resetBoard(n: number) {
     setBoard(createInitialBoard(n))
+    setPrevBoard(null)
     setSelectedPos(null); setErrorCell(null); setLastError(null)
     setStatus('jugando'); setMoves(0); setFallaCount(0)
     turnStartRef.current = Date.now()
@@ -69,20 +72,21 @@ function ControlSimulado({ pares, operatorId, sidebarTop }: { pares: number; ope
   }
 
   function handleMove(from: number, to: number) {
-    if (!classifyAttempt(board, from, to).ok) return
+    if (!classifyAttempt(board, from, to, prevBoard).ok) return
     const moved = board[from]!
     const next = applyMove(board, from, to)
+    setPrevBoard(board)
     setBoard(next); setSelectedPos(null); setErrorCell(null); setLastError(null)
     setMoves(m => m + 1); setFallaCount(0)
     setSelectedCubeId(moved.id)
     turnStartRef.current = Date.now()
     if (boardsEqual(next, win)) setStatus('victoria')
-    else if (isStuck(next, win)) setStatus('bloqueado')
+    else if (isStuck(next, win, board)) setStatus('bloqueado')
   }
 
   function handleInvalid(from: number, to: number) {
     if (from === to) return
-    const res = classifyAttempt(board, from, to)
+    const res = classifyAttempt(board, from, to, prevBoard)
     if (res.ok) return
     const { titulo, texto } = explainError(res.error, board[from]!.team)
     playError()
@@ -152,8 +156,10 @@ function ControlSimulado({ pares, operatorId, sidebarTop }: { pares: number; ope
         }>
           Tablero simulado · {pares} par{pares > 1 ? 'es' : ''} · {moves} movimientos
         </SectionTitle>
+        {status === 'victoria' && <EndBanner kind="victoria" title="¡Victoria!" detail={`Intercambio completo en ${moves} movimientos. Usa «Reiniciar tablero» para empezar de nuevo.`} />}
+        {status === 'bloqueado' && <EndBanner kind="bloqueo" title="Camino sin retorno: bloqueado" detail="La única jugada que queda es volver a la posición anterior, y eso no se permite. Usa «Reiniciar tablero»." />}
         <SimBoard
-          board={board} disabled={status !== 'jugando'}
+          board={board} prev={prevBoard} disabled={status !== 'jugando'}
           selected={selectedPos} onSelect={i => { setSelectedPos(i); setErrorCell(null) }}
           onTapPiece={i => { const p = board[i]; if (p) setSelectedCubeId(p.id) }}
           onMove={handleMove} onInvalid={handleInvalid}
@@ -164,7 +170,7 @@ function ControlSimulado({ pares, operatorId, sidebarTop }: { pares: number; ope
             borderLeft: `3px solid ${status === 'victoria' ? 'var(--color-online)' : 'var(--color-offline)'}`,
           }}>
             {status === 'victoria' ? `¡Intercambio completo en ${moves} movimientos!`
-              : status === 'bloqueado' ? 'Bloqueado — ningún cubo tiene ya un movimiento legal disponible.'
+              : status === 'bloqueado' ? 'Bloqueado — no queda ninguna jugada permitida (solo volver a la posición anterior).'
                 : `Movimiento no permitido: ${lastError}`}
           </div>
         )}
@@ -231,7 +237,6 @@ function ControlSimulado({ pares, operatorId, sidebarTop }: { pares: number; ope
 
   const side = (
     <>
-      {sidebarTop}
       <Panel>
         <SectionTitle>En vivo</SectionTitle>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>

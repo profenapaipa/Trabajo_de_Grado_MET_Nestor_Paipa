@@ -3,7 +3,7 @@ import App, { type ControlSnapshot } from './App'
 import TutorialTab from './components/TutorialTab'
 import SimulacionLibreTab from './components/SimulacionLibreTab'
 import ObservadorTab from './components/ObservadorTab'
-import { StepMark } from './ui/brand'
+import { StepMark, WIDE_MAX } from './ui/brand'
 
 type Tab = 'control' | 'tutorial' | 'libre' | 'observador'
 
@@ -37,7 +37,7 @@ function AppShell() {
           inferior — no botones redondeados de colores sueltos. */}
       <div style={{ flexShrink: 0, borderBottom: '1px solid var(--color-line)' }}>
         <div style={{
-          display: 'flex', alignItems: 'stretch', gap: '4px', maxWidth: '1400px', margin: '0 auto',
+          display: 'flex', alignItems: 'stretch', gap: '4px', maxWidth: tab === 'tutorial' || tab === 'libre' ? WIDE_MAX : '1400px', margin: '0 auto',
           padding: '0 20px', boxSizing: 'border-box',
         }}>
           {TABS.map(t => {

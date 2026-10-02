@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { type Board, legalMovesFor } from '../../core/simulation/laEscaleraRules'
 import { PPA_HEX, type PPAPhase } from '../../core/ppa/ppaColors'
 import { TEAM_HEX } from '../../ui/styles'
@@ -20,9 +20,12 @@ export type BoardHint = { from: number; to: number } | null
 
 function SimBoard({
   board, disabled = false, selected, onSelect, onMove, onInvalid, onTapPiece,
-  hint = null, errorCell = null, showArrows = true, showLegalTargets = true, cubeActions,
+  hint = null, errorCell = null, showArrows = false, showLegalTargets = true, cubeActions, prev = null,
 }: {
   board: Board
+  // Tablero anterior: la Regla 2 (no volver a la posición inmediatamente
+  // anterior) depende de él.
+  prev?: Board | null
   disabled?: boolean
   selected: number | null
   onSelect: (index: number | null) => void
@@ -42,12 +45,28 @@ function SimBoard({
   // Con pocos pares las fichas crecen: el tablero de 1 par (3 casillas)
   // quedaba diminuto en un panel pensado para 11. Con 5 pares vuelven al
   // tamaño de los cubos de Control (72x80) para caber en una sola fila.
-  const scale = board.length <= 3 ? 1.45 : board.length <= 5 ? 1.3 : board.length <= 7 ? 1.12 : 1
+  const baseScale = board.length <= 3 ? 1.45 : board.length <= 5 ? 1.3 : board.length <= 7 ? 1.12 : 1
+  // Además se ajusta al ancho real de su columna: en la mesa de trabajo el
+  // tablero comparte pantalla con el grafo y no siempre hay sitio para 11
+  // casillas de tamaño completo.
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [availW, setAvailW] = useState(0)
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setAvailW(el.clientWidth))
+    ro.observe(el)
+    setAvailW(el.clientWidth)
+    return () => ro.disconnect()
+  }, [])
+  const natural = board.length * 72 + (board.length - 1) * 6 // ancho a escala 1
+  const fitScale = availW > 0 ? (availW - 8) / natural : baseScale
+  const scale = Math.max(0.5, Math.min(baseScale, fitScale))
 
-  const legalTargets = selected !== null && board[selected] ? legalMovesFor(board, selected) : []
+  const legalTargets = selected !== null && board[selected] ? legalMovesFor(board, selected, prev) : []
 
   function attempt(from: number, to: number) {
-    const legal = board[to] === null && legalMovesFor(board, from).includes(to)
+    const legal = board[to] === null && legalMovesFor(board, from, prev).includes(to)
     if (legal) onMove(from, to)
     else onInvalid(from, to)
   }
@@ -109,7 +128,7 @@ function SimBoard({
       finishDrag(fromIndex, fromIndex, 'cancel')
       return
     }
-    const legal = board[nearest] === null && legalMovesFor(board, fromIndex).includes(nearest)
+    const legal = board[nearest] === null && legalMovesFor(board, fromIndex, prev).includes(nearest)
     finishDrag(fromIndex, nearest, legal ? 'move' : 'invalid')
   }
 
@@ -162,7 +181,7 @@ function SimBoard({
   }
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div ref={wrapRef} style={{ position: 'relative' }}>
       <div style={{ display: 'flex', gap: `${Math.round(6 * scale)}px`, flexWrap: 'nowrap', overflowX: 'auto', justifyContent: 'center', padding: '8px 4px', touchAction: 'none' }}>
         {board.map((_, i) => (
           <div key={i} data-cell={i}

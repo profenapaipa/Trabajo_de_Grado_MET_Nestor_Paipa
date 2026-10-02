@@ -45,11 +45,14 @@ export type BitacoraEvent = {
   motivoDescarte?: string
   activacionEfectiva?: boolean
   posiciones: (number | null)[]
-  // Qué regla se rompió en una falla (ver tutor.ts: ocupada, atras, lejos,
-  // salto_propio, salto_hueco) — antes la falla solo decía la posición.
+  // Qué regla se rompió en una falla (ver tutor.ts: ocupada, lejos,
+  // salto_propio, salto_hueco, borde) — antes la falla solo decía la posición.
   errorTipo?: string
   nivel?: number
   intentoNum?: number
+  // ID (1-based) del estado en el grafo de Escalera.m tras este evento: permite
+  // reconstruir el recorrido de cada intento sobre el grafo del libro.
+  nodoGrafo?: number
 }
 
 export function nowIso(): string {
@@ -60,7 +63,7 @@ export function toCsv(events: BitacoraEvent[]): string {
   const cols: (keyof BitacoraEvent)[] = [
     'timestamp', 'esSimulacion', 'operadorId', 'participanteId', 'versionConfiguracion', 'pares',
     'tipo', 'detalle', 'fase', 'motivo', 'decision', 'motivoDescarte',
-    'activacionEfectiva', 'posiciones', 'errorTipo', 'nivel', 'intentoNum',
+    'activacionEfectiva', 'posiciones', 'errorTipo', 'nivel', 'intentoNum', 'nodoGrafo',
   ]
   const esc = (v: unknown) => {
     if (v === undefined || v === null) return ''

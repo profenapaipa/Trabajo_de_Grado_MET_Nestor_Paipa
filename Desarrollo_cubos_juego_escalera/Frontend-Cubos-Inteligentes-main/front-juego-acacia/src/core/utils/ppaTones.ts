@@ -1,6 +1,16 @@
+// Un solo AudioContext para toda la aplicación. Antes cada tono creaba uno
+// nuevo y nunca lo cerraba: en una sesión larga (cada movimiento, error y señal
+// suena) se acumulaban cientos hasta que el navegador dejaba de responder.
+let sharedCtx: AudioContext | null = null
+function getCtx(): AudioContext {
+  if (!sharedCtx || sharedCtx.state === 'closed') sharedCtx = new AudioContext()
+  if (sharedCtx.state === 'suspended') void sharedCtx.resume()
+  return sharedCtx
+}
+
 export function playTone(freq: number, duration: number, gain = 0.35) {
   try {
-    const ctx = new AudioContext(), osc = ctx.createOscillator(), g = ctx.createGain()
+    const ctx = getCtx(), osc = ctx.createOscillator(), g = ctx.createGain()
     osc.connect(g); g.connect(ctx.destination)
     osc.frequency.value = freq
     g.gain.setValueAtTime(gain, ctx.currentTime)
@@ -10,7 +20,7 @@ export function playTone(freq: number, duration: number, gain = 0.35) {
 }
 export function playBipBip(freq: number, reps = 2, gain = 0.35) {
   try {
-    const ctx = new AudioContext()
+    const ctx = getCtx()
     for (let i = 0; i < reps; i++) {
       const osc = ctx.createOscillator(), g = ctx.createGain()
       osc.connect(g); g.connect(ctx.destination); osc.frequency.value = freq
@@ -23,7 +33,7 @@ export function playBipBip(freq: number, reps = 2, gain = 0.35) {
 }
 export function playAscending(s: number, e: number, d: number) {
   try {
-    const ctx = new AudioContext(), osc = ctx.createOscillator(), g = ctx.createGain()
+    const ctx = getCtx(), osc = ctx.createOscillator(), g = ctx.createGain()
     osc.connect(g); g.connect(ctx.destination)
     osc.frequency.setValueAtTime(s, ctx.currentTime)
     osc.frequency.linearRampToValueAtTime(e, ctx.currentTime + d)
@@ -37,7 +47,7 @@ export function playAscending(s: number, e: number, d: number) {
 // grave se percibe más bajo que uno agudo (curvas isofónicas).
 export function playLongDoublePulse(freq: number, pulseDur: number, gapDur: number, gain = 0.55) {
   try {
-    const ctx = new AudioContext()
+    const ctx = getCtx()
     for (let i = 0; i < 2; i++) {
       const osc = ctx.createOscillator(), g = ctx.createGain()
       osc.connect(g); g.connect(ctx.destination); osc.frequency.value = freq
@@ -56,7 +66,7 @@ export function playLongDoublePulse(freq: number, pulseDur: number, gapDur: numb
 // rápido, Actuar continuo e intenso, sin cambios).
 export function playPpaFeedback(fase: 'pausar' | 'pensar' | 'actuar', totalDurationSec: number) {
   try {
-    const ctx = new AudioContext()
+    const ctx = getCtx()
     if (fase === 'pausar') {
       const pulseDur = 0.55, gapDur = 0.35, restAfterPair = 1.2
       const cycle = pulseDur * 2 + gapDur + restAfterPair
@@ -120,7 +130,7 @@ export function playCountdownBeep(tick: 3 | 2 | 1 | 0) {
 // tonos de PPA para no confundirse con una fase real.
 export function playError() {
   try {
-    const ctx = new AudioContext()
+    const ctx = getCtx()
     for (let i = 0; i < 2; i++) {
       const osc = ctx.createOscillator(), g = ctx.createGain()
       osc.type = 'square'

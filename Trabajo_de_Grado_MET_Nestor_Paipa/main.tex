@@ -175,7 +175,7 @@ por reglas precisas, cada decisión modifica el
 espacio de soluciones disponibles para las 
 decisiones siguientes, de modo que un movimiento 
 impulsivo puede cerrar caminos que son difíciles 
-de recuperar sin retroceder \cite{PaezGonzalez2022}. 
+de recuperar sin deshacer varios movimientos \cite{PaezGonzalez2022}. 
 Investigaciones previas realizadas en la Universidad 
 Distrital Francisco José de Caldas han mostrado que 
 la solución de este juego activa procesos de 
@@ -561,23 +561,32 @@ color ocupan las posiciones del extremo derecho, y una posición
 central permanece vacía al inicio. El objetivo del juego es 
 intercambiar completamente la posición de ambos conjuntos de 
 fichas, de manera que las fichas que comenzaron a la izquierda 
-terminen a la derecha y viceversa. El juego se rige por dos 
-operadores: una ficha puede avanzar una posición hacia el centro 
-si la posición inmediata siguiente está vacía, o puede saltar 
-sobre una ficha del color contrario si la posición después de 
-esa ficha está vacía. En ambos casos el movimiento es 
-unidireccional: las fichas del grupo izquierdo solo avanzan 
-hacia la derecha, y las del grupo derecho solo avanzan hacia 
-la izquierda. No se permiten retrocesos \cite{PaezGonzalez2022, LievanoMolina2022}.
+terminen a la derecha y viceversa. El juego se rige por tres 
+reglas, tal como se enuncian en la interfaz original del juego 
+\cite{LievanoMolina2022}. Primera, al hacer clic sobre una ficha esta 
+se desplaza al espacio vacío, ya sea deslizándose desde una posición 
+contigua o saltando desde dos posiciones de distancia, siempre que las 
+otras dos reglas lo permitan; en el juego digital original, el intento 
+de violar una regla reinicia el juego. Segunda, no se puede volver a la 
+posición inmediatamente anterior, es decir, no se puede deshacer de 
+inmediato el último movimiento. Tercera, solo se puede saltar una pieza 
+de color contrario. Ninguno de los dos grupos tiene una dirección fija: 
+cualquier ficha habilitada puede moverse hacia la izquierda o hacia la 
+derecha, y se puede regresar a una posición anterior por otro camino, 
+lo que da lugar a bucles.
 
 Desde el punto de vista matemático, el espacio de estados del 
-juego puede representarse como un grafo dirigido en el que cada 
+juego puede representarse como un grafo en el que cada 
 nodo corresponde a una configuración posible del tablero y cada 
-arco representa un movimiento válido según los operadores 
-descritos. El camino óptimo de solución, calculado mediante 
-el patrón alternado de movimientos individuales y saltos, 
-requiere exactamente 35 movimientos para la versión de cinco 
-fichas por lado, resultado que se obtiene de la expresión 
+arista representa un movimiento válido según los operadores 
+descritos. Como casi todos los movimientos pueden deshacerse, 
+el grafo se representa sin dirección (Figura~\ref{fig:espacio-problema-propio}). 
+La segunda regla da lugar a los caminos sin retorno: estados en los que 
+la única jugada posible es volver a la posición anterior, es decir, 
+infringir una regla. Para la versión de cinco fichas por lado el grafo 
+tiene 2772 nodos y 3780 aristas. El camino óptimo de solución, 
+calculado mediante el patrón alternado de movimientos individuales 
+y saltos, requiere como mínimo 35 movimientos para esa misma versión, resultado que se obtiene de la expresión 
 general $n^2 + 2n$, donde $n$ representa el número de fichas 
 por conjunto \cite{PaezGonzalez2022}. Sin embargo, los 
 aprendices que enfrentan el juego por primera vez, sin conocer 
@@ -1375,7 +1384,7 @@ transformación como el juego La Escalera, donde cada
 decisión modifica el espacio de estados disponibles para 
 las decisiones siguientes, y donde un movimiento impulsivo 
 puede cerrar caminos de solución que son difíciles de 
-recuperar sin retroceder.
+recuperar sin deshacer varios movimientos.
 
 Dentro del sistema de funciones ejecutivas, el control 
 inhibitorio ocupa una posición central tanto teórica como 
@@ -2905,7 +2914,7 @@ Video, registro EEG y bitácora del sistema se sincronizan mediante una marca de
 \subsection{Distinción entre cubo levantado y cubo no detectado}
 
 % [SUJETO A VERIFICACIÓN TÉCNICA]
-Para efectos del análisis, un cambio de estado de un cubo se evalúa en dos pasos. Primero se verifica si es compatible con las reglas de movimiento del juego: en cada instante puede haber como máximo un cubo levantado, y ese cubo debe pertenecer al conjunto de cubos que pueden moverse legalmente, es decir, avanzar únicamente en el sentido opuesto al de inicio, sin retroceder, y saltando como máximo sobre un cubo. Si el cambio es compatible con un movimiento legal, se interpreta como cubo levantado. Si no lo es, no se asume de inmediato que el cubo se desconectó: se revisa, en segundo lugar, una señal independiente del canal de posición que confirme la desconexión, antes de excluir ese cambio de estado del análisis. Esta misma distinción determina cómo se representa cada cubo en la interfaz del docente.
+Para efectos del análisis, un cambio de estado de un cubo se evalúa en dos pasos. Primero se verifica si es compatible con las reglas de movimiento del juego: en cada instante puede haber como máximo un cubo levantado, y ese cubo debe pertenecer al conjunto de cubos que pueden moverse legalmente, es decir, desplazarse hacia la casilla vacía contigua en cualquiera de los dos sentidos, o saltar sobre un único cubo del equipo contrario hacia la casilla vacía, sin volver a la posición inmediatamente anterior. Si el cambio es compatible con un movimiento legal, se interpreta como cubo levantado. Si no lo es, no se asume de inmediato que el cubo se desconectó: se revisa, en segundo lugar, una señal independiente del canal de posición que confirme la desconexión, antes de excluir ese cambio de estado del análisis. Esta misma distinción determina cómo se representa cada cubo en la interfaz del docente.
 
 \subsection{Objeto del análisis}
 

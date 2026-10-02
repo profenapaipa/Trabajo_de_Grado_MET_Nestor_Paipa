@@ -12,7 +12,7 @@ import {
 import hexToRgbArray from './core/utils/hextToRgb'
 import { playPpaFeedback, playError, playCountdownBeep } from './core/utils/ppaTones'
 import { PPA_RGB, PPA_HEX, PPA_TEXT, PPA_VIBRATION, PPA_SOUND_LABEL, PPA_LABEL, PPA_FRASE, ppaRgba, AUTO_OFF_MS, FALLAS_PARA_PAUSAR, type PPAPhase, EFECTOS } from './core/ppa/ppaColors'
-import { type Board, legalMovesFor, computeWinBoard, boardsEqual, isStuck } from './core/simulation/laEscaleraRules'
+import { type Board, physicalLegalMoves, physicalWindow, computeWinBoard, boardsEqual, isStuck } from './core/simulation/laEscaleraRules'
 import {
   type SessionState, type SustainedCubeVisual,
   sessionVisualTier, resolveSustainedVisual, sustainedVisualToCommand, resolveCubeDisplay,
@@ -125,6 +125,9 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
   const paresRef      = useRef(pares)
   const operatorIdRef = useRef(operatorId)
   const lastSettledPositionsRef = useRef<number[]>(INITIAL_POSITIONS)
+  // Posiciones asentadas ANTES de la última jugada: la Regla 2 (no volver a la
+  // posición inmediatamente anterior) las necesita. null al comienzo de un intento.
+  const previousSettledRef = useRef<number[] | null>(null)
   const turnStartRef = useRef<number>(Date.now())
   const prevControlStatusRef = useRef<'jugando' | 'victoria' | 'derrota'>('jugando')
   // ── Resolutor único de estado visual (ver core/ppa/cubeVisualState.ts y
@@ -260,9 +263,9 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
   // en las pestañas de Simulación (ControladorSimulado/JuegoSimulado).
   const legalTargetsLive: number[] = (() => {
     if (gameState.emptyPosition === null) return []
-    const prevBoard: Board = lastSettledPositionsRef.current
-      .map(id => id === 0 ? null : { id, team: id <= 5 ? 'A' as const : 'B' as const })
-    return legalMovesFor(prevBoard, gameState.emptyPosition)
+    // Sobre la ventana del ejercicio (2n+1 posiciones), no sobre las 11
+    // físicas: los bordes del .m dependen del largo del tablero jugado.
+    return physicalLegalMoves(lastSettledPositionsRef.current, pares, gameState.emptyPosition, previousSettledRef.current)
   })()
   // El tablero físico siempre tiene 11 posiciones fijas (0-10, vacío en el
   // centro). Para un ejercicio de menos pares, se muestran solo las
@@ -273,13 +276,16 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
   // Victoria/derrota del tablero físico, con las mismas reglas de
   // laEscaleraRules que usa la simulación — informativo: no envía ninguna
   // señal por sí solo, solo se muestra al operador.
-  const initialBoardForPares: Board = INITIAL_POSITIONS.slice(5 - pares, 5 + pares + 1)
-    .map(id => id === 0 ? null : { id, team: id <= 5 ? 'A' as const : 'B' as const })
+  const initialBoardForPares: Board = physicalWindow(INITIAL_POSITIONS, pares)
   const winBoardControl: Board = computeWinBoard(initialBoardForPares)
-  const currentBoardControl: Board = visibleCubes.map(c => c.id === 0 ? null : { id: c.id, team: c.id <= 5 ? 'A' as const : 'B' as const })
+  const currentBoardControl: Board = physicalWindow(cubes.map(c => c.id), pares)
+  // La derrota solo se evalúa con el tablero asentado: exactamente una
+  // casilla vacía en la ventana. Con un cubo levantado hay dos (aún no es una
+  // posición del juego) y sin ninguna (un cubo de fuera ocupó el hueco) el
+  // ejercicio está mal armado, no perdido.
   const controlStatus: 'jugando' | 'victoria' | 'derrota' =
     boardsEqual(currentBoardControl, winBoardControl) ? 'victoria'
-      : isStuck(currentBoardControl, winBoardControl) ? 'derrota'
+      : currentBoardControl.filter(c => c === null).length === 1 && isStuck(currentBoardControl, winBoardControl, previousSettledRef.current ? physicalWindow(previousSettledRef.current, pares) : null) ? 'derrota'
       : 'jugando'
 
   // El tablero volvió a la posición inicial del nivel (5 azules + 5 rojos
@@ -309,8 +315,7 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
       const fromIdx = prevSettled.findIndex((v, i) => v !== 0 && positions[i] === 0)
       const toIdx = prevSettled.findIndex((v, i) => v === 0 && positions[i] !== 0)
       if (fromIdx !== -1 && toIdx !== -1) {
-        const prevBoard: Board = prevSettled.map(id => id === 0 ? null : { id, team: id <= 5 ? 'A' as const : 'B' as const })
-        const legal = legalMovesFor(prevBoard, fromIdx).includes(toIdx)
+        const legal = physicalLegalMoves(prevSettled, paresRef.current, fromIdx, previousSettledRef.current).includes(toIdx)
         if (legal) {
           setFallaCount(0)
           turnStartRef.current = Date.now()
@@ -342,6 +347,9 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
           }
         }
       }
+      // Solo cuenta como jugada si el tablero cambió (un cubo levantado y
+      // devuelto a su sitio no mueve la "posición anterior").
+      if (fromIdx !== -1 && toIdx !== -1) previousSettledRef.current = prevSettled
       lastSettledPositionsRef.current = positions
       setCubesData(originalCubes)
       setPath(t => [...t, positions])
@@ -429,6 +437,7 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
     const nextIntento = intentoCount + 1
     intentoIdRef.current = `intento-${Date.now()}`
     intentoNumRef.current = nextIntento
+    previousSettledRef.current = null // intento nuevo: aún no hay posición anterior
     sessionAccumMsRef.current = 0
     setFallaCount(0)
     setPath([[...gameState.cubesPositions]])
@@ -548,7 +557,7 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
       logCuboEvent(
         controlStatus === 'victoria'
           ? { tipo: 'victoria', detalle: `Intento #${intentoCount} — intercambio completo en ${moveCount} movimientos` }
-          : { tipo: 'derrota', detalle: `Intento #${intentoCount} — ningún cubo tiene ya un movimiento legal disponible (bloqueo)` }
+          : { tipo: 'derrota', detalle: `Intento #${intentoCount} — no queda ninguna jugada permitida (bloqueo)` }
       )
       // Fin de partida: cierre del intento en curso en la bitácora + detener
       // el cronómetro. La señal física a los 10 cubos (EF=VICTORIA/BLOQUEO,
@@ -734,7 +743,7 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
           }}>
             <Electrode on={controlStatus === 'victoria'} />
             <span style={{ fontWeight: 700, fontSize: '13px' }}>
-              {controlStatus === 'victoria' ? `Victoria — intercambio completo en ${moveCount} movimientos` : 'Derrota — ningún cubo tiene ya un movimiento legal disponible'}
+              {controlStatus === 'victoria' ? `Victoria — intercambio completo en ${moveCount} movimientos` : 'Derrota — no queda ninguna jugada permitida'}
             </span>
           </div>
         )}

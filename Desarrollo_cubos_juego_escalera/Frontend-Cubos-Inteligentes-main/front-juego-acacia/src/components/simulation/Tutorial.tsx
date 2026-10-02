@@ -11,6 +11,10 @@ import { Panel, SectionTitle, Collapsible, LogPanel } from '../../ui/brand'
 import { sectionLabel, sessionBtn } from '../../ui/styles'
 import SimBoard, { type BoardHint } from './SimBoard'
 import RulesCard, { MiniBoard } from './RulesCard'
+import RulesAnimation from './RulesAnimation'
+import GrafoEstados from './GrafoEstados'
+import Workbench from './Workbench'
+import { buildStateGraph } from '../../core/simulation/stateGraph'
 
 // Tutorial por niveles, de 1 a 5 pares: cada nivel presenta su objetivo,
 // acompaña cada jugada con un mensaje en pantalla (qué salió bien, qué
@@ -57,8 +61,24 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
   const [events, setEvents] = useState<BitacoraEvent[]>([])
   const [rulesOpen, setRulesOpen] = useState(level === 1)
   const [logOpen, setLogOpen] = useState(true)
+  // Recorridos de intentos ya terminados, por nivel (cada nivel es otro grafo).
+  const [previosPorNivel, setPreviosPorNivel] = useState<Record<number, number[][]>>({})
 
   const win = computeWinBoard(createInitialBoard(level))
+  const graph = buildStateGraph(level)
+  // Tablero anterior (Regla 2: no se vuelve a la posición inmediatamente anterior).
+  const prev: Board | null = history.length ? history[history.length - 1] : null
+  // El recorrido del intento en curso se deduce de las jugadas vigentes
+  // (al deshacer, el último paso sale del recorrido).
+  const actual = [...history, board].map(b => graph.nodeIdOf(b))
+
+  function archivar(nivel: number) {
+    // Se convierte con el grafo de ESE nivel: al cambiar de nivel, el tablero
+    // vigente todavía es el del nivel anterior.
+    const g = buildStateGraph(nivel)
+    const path = [...history, board].map(b => g.nodeIdOf(b))
+    if (path.length > 1 && !path.includes(-1)) setPreviosPorNivel(p => ({ ...p, [nivel]: [...(p[nivel] ?? []), path] }))
+  }
   const optimal = optimalMoves(level)
   const info = LEVELS[level]
 
@@ -66,15 +86,16 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
     return { tone: 'info', titulo: 'Tu turno', texto: 'Toca una ficha para ver a dónde puede ir, y luego toca la casilla marcada AQUÍ. También puedes arrastrarla.' }
   }
 
-  function log(partial: Omit<BitacoraEvent, 'timestamp' | 'esSimulacion' | 'operadorId' | 'participanteId' | 'versionConfiguracion' | 'pares' | 'posiciones' | 'nivel'>, b: Board) {
+  function log(partial: Omit<BitacoraEvent, 'timestamp' | 'esSimulacion' | 'operadorId' | 'participanteId' | 'versionConfiguracion' | 'pares' | 'posiciones' | 'nivel' | 'nodoGrafo'>, b: Board) {
     setEvents(prev => [...prev, {
       timestamp: nowIso(), esSimulacion: true, operadorId: operatorId || '(sin asignar)', participanteId: participante || '(sin nombre)',
-      versionConfiguracion: VERSION, pares: level, nivel: level, posiciones: b.map(c => c?.id ?? null), ...partial,
+      versionConfiguracion: VERSION, pares: level, nivel: level, posiciones: b.map(c => c?.id ?? null), nodoGrafo: graph.nodeIdOf(b), ...partial,
     }])
   }
 
   function reset(toPhase: 'intro' | 'jugando') {
     const initial = createInitialBoard(level)
+    archivar(level)
     setBoard(initial)
     setHistory([])
     setSelected(null)
@@ -91,6 +112,7 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
   // no pintar un cuadro con el tablero del nivel anterior.
   const [levelSeen, setLevelSeen] = useState(level)
   if (levelSeen !== level) {
+    archivar(levelSeen)
     setLevelSeen(level)
     const initial = createInitialBoard(level)
     setBoard(initial); setHistory([]); setSelected(null); setHint(null); setErrorCell(null); setDeadEnd(false)
@@ -103,15 +125,15 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
     setSelected(i)
     if (i === null || !board[i]) return
     const piece = board[i]!
-    if (legalMovesFor(board, i).length === 0) {
-      setFeedback({ tone: 'warn', titulo: `La ficha ${piece.id} no puede moverse ahora`, texto: `${whyNoMoves(board, i)} Prueba con otra ficha.` })
+    if (legalMovesFor(board, i, prev).length === 0) {
+      setFeedback({ tone: 'warn', titulo: `La ficha ${piece.id} no puede moverse ahora`, texto: `${whyNoMoves(board, i, prev)} Prueba con otra ficha.` })
     } else {
       setFeedback({ tone: 'info', titulo: `Elegiste la ficha ${TEAM_NAME[piece.team].ficha} ${piece.id}`, texto: 'Ahora toca la casilla marcada AQUÍ (o arrastra la ficha hasta ella).' })
     }
   }
 
   function handleMove(from: number, to: number) {
-    const res = classifyAttempt(board, from, to)
+    const res = classifyAttempt(board, from, to, prev)
     if (!res.ok) return
     const piece = board[from]!
     const next = applyMove(board, from, to)
@@ -134,12 +156,12 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
       return
     }
 
-    if (!solve(next, win)) {
-      const noMoves = !next.some((c, i) => c && legalMovesFor(next, i).length > 0)
+    if (!solve(next, win, board)) {
+      const noMoves = !next.some((c, i) => c && legalMovesFor(next, i, board).length > 0)
       setDeadEnd(true)
       playError()
       setFeedback(noMoves
-        ? { tone: 'warn', titulo: 'Te quedaste sin movimientos', texto: 'Ninguna ficha puede avanzar y todavía no cambiaron de lado. Toca «Deshacer» para volver atrás, o «Empezar de nuevo».' }
+        ? { tone: 'warn', titulo: 'Te quedaste sin movimientos', texto: 'Ninguna jugada está permitida (solo quedaría volver a la posición anterior, y eso no se puede) y todavía no cambiaron de lado. Toca «Deshacer» para volver atrás, o «Empezar de nuevo».' }
         : { tone: 'warn', titulo: 'Camino sin salida', texto: 'Esa jugada es válida, pero desde aquí ya no se puede completar el cambio. Toca «Deshacer» para volver un paso atrás y probar otra ficha.' })
       log({ tipo: 'callejon_sin_salida', detalle: noMoves ? 'Bloqueo: sin movimientos legales' : 'Jugada válida que impide ganar' }, next)
       return
@@ -147,16 +169,16 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
 
     setDeadEnd(false)
     playTone(660, 0.07, 0.15)
-    setFeedback({ tone: 'ok', titulo: successText(res.kind, piece.team), texto: `Llevas ${moves} de ${optimal} movimientos. Sigue así.` })
+    setFeedback({ tone: 'ok', titulo: successText(res.kind, piece.team, to > from ? 'derecha' : 'izquierda'), texto: `Llevas ${moves} de ${optimal} movimientos. Sigue así.` })
   }
 
   function handleInvalid(from: number, to: number) {
     if (from === to) return
-    const res = classifyAttempt(board, from, to)
+    const res = classifyAttempt(board, from, to, prev)
     if (res.ok) return
     const piece = board[from]!
     const { titulo, texto } = explainError(res.error, piece.team)
-    const canMove = legalMovesFor(board, from).length > 0
+    const canMove = legalMovesFor(board, from, prev).length > 0
     playError()
     setErrorCell(to)
     setSelected(canMove ? from : null)
@@ -170,7 +192,7 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
   }
 
   function pedirPista() {
-    const path = solve(board, win)
+    const path = solve(board, win, prev)
     if (!path || path.length === 0) {
       setFeedback({ tone: 'warn', titulo: 'No hay pista desde aquí', texto: 'Esta posición ya no tiene salida. Toca «Deshacer» para volver atrás.' })
       return
@@ -206,7 +228,7 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
   const endPattern = 'B'.repeat(level) + '_' + 'A'.repeat(level)
   const stars = starsFor(counts.errors, counts.hints, counts.undos)
 
-  return (
+  const left = (
     <>
       {phase === 'intro' && (
         <Panel style={{ padding: '22px 24px' }}>
@@ -295,6 +317,7 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
           </SectionTitle>
           <SimBoard
             board={board}
+            prev={prev}
             disabled={phase !== 'jugando'}
             selected={selected}
             onSelect={handleSelect}
@@ -314,8 +337,9 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
         </Panel>
       )}
 
-      <Collapsible title="¿Cómo se juega? — las reglas" open={rulesOpen} onToggle={() => setRulesOpen(o => !o)}>
-        <RulesCard />
+      <Collapsible title="¿Cómo se juega? — las 3 reglas, explicadas y en movimiento" open={rulesOpen} onToggle={() => setRulesOpen(o => !o)}>
+        <RulesAnimation />
+        <RulesCard resumen />
       </Collapsible>
 
       <Collapsible title="Bitácora del tutorial" open={logOpen} onToggle={() => setLogOpen(o => !o)}>
@@ -327,6 +351,17 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
       </Collapsible>
     </>
   )
+
+  const graphPanel = (
+    <Panel style={{ height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <SectionTitle>Grafo de estados · {level} par{level > 1 ? 'es' : ''} — todas las posiciones del juego</SectionTitle>
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <GrafoEstados pares={level} previos={previosPorNivel[level] ?? []} actual={actual} />
+      </div>
+    </Panel>
+  )
+
+  return <Workbench left={left} right={graphPanel} offset={300} />
 }
 
 export default Tutorial
