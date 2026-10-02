@@ -49,6 +49,18 @@ el control al nivel que estuviera vigente antes.
 | 5 | Movimiento inválido | Cubo (pulso) | El cubo implicado | `EF=3` | ya existía |
 | 6 | Señal PPA manual (Pausar/Pensar/Actuar del operador) | Cubo | El cubo seleccionado | `M=` color de fase | ya existía |
 | 7 | Color de equipo en reposo | Cubo | Cualquier otro cubo | `M=` color de equipo | ya existía |
+| 8 | Conectado al maestro, sin confirmar (arranque) | Cubo | El cubo recién conectado | ninguno hasta la confirmación | **naranja** (nuevo, 2026-09-18) |
+| — | Sin WiFi / reconectando | Solo firmware | El cubo afectado | ninguno (lo decide el cubo solo) | **magenta** (antes rojo) |
+
+**Fila 8**: en la práctica no compite con las demás, porque solo existe
+*antes* de que el frontend confirme al cubo — una vez confirmado, entra al
+mismo criterio que cualquier otro cubo (fila 7 en adelante). No hizo falta
+insertarla como prioridad 7.5 formal: el firmware la aplica por su cuenta al
+arrancar, y el frontend la reemplaza con un `M=` normal en cuanto puede.
+
+**Fila "Sin WiFi"**: fuera de la tabla de prioridad del frontend, porque un
+cubo sin WiFi no puede recibir ningún comando — el propio firmware se pone
+magenta mientras reconecta y vuelve solo a su color de equipo al conectar.
 
 **No hace falta ningún código `EF=` nuevo en el firmware** — las 5
 condiciones pedidas por el autor (color de equipo en reposo, movimiento
@@ -59,6 +71,35 @@ pausada), caben todas en primitivas que el motor de efectos de
 arquitectura del frontend, no de protocolo — el transporte (TCP, sockets
 persistentes maestro-cubo, cola de comandos del backend) queda exactamente
 igual que en la Fase 1.
+
+## Naranja de arranque y confirmación de conexión (2026-09-18)
+
+Diagnóstico de la sesión anterior: el PPA sí llegaba bien al backend, pero
+el maestro no lo recogía porque el enlace maestro↔backend se había caído
+("Base física desconectada" en la consola del backend) — no era un bug del
+resolutor. Con eso resuelto (y el maestro reiniciado), el autor pidió un
+requisito nuevo, no una corrección: que el color de equipo **no** sea el
+valor por defecto del cubo. En su lugar:
+
+- El cubo arranca (y se queda) en **naranja fijo** en cuanto conecta al WiFi
+  del maestro — distinto del **magenta** de "sin WiFi" (fila de arriba, sin
+  cambios): magenta es "no tengo WiFi todavía/lo perdí"; naranja es "tengo
+  WiFi con el maestro, pero el sistema completo (maestro+backend+frontend)
+  todavía no me confirmó nada".
+- Solo pasa a su color de equipo (azul/rojo) cuando el **frontend** lo
+  confirma explícitamente, en cuanto lo ve reportado en `esclavosConectados`
+  — no antes, y no por su cuenta.
+- Este mecanismo es **autocorregible**: el efecto de despacho de nivel cubo
+  ahora itera sobre `esclavos` (los cubos realmente conectados, no los 10
+  virtuales) y depende de ese estado — si un cubo se reconecta después de
+  un corte del enlace maestro↔backend, sin que nadie reintente nada, recibe
+  su confirmación de nuevo en el siguiente ciclo. `sendSustainedAll` marca
+  como "ya confirmados" solo a los cubos que estaban conectados en el
+  momento de una difusión de sesión (bloqueo/victoria/pausa), para no
+  duplicar mensajes con el efecto de nivel cubo.
+- **No hizo falta tocar `Maestro_v3.ino`**: es un relevo genérico (reenvía
+  `id`/`color`/`vibrationIntensity`/`iluminationFrequency` tal cual), no
+  necesita saber qué significa "confirmación".
 
 ## Decisiones validadas con el autor (2026-09-18)
 
@@ -91,6 +132,36 @@ contra hardware real y prefiere el blanco instantáneo del reinicio manual,
 es un ajuste de una sola línea (un tier de sesión nuevo, p. ej. `'reinicio'`,
 con su propio comando en `sustainedVisualToCommand`).
 
+## Ajustes tras la prueba con hardware real (2026-09-18, misma fecha)
+
+Con los cubos conectados, el autor reportó dos fallas: (1) el PPA enviado
+desde el frontend no hacía **nada** en el cubo (ni luz ni vibración), cuando
+en el commit anterior a este resolutor sí funcionaba; (2) los cubos no se
+veían azules/rojos por equipo. Pidió explícitamente quitar condicionales
+del momento de conexión y dejar solo lo esencial: 5 azules + 5 rojos
+siempre, y Pausar/Pensar/Actuar funcionando. Cambios (sin verificar todavía
+contra hardware):
+
+1. **PPA con envío directo**: `sendAction()` y `apagarSenal()` vuelven a
+   mandar el comando en el mismo clic (como antes de este resolutor), en
+   vez de delegarlo a un efecto posterior condicionado al estado de sesión.
+   Se envía **forzado**: un clic del operador siempre sale al cable, aunque
+   sea la misma señal repetida.
+2. **El color de equipo lo maneja solo el cubo**: el frontend ya no le
+   reenvía el color de equipo al conectar ni al cargar la página — el
+   firmware ya se lo asigna solo desde su IP (`192.168.4.2`..`.6` = cubos
+   1-5 azules, `.7`..`.11` = cubos 6-10 rojos). Única excepción: un cubo que
+   se reconecta en medio de un bloqueo/victoria/pausa recibe esa señal de
+   sesión. El frontend solo manda eventos extraordinarios.
+3. **"Sin WiFi" pasa de rojo a magenta** en el firmware: el rojo era idéntico
+   al del equipo B, así que un cubo rojo reconectando se confundía con uno
+   rojo conectado y bien — probable causa de "no se ven azules/rojos"
+   durante la estabilización.
+4. **Bug del motor corregido**: el maestro manda la vibración como `M=0.00`
+   y el cubo comparaba contra el texto `"0.0"`; nunca coincidían, así que
+   el motor quedaba a PWM 50 (~20%) cada vez que un cubo volvía a reposo.
+   Ahora se compara como número (`aplicarVibracion`, ya existente).
+
 ## Implementación
 
 - **Frontend**: `front-juego-acacia/src/core/ppa/cubeVisualState.ts` — única
@@ -112,21 +183,24 @@ con su propio comando en `sustainedVisualToCommand`).
 
 ## Estado de verificación
 
-- ✅ `npm run build` (`tsc -b && vite build`) del frontend, limpio.
+- ✅ **PPA confirmado en el backend (2026-09-18)**: el comando llega con el
+  payload correcto (color/vibración/frecuencia de la fase enviada). El
+  bloqueo real era el enlace maestro↔backend ("Base física desconectada"),
+  no el resolutor — ver PENDIENTES_TESIS.md.
+- ✅ `npm run build` (`tsc -b && vite build`) del frontend, limpio (incluye
+  el cambio del 2026-09-18: efecto de nivel cubo por `esclavos`).
 - ✅ `arduino-cli compile` de `Cubo_Esclavo_v3.ino` contra
-  `esp32:esp32:esp32c3`, sin cambios funcionales por verificar (solo un
-  comentario nuevo).
-- ⏳ **Sin verificar contra hardware real.** Ninguna de las 7 condiciones de
-  la tabla se ha probado todavía con los cubos físicos bajo este resolutor
-  — la prueba pendiente es la misma que ya estaba registrada en
-  `PENDIENTES_TESIS.md` ("Verificar el motor de efectos del cubo... contra
-  hardware real"), ahora bajo la arquitectura nueva. Antes de dar esto por
-  cerrado hace falta, con los cubos conectados: (1) un movimiento inválido
-  con una señal PPA manual activa en el mismo cubo (confirmar que la señal
-  se restaura tras el destello); (2) pausar la partida con una señal PPA
-  manual activa (confirmar que la pausa la tapa y que no vuelve sola al
-  reanudar); (3) un reinicio manual (confirmar si la animación de `EF=4` es
-  aceptable o se prefiere blanco instantáneo, ver sección de arriba); (4)
-  un cubo que se desconecta y reconecta en medio de un bloqueo/victoria/
-  pausa (confirmar que al reconectar refleja el estado de sesión vigente,
-  no el color de equipo).
+  `esp32:esp32:esp32c3`, sin errores (incluye el naranja de arranque del
+  2026-09-18).
+- ⏳ **Sin verificar contra hardware real** lo siguiente, todo pendiente de
+  reflashear los 10 cubos y probar con el maestro real: (1) que el cubo
+  arranque en naranja y pase a su color de equipo solo al confirmarse
+  conectado; (2) que el PPA sí llegue al cubo físico ahora que el enlace
+  maestro↔backend está sano; (3) un movimiento inválido con una señal PPA
+  manual activa en el mismo cubo (debe interrumpir y restaurar); (4) pausar
+  la partida con una señal PPA manual activa (debe taparla sin restaurarla
+  sola); (5) un cubo que se desconecta y reconecta en medio de un bloqueo/
+  victoria/pausa (debe confirmarse con esa señal, no con el color de
+  equipo); (6) un corte real del enlace maestro↔backend seguido de
+  reconexión, para confirmar que los cubos que quedaron a medio confirmar
+  se resuelven solos al volver la conexión.

@@ -111,7 +111,7 @@ bool conex = false;
 const char* ssid = "ESP32_Master_AP";
 const char* password = "12345678";
 
-IPAddress local_IP(192,168,4,11);     // Cambia el ultimo digito para que sean unicos e identificables
+IPAddress local_IP(192,168,4,10);     // Cambia el ultimo digito para que sean unicos e identificables
 IPAddress gateway(192,168,4,1);
 IPAddress subnet(255,255,255,0);
 
@@ -134,6 +134,23 @@ bool ledEncendidoAhora = false;
 // cubos 1..10, obligatorio configurarlo al flashear cada uno). id<=5 =
 // equipo A (azul), igual que teamAColor/teamBColor en App.tsx del frontend.
 int colorEquipoR = 0, colorEquipoG = 0, colorEquipoB = 255;
+
+// --- color de "sin WiFi / reconectando": magenta ---
+// Antes era rojo fijo (255,0,0), idéntico al color del equipo B: un cubo
+// rojo desconectado no se distinguía de uno rojo conectado y bien. Magenta
+// no lo usa ningún otro estado (equipos azul/rojo, PPA celeste/amarillo/
+// verde, inválido naranja, bloqueo/victoria que terminan en blanco).
+// Decisión del autor, 2026-09-18.
+const int COLOR_DESC_R = 255, COLOR_DESC_G = 0, COLOR_DESC_B = 255;
+
+// --- color de "conectado al maestro, esperando confirmación": naranja ---
+// Mismo naranja que EFECTO_3_INVALIDO (255,140,0) — sin conflicto real: este
+// solo se ve una vez, al arrancar, antes de que llegue la primera
+// confirmación; el de movimiento inválido solo aparece después, ya en
+// juego. Decisión del autor, 2026-09-18: por defecto el cubo debe verse
+// naranja hasta que el sistema completo (maestro+backend+frontend) lo
+// confirme y le mande su color de equipo — no autoasignárselo solo.
+const int COLOR_ESPERA_R = 255, COLOR_ESPERA_G = 140, COLOR_ESPERA_B = 0;
 
 // --- motor de efectos no bloqueante (EF=<n>): secuencias de color y
 // vibración de varios pasos que corren enteramente en el cubo, sin
@@ -328,7 +345,13 @@ void procesarLinea(const String &cadena) {
   String lb           = extraerValor(cadena, "LB=");
   String freq         = extraerValor(cadena, "F=");
 
-  confi_vibromotor(valor_motor);
+  // Se compara como número, no como texto: el maestro formatea con "%.2f"
+  // ("0.00"), y confi_vibromotor() compara contra el texto "0.0" — nunca
+  // coincidían, así que el motor quedaba encendido a PWM 50 (~20%) cada vez
+  // que un cubo volvía a su color de equipo con vibración 0. Misma fórmula
+  // que antes para cualquier valor mayor que 0 (Pausar/Pensar/Actuar sin
+  // cambios).
+  aplicarVibracion(valor_motor.toFloat());
   actualizarColorObjetivo(lr, lg, lb, freq);
 }
 
@@ -389,7 +412,7 @@ void loop() {
 
   if (WiFi.status() != WL_CONNECTED) {
     conex = false;
-    setColorSolid(255, 0, 0);  // Rojo fijo = desconectado
+    setColorSolid(COLOR_DESC_R, COLOR_DESC_G, COLOR_DESC_B);  // magenta = sin WiFi
     confi_vibromotor("0.0");
     conectarWifi();  // Reintenta solo si se perdió la conexión
     return;
@@ -405,16 +428,21 @@ void conectarWifi() {
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
-    setColorSolid(255, 0, 0);
+    setColorSolid(COLOR_DESC_R, COLOR_DESC_G, COLOR_DESC_B);
     confi_vibromotor("0.0");
     conex = false;
     delay(500);
   }
 
-  // Se asienta directo en su propio color de equipo (ya calculado en
-  // setup() desde local_IP) en vez de quedar en negro esperando a que el
-  // maestro/frontend se lo reafirme — el cubo no depende de que nadie más
-  // "se acuerde" de mandarle su color para mostrarlo correctamente.
-  actualizarColorObjetivo(String(colorEquipoR), String(colorEquipoG), String(colorEquipoB), "0.0");
+  // NO se asienta en su color de equipo todavía: se queda en naranja (color
+  // de "esperando confirmación") hasta que el frontend lo vea conectado de
+  // verdad (backend + frontend, no solo el WiFi al maestro) y le mande el
+  // color de equipo explícito — decisión del autor, 2026-09-18. Antes se
+  // autoasignaba aquí mismo para no depender de que nadie se lo confirmara;
+  // ahora se pide justo lo contrario: que el naranja sea la señal visible
+  // de "conectado al maestro pero todavía no confirmado por el sistema
+  // completo". El primer comando M=.../EF=... que llegue (cualquiera)
+  // reemplaza este naranja igual que reemplazaría cualquier otro estado.
+  setColorSolid(COLOR_ESPERA_R, COLOR_ESPERA_G, COLOR_ESPERA_B);
   conex = true;
 }
