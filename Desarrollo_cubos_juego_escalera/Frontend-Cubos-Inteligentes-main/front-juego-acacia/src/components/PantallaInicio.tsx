@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Zap, UserPlus } from 'lucide-react'
 import { Logo, EegTrace } from '../ui/brand'
 import LogosFondo from '../ui/LogosFondo'
+import Creditos from './Creditos'
 import { sectionLabel, sessionBtn, panel } from '../ui/styles'
 import { ID_ADMIN, perfiles, resumenDePerfil, type RolPerfil } from '../core/session/perfiles'
 
@@ -21,6 +22,7 @@ const reloj = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60))
 export default function PantallaInicio({ onAbrir }: { onAbrir: (participante: string, operador: string, rol?: RolPerfil) => void }) {
   const [participante, setParticipante] = useState('')
   const [operador, setOperador] = useState('')
+  const [creditos, setCreditos] = useState(false)
   const lista = useMemo(() => perfiles().map(p => ({ perfil: p, resumen: resumenDePerfil(p.id) })), [])
 
   const listo = participante.trim().length > 0
@@ -130,7 +132,18 @@ export default function PantallaInicio({ onAbrir }: { onAbrir: (participante: st
           La sesión se conserva aunque se recargue la página, y al cerrarla queda archivada en el historial del perfil
           (no se borra): la próxima sesión del mismo perfil puede comparar con las anteriores.
         </div>
+
+        {/* Esta aplicación está construida sobre el trabajo de otras personas;
+            dejarlo a la vista desde la primera pantalla es lo correcto. */}
+        <div style={{ marginTop: '14px', textAlign: 'center' }}>
+          <button onClick={() => setCreditos(true)} style={{
+            background: 'transparent', border: 'none', padding: '4px', cursor: 'pointer',
+            fontSize: '11px', color: 'var(--color-paper-faint)', textDecoration: 'underline',
+          }}>Créditos y fuentes</button>
+        </div>
       </div>
+
+      {creditos && <Creditos onCerrar={() => setCreditos(false)} />}
     </div>
   )
 }

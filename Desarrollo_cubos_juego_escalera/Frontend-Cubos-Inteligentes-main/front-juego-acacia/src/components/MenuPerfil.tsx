@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { FileText, LogOut, Users } from 'lucide-react'
+import { FileText, Info, LogOut, Users } from 'lucide-react'
 import { sectionLabel } from '../ui/styles'
 import { perfiles, type RolPerfil } from '../core/session/perfiles'
 import type { Perfil } from '../core/session/sesion'
@@ -10,11 +10,12 @@ import type { Perfil } from '../core/session/sesion'
 // había que pasar por el informe general—, y en una sesión de trabajo el
 // relevo entre dos personas es algo que ocurre.
 
-export default function MenuPerfil({ perfil, onInforme, onCerrar, onCambiar }: {
+export default function MenuPerfil({ perfil, onInforme, onCerrar, onCambiar, onCreditos }: {
   perfil: Perfil
   onInforme: () => void
   onCerrar: () => void
   onCambiar: (nombre: string, rol: RolPerfil) => void
+  onCreditos: () => void
 }) {
   const [abierto, setAbierto] = useState(false)
   const cajaRef = useRef<HTMLDivElement>(null)
@@ -77,6 +78,9 @@ export default function MenuPerfil({ perfil, onInforme, onCerrar, onCambiar }: {
 
           <button role="menuitem" onClick={() => { setAbierto(false); onInforme() }} style={item}>
             <FileText size={14} color="var(--color-blue)" /> Ver informe de la sesión
+          </button>
+          <button role="menuitem" onClick={() => { setAbierto(false); onCreditos() }} style={item}>
+            <Info size={14} color="var(--color-paper-dim)" /> Créditos y fuentes
           </button>
           <button role="menuitem" onClick={() => { setAbierto(false); onCerrar() }} style={{ ...item, borderTop: '1px solid var(--color-line)' }}>
             <LogOut size={14} color="var(--color-caution)" /> Cerrar sesión y volver al inicio

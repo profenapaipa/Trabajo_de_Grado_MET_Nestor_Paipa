@@ -4,6 +4,7 @@ import PantallaInicio from './components/PantallaInicio'
 import InformeGeneral from './components/informe/InformeGeneral'
 import { BotonTerminarSesion } from './components/informe/botones'
 import MenuPerfil from './components/MenuPerfil'
+import Creditos from './components/Creditos'
 import { SesionProvider, useSesion } from './core/session/sesion'
 import { sembrarSesionesDeEjemplo } from './core/session/semilla'
 import TutorialTab from './components/TutorialTab'
@@ -25,6 +26,7 @@ const TABS: { id: Tab; label: string; mode: string; modeColor: string }[] = [
 function Shell() {
   const { perfil, abrirSesion, cerrarSesion } = useSesion()
   const [informeAbierto, setInformeAbierto] = useState(false)
+  const [creditos, setCreditos] = useState(false)
   const [tab, setTab] = useState<Tab>('control')
   // Estado de Control que la Vista de observador ve en espejo (solo lectura).
   const [snapshot, setSnapshot] = useState<ControlSnapshot | null>(null)
@@ -90,7 +92,8 @@ function Shell() {
               perfil={perfil}
               onInforme={() => setInformeAbierto(true)}
               onCerrar={() => { setInformeAbierto(false); cerrarSesion() }}
-              onCambiar={(nombre, rol) => { setInformeAbierto(false); cerrarSesion(); abrirSesion(nombre, operatorId, rol) }} />
+              onCambiar={(nombre, rol) => { setInformeAbierto(false); cerrarSesion(); abrirSesion(nombre, operatorId, rol) }}
+              onCreditos={() => setCreditos(true)} />
           </span>
         </div>
       </div>
@@ -121,6 +124,8 @@ function Shell() {
       <div style={{ display: tab === 'informes' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0 }}>
         <InformesTab activo={tab === 'informes'} />
       </div>
+
+      {creditos && <Creditos onCerrar={() => setCreditos(false)} />}
 
       {informeAbierto && (
         <InformeGeneral
