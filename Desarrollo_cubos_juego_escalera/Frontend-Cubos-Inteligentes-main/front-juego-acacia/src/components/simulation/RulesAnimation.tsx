@@ -17,7 +17,7 @@ import { TEAM_HEX } from '../../ui/styles'
 type Beat = { from: number; to: number; ok?: string } // `ok`: texto opcional si la jugada es válida
 export type Scene = { pattern: string; beats: Beat[] }
 
-const SCENES: Record<1 | 2 | 3, Scene[]> = {
+export const SCENES: Record<1 | 2 | 3, Scene[]> = {
   1: [
     { pattern: 'AA_BB', beats: [{ from: 1, to: 2, ok: 'La ficha azul está pegada a la casilla vacía: se desliza a ella.' }] },
     { pattern: 'AA_BB', beats: [{ from: 3, to: 2, ok: 'También se puede desde el otro lado: la roja se desliza hacia la izquierda.' }] },
@@ -53,32 +53,18 @@ function boardOf(pattern: string): Board {
 }
 
 const CELL_W = 38, CELL_H = 44, GAP = 6
-// Medidas reducidas para los pares de tableros de la tarjeta de error,
-// que van uno al lado del otro.
-const CELDA_CHICA = { w: 26, h: 30, gap: 5 }
 const reduceMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms))
 
 type Verdict = { ok: boolean; titulo: string; texto: string } | null
 
 // Una demostración: reproduce en bucle las escenas de una regla.
-// `sinTexto` deja solo el tablero animado (el motivo se explica una vez al
-// lado, no dos veces); `celda` permite dibujarlo más pequeño.
-function Demo({ scenes, compacto = false, sinTexto = false, celda, tono, breve = false }: {
-  scenes: Scene[]
-  compacto?: boolean
-  sinTexto?: boolean
-  celda?: { w: number; h: number; gap: number }
-  // Color con el que habla la animación: naranja cuando enseña el error,
-  // verde cuando enseña la jugada correcta. Sin tono, el veredicto lo pone
-  // cada jugada (la sección de reglas, donde se mezclan válidas e inválidas).
-  tono?: 'error' | 'ok'
-  // Ciclo corto, para las dos animaciones que acompañan a una falla.
-  breve?: boolean
-}) {
-  const CW = celda?.w ?? CELL_W, CH = celda?.h ?? CELL_H, GP = celda?.gap ?? GAP
-  const acento = tono === 'ok' ? 'var(--color-online)' : tono === 'error' ? INVALIDO_HEX : undefined
-  const t = (normal: number, corto: number) => (breve ? corto : normal)
+function Demo({ scenes, compacto = false }: { scenes: Scene[]; compacto?: boolean }) {
+  const CW = CELL_W, CH = CELL_H, GP = GAP
+  // El veredicto de cada jugada pone el color: no hay un tono fijo, porque
+  // estas escenas mezclan jugadas válidas e inválidas a propósito.
+  const acento: string | undefined = undefined
+  const t = (normal: number) => normal
   const [sceneIdx, setSceneIdx] = useState(0)
   const [board, setBoard] = useState<Board>(() => boardOf(scenes[0].pattern))
   const [selected, setSelected] = useState<number | null>(null) // índice de la ficha que se prueba
@@ -106,11 +92,11 @@ function Demo({ scenes, compacto = false, sinTexto = false, celda, tono, breve =
         let b = boardOf(scene.pattern)
         let prev: Board | null = null
         setSceneIdx(si); setBoard(b); setSelected(null); setTarget(null); setVerdict(null); setNudge(null); setRecien(null)
-        await sleep(t(650, 420)); if (!alive) return
+        await sleep(t(650)); if (!alive) return
         for (const beat of scene.beats) {
           const piece = b[beat.from]!
           setSelected(beat.from); setTarget(beat.to); setVerdict(null)
-          await sleep(t(750, 520)); if (!alive) return
+          await sleep(t(750)); if (!alive) return
           const res = classifyAttempt(b, beat.from, beat.to, prev)
           if (res.ok) {
             if (res.kind === 'saltar') { setHopId(piece.id); setTimeout(() => setHopId(null), 700) }
@@ -119,19 +105,19 @@ function Demo({ scenes, compacto = false, sinTexto = false, celda, tono, breve =
             b = applyMove(b, beat.from, beat.to)
             setBoard(b); setSelected(null); setRecien({ id: piece.id, desde: beat.from })
             setVerdict({ ok: true, titulo: 'Jugada válida', texto: beat.ok ?? successText(res.kind, piece.team) })
-            await sleep(t(1500, 950))
+            await sleep(t(1500))
           } else {
             const dx = (beat.to - beat.from) * (CW + GP)
-            setNudge({ id: piece.id, dx: dx * 0.4 }); await sleep(t(320, 260)); if (!alive) return
+            setNudge({ id: piece.id, dx: dx * 0.4 }); await sleep(t(320)); if (!alive) return
             setNudge({ id: piece.id, dx: 0 }); setShakeId(piece.id); setTimeout(() => setShakeId(null), 500)
             const e = explainError(res.error, piece.team)
             setVerdict({ ok: false, titulo: 'Jugada NO válida', texto: `${e.titulo}. ${e.texto}` })
-            await sleep(t(1900, 1150))
+            await sleep(t(1900))
           }
           if (!alive) return
         }
         setTarget(null); setSelected(null)
-        await sleep(t(400, 260)); if (!alive) return
+        await sleep(t(400)); if (!alive) return
         sceneRef.current = (si + 1) % scenes.length
       }
     })()
@@ -202,7 +188,6 @@ function Demo({ scenes, compacto = false, sinTexto = false, celda, tono, breve =
         </div>
       </div>
 
-      {sinTexto ? null : (
       <div role="status" aria-live="off" style={{
         minHeight: compacto ? '52px' : '82px', padding: '8px 10px', borderRadius: 'var(--radius)', background: 'var(--color-bg)',
         borderLeft: `4px solid ${verdict ? (verdict.ok ? 'var(--color-online)' : 'var(--color-offline)') : 'var(--color-line-strong)'}`,
@@ -224,7 +209,6 @@ function Demo({ scenes, compacto = false, sinTexto = false, celda, tono, breve =
           </div>
         )}
       </div>
-      )}
 
       {compacto ? null : (
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
@@ -247,65 +231,16 @@ function Demo({ scenes, compacto = false, sinTexto = false, celda, tono, breve =
 }
 
 // ── Animación de la regla que se acaba de infringir ────────────────────────
-// Con ver solo la jugada rechazada no se entiende qué habría que hacer en su
-// lugar, así que cada error muestra DOS tableros animados que parten de la
-// misma posición: el movimiento incorrecto («Así no») y uno correcto
-// («Así sí»). El veredicto de ambos lo decide el mismo motor de reglas del
-// juego, y scripts/verificarAnimaciones.ts comprueba que el de la izquierda
-// sea siempre inválido por el motivo anunciado y el de la derecha, válido.
-export const ESCENA_POR_ERROR: Record<string, {
-  regla: number
-  mal: Scene
-  bien: Scene
-  pieMal: string
-  pieBien: string
-}> = {
-  // Las dos escenas arrancan en la misma posición Y con la misma primera
-  // jugada: lo único que cambia es el último movimiento. Así se ve qué se
-  // hizo mal comparándolo con lo que había que hacer, y no dos situaciones
-  // distintas. Importa sobre todo en la Regla 2, donde el error es «la misma
-  // ficha vuelve por donde vino» y sin el movimiento anterior no se entiende.
-  ocupada: {
-    regla: 1,
-    mal: { pattern: 'AB_', beats: [{ from: 1, to: 2, ok: 'La roja se desliza a la casilla vacía.' }, { from: 0, to: 2 }] },
-    bien: { pattern: 'AB_', beats: [{ from: 1, to: 2, ok: 'La roja se desliza a la casilla vacía.' }, { from: 0, to: 1 }] },
-    pieMal: 'después la azul empuja hacia donde está la roja: esa casilla ya está ocupada y rebota.',
-    pieBien: 'después la azul entra en la casilla que quedó vacía, que es la única a la que se puede ir.',
-  },
-  lejos: {
-    regla: 1,
-    mal: { pattern: 'AABB_', beats: [{ from: 3, to: 4, ok: 'La roja del borde se desliza.' }, { from: 0, to: 3 }] },
-    bien: { pattern: 'AABB_', beats: [{ from: 3, to: 4, ok: 'La roja del borde se desliza.' }, { from: 2, to: 3 }] },
-    pieMal: 'después una ficha lejana intenta cruzar tres casillas de una vez y rebota.',
-    pieBien: 'después se mueve la ficha que está pegada al hueco: una casilla, deslizando.',
-  },
-  salto_propio: {
-    regla: 3,
-    mal: { pattern: 'AAB_', beats: [{ from: 2, to: 3, ok: 'La roja se desliza al borde.' }, { from: 0, to: 2 }] },
-    bien: { pattern: 'AAB_', beats: [{ from: 2, to: 3, ok: 'La roja se desliza al borde.' }, { from: 1, to: 2 }] },
-    pieMal: 'después la azul del fondo intenta saltar por encima de otra azul: solo se salta el color contrario.',
-    pieBien: 'después la azul vecina se desliza al hueco, sin saltar a nadie.',
-  },
-  salto_hueco: {
-    regla: 3,
-    mal: { pattern: 'A__', beats: [{ from: 0, to: 2 }] },
-    bien: { pattern: 'A__', beats: [{ from: 0, to: 1 }] },
-    pieMal: 'la ficha intenta saltar, pero al lado no hay ninguna ficha que saltar.',
-    pieBien: 'con la casilla de al lado vacía, avanza de a una casilla.',
-  },
-  regreso: {
-    regla: 2,
-    mal: {
-      pattern: 'AA_BB',
-      beats: [{ from: 1, to: 2, ok: 'La azul se desliza a la casilla vacía.' }, { from: 2, to: 1 }],
-    },
-    bien: {
-      pattern: 'AA_BB',
-      beats: [{ from: 1, to: 2, ok: 'La azul se desliza a la casilla vacía.' }, { from: 3, to: 1 }],
-    },
-    pieMal: 'y enseguida ESA MISMA ficha vuelve a la casilla marcada, de donde acababa de salir.',
-    pieBien: 'se mueve OTRA ficha; más adelante la azul sí podrá volver, por otro camino.',
-  },
+// Se reutiliza tal cual la animación que ya explica esa regla en el tutorial
+// («¿Cómo se juega?»): es la que la gente entiende, va con sus ejemplos
+// válidos e inválidos y su explicación en texto, y no hay que mantener —ni
+// calcular— un segundo juego de escenas solo para la tarjeta de error.
+export const REGLA_POR_ERROR: Record<string, 1 | 2 | 3> = {
+  ocupada: 1,
+  lejos: 1,
+  salto_propio: 3,
+  salto_hueco: 3,
+  regreso: 2,
 }
 
 const TITULO_REGLA: Record<number, string> = {
@@ -314,40 +249,13 @@ const TITULO_REGLA: Record<number, string> = {
   3: 'Regla 3 · Saltar solo una pieza de color contrario',
 }
 
-// Un lado del par: el tablero animado, su veredicto y su pie. El color lo
-// dice todo antes que el texto —naranja la jugada que no se puede, verde la
-// que sí—, y es el mismo naranja con que el cubo físico avisa un movimiento
-// inválido, para que el aprendiz asocie pantalla y cubo.
-function Lado({ ok, escena, pie }: { ok: boolean; escena: Scene; pie: string }) {
-  const color = ok ? 'var(--color-online)' : INVALIDO_HEX
-  return (
-    <div style={{
-      border: `2px solid ${color}`, borderRadius: 'var(--radius)', padding: '6px 7px', minWidth: 0,
-      background: ok ? 'rgba(66,190,101,0.07)' : 'rgba(255,140,0,0.08)',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px' }}>
-        <span aria-hidden="true" style={{
-          width: '16px', height: '16px', borderRadius: '50%', background: color, color: '#0B0F10',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800,
-        }}>{ok ? '✓' : '✕'}</span>
-        <span style={{ ...sectionLabel, color, fontWeight: 700 }}>{ok ? 'Así sí' : 'Así no'}</span>
-      </div>
-      <Demo scenes={[escena]} compacto sinTexto breve celda={CELDA_CHICA} tono={ok ? 'ok' : 'error'} />
-      <div style={{ fontSize: '11px', color: 'var(--color-paper-dim)', lineHeight: 1.4, marginTop: '4px' }}>{pie}</div>
-    </div>
-  )
-}
-
 export function AnimacionRegla({ error }: { error: string }) {
-  const caso = ESCENA_POR_ERROR[error]
-  if (!caso) return null
+  const regla = REGLA_POR_ERROR[error]
+  if (!regla) return null
   return (
-    <div style={{ background: 'var(--color-bg)', border: '1px solid var(--color-line)', borderRadius: 'var(--radius)', padding: '8px 10px' }}>
-      <div style={{ ...sectionLabel, color: INVALIDO_HEX, marginBottom: '6px', lineHeight: 1.3 }}>{TITULO_REGLA[caso.regla]}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px' }}>
-        <Lado ok={false} escena={caso.mal} pie={caso.pieMal} />
-        <Lado ok escena={caso.bien} pie={caso.pieBien} />
-      </div>
+    <div style={{ background: 'var(--color-bg)', border: '1px solid var(--color-line)', borderRadius: 'var(--radius)', padding: '10px 12px' }}>
+      <div style={{ ...sectionLabel, color: INVALIDO_HEX, marginBottom: '6px', lineHeight: 1.3 }}>{TITULO_REGLA[regla]}</div>
+      <Demo scenes={SCENES[regla]} />
     </div>
   )
 }

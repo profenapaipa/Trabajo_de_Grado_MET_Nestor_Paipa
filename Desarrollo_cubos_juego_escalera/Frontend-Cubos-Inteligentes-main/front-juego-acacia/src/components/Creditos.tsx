@@ -1,17 +1,17 @@
 import ModalInforme, { Bloque } from './informe/ModalInforme'
 import { REFERENCIAS } from './informe/fuentes'
 
-// Panel de créditos.
+// Panel de créditos y reconocimientos.
 //
-// Esta aplicación no empieza en cero: el juego y su análisis vienen del
-// trabajo de Liévano y Molina, los cubos físicos —mecánica, electrónica,
-// firmware y una primera versión del software de control— los desarrolló el
-// módulo INNOVA del proyecto ACACIA, y el marco de la investigación lo dirige
-// Jhon Jairo Páez. Dejarlo escrito dentro de la propia aplicación, y no solo
-// en el documento, es parte de hacer bien el trabajo: quien abra esto en la
-// web tiene que poder ver de quién es cada cosa.
+// El desarrollo se apoya en antecedentes con autoría identificable: el
+// dispositivo procede del módulo INNOVA del proyecto ACACIA, el juego y su
+// análisis de trayectorias del trabajo de Liévano y Molina, y la
+// investigación se realiza bajo la dirección de Jhon Jairo Páez. Dejar esa
+// atribución dentro de la propia aplicación —y no solo en el documento—
+// corresponde a la práctica de reconocer la procedencia de cada componente,
+// sobre todo ahora que la aplicación es de acceso público.
 //
-// Todo lo que aparece aquí está tomado del documento de la tesis y de su
+// Todo lo que aparece aquí procede del documento del trabajo de grado y de su
 // bibliografía (entradas ACACIA2025, LievanoMolina2022 y PaezGonzalez2022).
 
 const parrafo: React.CSSProperties = { fontSize: '13.5px', lineHeight: 1.65, color: 'var(--color-paper)', margin: '0 0 10px' }
@@ -31,9 +31,9 @@ const lista: React.CSSProperties = { margin: '0 0 10px', paddingLeft: '18px', fo
 export default function Creditos({ onCerrar }: { onCerrar: () => void }) {
   return (
     <ModalInforme
-      etiqueta="Créditos"
-      titulo="Quién hizo esto"
-      subtitulo="Escalera Inteligente · aplicación de apoyo al trabajo de grado, construida sobre el trabajo de otras personas"
+      etiqueta="Créditos y reconocimientos"
+      titulo="Escalera Inteligente"
+      subtitulo="Aplicación de registro y análisis desarrollada en el marco del trabajo de grado de la Maestría en Educación en Tecnología, Universidad Distrital Francisco José de Caldas"
       onCerrar={onCerrar}
     >
       <Bloque titulo="Trabajo de grado">
@@ -42,7 +42,7 @@ export default function Creditos({ onCerrar }: { onCerrar: () => void }) {
           durante la resolución del juego La Escalera en niños con Trastorno del Espectro Autista — TEA nivel 1.</b>
         </p>
         <ul style={lista}>
-          <Persona nombre="Néstor Andrés Paipa Castro" papel="autor del trabajo de grado y de esta aplicación" />
+          <Persona nombre="Néstor Andrés Paipa Castro" papel="autor de la investigación y del desarrollo de esta aplicación" />
           <Persona nombre="PhD Jhon Jairo Páez Rodríguez" papel="director del trabajo de grado" />
         </ul>
         <p style={apunte}>
@@ -51,14 +51,15 @@ export default function Creditos({ onCerrar }: { onCerrar: () => void }) {
         </p>
       </Bloque>
 
-      <Bloque titulo="Los cubos inteligentes · proyecto ACACIA">
+      <Bloque titulo="Antecedente tecnológico · proyecto ACACIA">
         <p style={parrafo}>
-          El diseño mecánico, electrónico y de firmware de los cubos, junto con una primera versión del software de
-          control, fueron desarrollados por el <b>módulo INNOVA del proyecto ACACIA</b>
+          El diseño mecánico, electrónico y de firmware de los cubos inteligentes, así como una primera versión del
+          software de control, fueron desarrollados por el <b>módulo INNOVA del proyecto ACACIA</b>
           {' '}(561754-EPP-1-2015-1-CO-EPPKA2-CBHE-JP), cofinanciado por el programa <b>Erasmus+</b> y ejecutado
           conjuntamente por la <b>Universidad NOVA de Lisboa</b> y la <b>Universidad Distrital Francisco José de
-          Caldas</b> (Red CADEP ACACIA). Esta aplicación continúa ese desarrollo; no lo reemplaza.
+          Caldas</b> (Red CADEP ACACIA). El presente desarrollo constituye una continuación de ese trabajo.
         </p>
+        <p style={{ ...apunte, marginBottom: '10px' }}>Equipo de desarrollo del módulo INNOVA:</p>
         <ul style={lista}>
           <Persona nombre="João Sarraipa" papel="Universidad NOVA de Lisboa" />
           <Persona nombre="John Páez" papel="Universidad Distrital Francisco José de Caldas" />
@@ -74,36 +75,37 @@ export default function Creditos({ onCerrar }: { onCerrar: () => void }) {
         </p>
       </Bloque>
 
-      <Bloque titulo="El juego La Escalera y el análisis de sus trayectorias">
+      <Bloque titulo="Antecedente conceptual · el juego La Escalera">
         <p style={parrafo}>
-          Las tres reglas del juego, el grafo de estados y la idea de leer el aprendizaje como una trayectoria sobre
-          ese grafo provienen del trabajo de grado de <b>Lina Paola Liévano Chaparro</b> y <b>Rafael Ricardo Molina
-          Monguí</b>, <i>Análisis de las trayectorias de aprendizaje del juego La Escalera</i> (Universidad Distrital
-          Francisco José de Caldas, 2022). Las reglas implementadas aquí son exactamente las de su Figura 3.3, y el
-          grafo coincide con el de su script de MATLAB: ambas cosas se comprueban en cada compilación.
+          Las tres reglas del juego, el grafo de estados y el planteamiento de analizar el aprendizaje como una
+          trayectoria sobre dicho grafo proceden del trabajo de grado de <b>Lina Paola Liévano Chaparro</b> y
+          {' '}<b>Rafael Ricardo Molina Monguí</b>, <i>Análisis de las trayectorias de aprendizaje del juego La
+          Escalera</i> (Universidad Distrital Francisco José de Caldas, 2022). Las reglas implementadas corresponden
+          a las de su Figura 3.3 y el grafo coincide con el de su script de MATLAB; ambas correspondencias se
+          verifican de forma automática en cada compilación.
         </p>
         <p style={apunte}>
-          El andamiaje humano-robot que enmarca la mediación Pausar–Pensar–Actuar procede de Páez y González (2022),
-          <i> Human-Robot Scaffolding: An Architecture to Foster Problem-solving Skills</i>, ACM Transactions on
-          Human-Robot Interaction 11(3).
+          El modelo de andamiaje humano-robot que enmarca la mediación Pausar–Pensar–Actuar procede de Páez y
+          González (2022), <i>Human-Robot Scaffolding: An Architecture to Foster Problem-solving Skills</i>, ACM
+          Transactions on Human-Robot Interaction, 11(3).
         </p>
       </Bloque>
 
-      <Bloque titulo="Fundamento de las métricas de los informes">
+      <Bloque titulo="Fundamento teórico de las métricas">
         <p style={parrafo}>
-          Las medidas de circuidad, ramificación y buclicidad que aparecen en los informes se apoyan en la literatura
-          que se lista a continuación; cada informe lleva además sus ecuaciones con el número que tienen en el
-          documento de la tesis.
+          Los indicadores de circuidad, ramificación y buclicidad implementados en los informes se fundamentan en las
+          fuentes que se relacionan a continuación. Cada informe incluye además las ecuaciones correspondientes, con
+          la numeración que tienen en el documento del trabajo de grado.
         </p>
         <ol style={{ ...lista, fontSize: '12px', color: 'var(--color-paper-dim)' }}>
           {REFERENCIAS.map(r => <li key={r} style={{ marginBottom: '4px' }}>{r}</li>)}
         </ol>
       </Bloque>
 
-      <Bloque titulo="Quienes jugaron">
+      <Bloque titulo="Participación en las sesiones piloto">
         <p style={parrafo}>
-          Gracias a los participantes de las sesiones piloto —cuyas bitácoras vienen incluidas en la aplicación como
-          sesiones de ejemplo— y a sus familias, por autorizar el registro y el uso de esos datos.
+          Se agradece a quienes participaron en las sesiones piloto —cuyas bitácoras se incluyen en la aplicación
+          como sesiones de ejemplo— y a sus familias, por la autorización para el registro y el uso de los datos.
         </p>
         <p style={apunte}>
           Los datos de personas participantes se tratan según el consentimiento informado firmado por sus padres o
@@ -111,7 +113,7 @@ export default function Creditos({ onCerrar }: { onCerrar: () => void }) {
         </p>
       </Bloque>
 
-      <Bloque titulo="Hecho con">
+      <Bloque titulo="Herramientas y tecnologías">
         <ul style={{ ...lista, color: 'var(--color-paper-dim)' }}>
           <li><b style={{ color: 'var(--color-paper)' }}>React</b>, <b style={{ color: 'var(--color-paper)' }}>TypeScript</b> y <b style={{ color: 'var(--color-paper)' }}>Vite</b> — interfaz y compilación.</li>
           <li><b style={{ color: 'var(--color-paper)' }}>Cytoscape.js</b> — dibujo del grafo de estados.</li>
@@ -123,16 +125,19 @@ export default function Creditos({ onCerrar }: { onCerrar: () => void }) {
           <li><b style={{ color: 'var(--color-paper)' }}>OpenBCI</b> — casco de electroencefalografía previsto en el protocolo.</li>
         </ul>
         <p style={apunte}>
-          Cada una de estas herramientas es software libre o de código abierto de sus respectivos autores, y se usa
-          bajo sus propias licencias.
+          Todas ellas son herramientas de software libre o de código abierto de sus respectivos autores, empleadas
+          bajo sus licencias correspondientes.
         </p>
       </Bloque>
 
-      <Bloque titulo="Cómo citar esta aplicación">
-        <p style={{ ...apunte, fontFamily: 'var(--font-mono)', fontSize: '11.5px', lineHeight: 1.7 }}>
-          Paipa Castro, N. A. (2026). <i>Escalera Inteligente: aplicación de registro y análisis de trayectorias del
-          juego La Escalera</i> [software]. Universidad Distrital Francisco José de Caldas, Maestría en Educación en
-          Tecnología. Construida sobre los cubos inteligentes del módulo INNOVA del proyecto ACACIA.
+      <Bloque titulo="Referencia de la aplicación">
+        <p style={parrafo}>
+          La referencia formal para citar esta aplicación se incorporará en esta sección una vez publicado el
+          artículo derivado de la investigación.
+        </p>
+        <p style={apunte}>
+          Entretanto, cualquier uso o reproducción debe atribuirse a su autor y a los antecedentes relacionados en
+          este panel.
         </p>
       </Bloque>
     </ModalInforme>
