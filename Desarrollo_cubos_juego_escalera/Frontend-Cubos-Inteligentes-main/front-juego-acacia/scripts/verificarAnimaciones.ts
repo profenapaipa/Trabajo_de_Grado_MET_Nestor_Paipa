@@ -74,6 +74,14 @@ for (const [error, caso] of Object.entries(ESCENA_POR_ERROR)) {
   chk(caso.mal.pattern === caso.bien.pattern,
     `${error}: las dos escenas parten de posiciones distintas (${caso.mal.pattern} vs ${caso.bien.pattern})`)
 
+  // Y, cuando hay jugada previa, tiene que ser la MISMA en las dos: lo único
+  // que puede cambiar es el último movimiento, que es lo que se compara.
+  const prevMal = caso.mal.beats.slice(0, -1)
+  const prevBien = caso.bien.beats.slice(0, -1)
+  chk(prevMal.length === prevBien.length
+    && prevMal.every((m, k) => m.from === prevBien[k].from && m.to === prevBien[k].to),
+    `${error}: la jugada previa no coincide entre «Así no» y «Así sí»`)
+
   const fmt = (p: string, ms: typeof mal) =>
     (p + ' ' + ms.map(m => `${m.from}->${m.to}${m.ok ? '✓' : '✕' + m.error}`).join(' ')).padEnd(29)
   console.log(`${error.padEnd(15)} | ${fmt(caso.mal.pattern, mal)} | ${fmt(caso.bien.pattern, bien)}`)

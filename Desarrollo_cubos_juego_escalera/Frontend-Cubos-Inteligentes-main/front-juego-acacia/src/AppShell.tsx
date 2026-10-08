@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import App, { type ControlSnapshot } from './App'
 import PantallaInicio from './components/PantallaInicio'
 import InformeGeneral from './components/informe/InformeGeneral'
 import { BotonTerminarSesion } from './components/informe/botones'
+import MenuPerfil from './components/MenuPerfil'
 import { SesionProvider, useSesion } from './core/session/sesion'
+import { sembrarSesionesDeEjemplo } from './core/session/semilla'
 import TutorialTab from './components/TutorialTab'
 import SimulacionLibreTab from './components/SimulacionLibreTab'
 import ObservadorTab from './components/ObservadorTab'
@@ -27,6 +29,11 @@ function Shell() {
   // Estado de Control que la Vista de observador ve en espejo (solo lectura).
   const [snapshot, setSnapshot] = useState<ControlSnapshot | null>(null)
   const [simPares, setSimPares] = useState(1)
+  // Las sesiones de ejemplo que vienen con la aplicación se cargan una sola
+  // vez; al terminar se vuelve a pintar la pantalla de inicio para que sus
+  // perfiles aparezcan sin recargar.
+  const [semilla, setSemilla] = useState(0)
+  useEffect(() => { sembrarSesionesDeEjemplo().then(hecha => { if (hecha) setSemilla(x => x + 1) }) }, [])
 
   // El operador y el participante son los del perfil de la sesión: se piden
   // una sola vez al entrar y acompañan a todos los registros, de modo que la
@@ -37,7 +44,7 @@ function Shell() {
 
   const current = TABS.find(t => t.id === tab)!
 
-  if (!perfil) return <PantallaInicio onAbrir={abrirSesion} />
+  if (!perfil) return <PantallaInicio key={semilla} onAbrir={abrirSesion} />
 
   return (
     <div style={{
@@ -77,10 +84,13 @@ function Shell() {
             {current.mode}
           </span>
           <span style={{ alignSelf: 'center', display: 'flex', alignItems: 'center', gap: '10px', marginLeft: '14px' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-paper-dim)' }}>
-              {perfil.participante}
-            </span>
             <BotonTerminarSesion onClick={() => setInformeAbierto(true)} />
+            {/* Quién está usando la aplicación, y desde aquí se releva. */}
+            <MenuPerfil
+              perfil={perfil}
+              onInforme={() => setInformeAbierto(true)}
+              onCerrar={() => { setInformeAbierto(false); cerrarSesion() }}
+              onCambiar={(nombre, rol) => { setInformeAbierto(false); cerrarSesion(); abrirSesion(nombre, operatorId, rol) }} />
           </span>
         </div>
       </div>

@@ -4,10 +4,13 @@
 import { readFileSync } from 'node:fs'
 import { leerBitacora } from '../src/core/session/importar'
 
+// Las mismas bitácoras que la aplicación incluye como sesiones de ejemplo
+// (src/assets/sesiones), para que esta comprobación funcione en cualquier
+// equipo y también en integración continua.
 const ARCHIVOS = [
-  'D:/Escritorio old/TESIS MAESTRÍA OVERLEAF Y VSCODE/Joel-Sesión1-Tutorial completo/Tutorial/bitacora-tutorial-1791391002377.json',
-  'D:/Escritorio old/TESIS MAESTRÍA OVERLEAF Y VSCODE/Joel-Sesión1-Tutorial completo/práctica libre/bitacora-practica-libre-1791393022996.json',
-  'D:/Escritorio old/TESIS MAESTRÍA OVERLEAF Y VSCODE/Jerónimo-Sesión1/Simulación libre/bitacora-practica-libre-1791394273420.json',
+  'src/assets/sesiones/joel-s1-tutorial.json',
+  'src/assets/sesiones/joel-s1-practica-libre.json',
+  'src/assets/sesiones/jeronimo-s1-practica-libre.json',
 ]
 
 let fallos = 0

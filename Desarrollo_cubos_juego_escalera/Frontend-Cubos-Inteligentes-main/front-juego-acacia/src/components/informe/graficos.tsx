@@ -282,12 +282,15 @@ export type Serie = { nombre: string; color: string; puntos: (number | null)[] }
 // como si fueran comparables entre sí, que es justo lo que no son.
 export type GrupoEje = { nombre: string; desde: number; hasta: number }
 
-export function Evolucion({ etiquetas, series, alto = 132, etiquetaEjeX = 'intentos, en el orden en que ocurrieron', grupos }: {
+export function Evolucion({ etiquetas, series, alto = 132, etiquetaEjeX = 'intentos, en el orden en que ocurrieron', grupos, pie }: {
   etiquetas: string[]
   series: Serie[]
   alto?: number
   etiquetaEjeX?: string
   grupos?: GrupoEje[]
+  // Qué significan las etiquetas del eje (las iniciales de cada pestaña, por
+  // ejemplo): va dentro de la gráfica, no solo en el texto de al lado.
+  pie?: ReactNode
 }) {
   const [ref, ancho] = useAncho<HTMLDivElement>()
   const padL = 30, padR = 10, padT = 8, padB = 6
@@ -300,7 +303,7 @@ export function Evolucion({ etiquetas, series, alto = 132, etiquetaEjeX = 'inten
   // el primero del siguiente.
   const izqDe = (g: GrupoEje) => (g.desde === 0 ? padL : (px(g.desde - 1) + px(g.desde)) / 2)
   const derDe = (g: GrupoEje) => (g.hasta >= n - 1 ? padL + w : (px(g.hasta) + px(g.hasta + 1)) / 2)
-  const conGrupos = grupos && grupos.length > 1 && ancho > 0
+  const conGrupos = !!grupos && grupos.length > 0 && ancho > 0
 
   return (
     <div>
@@ -346,21 +349,32 @@ export function Evolucion({ etiquetas, series, alto = 132, etiquetaEjeX = 'inten
                 ))}
                 {series.map(s => {
                   const puntos = s.puntos.map((v, i) => (v === null ? null : [px(i), py(v)] as const))
-                  // Un tramo por cada secuencia de puntos con dato: un intento sin
-                  // decisiones reales no inventa una línea recta que lo atraviese.
-                  // La línea tampoco cruza de una franja a la siguiente: unir el
-                  // último intento de una pestaña con el primero de otra sugeriría
-                  // una continuidad que no existe.
-                  const cortes = new Set((grupos ?? []).map(g => g.desde).filter(i => i > 0))
+                  // Un tramo por cada secuencia de puntos con dato: lo único que
+                  // corta la línea es la falta de dato (un intento sin decisiones
+                  // reales), no el cambio de franja —la curva se sigue mejor
+                  // entera, y el cambio de pestaña ya se ve en la franja.
                   const tramos: (readonly [number, number])[][] = []
                   let actual: (readonly [number, number])[] = []
-                  puntos.forEach((q, i) => {
-                    if (cortes.has(i) && actual.length) { tramos.push(actual); actual = [] }
+                  puntos.forEach(q => {
                     if (q) actual.push(q)
                     else if (actual.length) { tramos.push(actual); actual = [] }
                   })
+                  // El último tramo también se dibuja: si la serie termina con
+                  // dato, se quedaba abierto y sus puntos salían sueltos.
+                  if (actual.length) tramos.push(actual)
                   return (
                     <g key={s.nombre}>
+                      {/* Puente punteado sobre los intentos sin dato: la curva se
+                          sigue de un extremo a otro, pero se ve que ahí no se
+                          midió nada en vez de inventar una línea continua. */}
+                      {tramos.slice(0, -1).map((t, k) => {
+                        const fin = t[t.length - 1]
+                        const sig = tramos[k + 1][0]
+                        return (
+                          <line key={`p${k}`} x1={fin[0]} y1={fin[1]} x2={sig[0]} y2={sig[1]}
+                            stroke={s.color} strokeWidth={1.5} strokeDasharray="3 4" opacity={0.5} />
+                        )
+                      })}
                       {tramos.map((t, k) => (
                         <polyline key={k} points={t.map(([x, y]) => `${x},${y}`).join(' ')}
                           fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
@@ -378,6 +392,11 @@ export function Evolucion({ etiquetas, series, alto = 132, etiquetaEjeX = 'inten
             ))}
           </div>
           <div style={{ textAlign: 'center', fontSize: '10.5px', color: 'var(--color-paper-dim)', marginTop: '2px' }}>{etiquetaEjeX} →</div>
+          {pie && (
+            <div style={{ textAlign: 'center', fontSize: '10.5px', color: 'var(--color-paper-faint)', marginTop: '5px', lineHeight: 1.5 }}>
+              {pie}
+            </div>
+          )}
         </div>
       </div>
     </div>

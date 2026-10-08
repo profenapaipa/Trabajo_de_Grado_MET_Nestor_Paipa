@@ -87,6 +87,10 @@ function Demo({ scenes, compacto = false, sinTexto = false, celda, tono, breve =
   const [shakeId, setShakeId] = useState<number | null>(null)
   const [hopId, setHopId] = useState<number | null>(null)
   const [okId, setOkId] = useState<number | null>(null)
+  // Qué ficha acaba de moverse y de qué casilla salió: sin esa memoria no
+  // se entiende el error de la Regla 2, que consiste justamente en que la
+  // MISMA ficha vuelve a la casilla de la que acaba de salir.
+  const [recien, setRecien] = useState<{ id: number; desde: number } | null>(null)
   const [verdict, setVerdict] = useState<Verdict>(null)
   const [running, setRunning] = useState(() => !reduceMotion())
   const [restart, setRestart] = useState(0) // cambia para reiniciar la escena elegida
@@ -101,7 +105,7 @@ function Demo({ scenes, compacto = false, sinTexto = false, celda, tono, breve =
         const scene = scenes[si]
         let b = boardOf(scene.pattern)
         let prev: Board | null = null
-        setSceneIdx(si); setBoard(b); setSelected(null); setTarget(null); setVerdict(null); setNudge(null)
+        setSceneIdx(si); setBoard(b); setSelected(null); setTarget(null); setVerdict(null); setNudge(null); setRecien(null)
         await sleep(t(650, 420)); if (!alive) return
         for (const beat of scene.beats) {
           const piece = b[beat.from]!
@@ -113,7 +117,7 @@ function Demo({ scenes, compacto = false, sinTexto = false, celda, tono, breve =
             setOkId(piece.id); setTimeout(() => setOkId(null), 720)
             prev = b
             b = applyMove(b, beat.from, beat.to)
-            setBoard(b); setSelected(null)
+            setBoard(b); setSelected(null); setRecien({ id: piece.id, desde: beat.from })
             setVerdict({ ok: true, titulo: 'Jugada válida', texto: beat.ok ?? successText(res.kind, piece.team) })
             await sleep(t(1500, 950))
           } else {
@@ -150,9 +154,20 @@ function Demo({ scenes, compacto = false, sinTexto = false, celda, tono, breve =
             <div key={`s${i}`} style={{
               position: 'absolute', left: `${x(i)}px`, top: '22px', width: `${CW}px`, height: `${CH}px`, borderRadius: '8px',
               background: c === null ? 'rgba(128,128,128,0.45)' : 'rgba(255,255,255,0.05)',
-              border: `2px ${c === null ? 'solid' : 'dashed'} ${c === null && target === i && (verdict || acento) ? arrowColor : 'var(--color-line-strong)'}`,
+              border: `2px ${c === null ? 'solid' : 'dashed'} ${
+                c === null && target === i && (verdict || acento) ? arrowColor
+                  : recien && recien.desde === i ? 'var(--color-paper-dim)'
+                    : 'var(--color-line-strong)'}`,
               boxSizing: 'border-box',
-            }} />
+            }}>
+              {/* De aquí salió la ficha que se acaba de mover. */}
+              {recien && recien.desde === i && c === null && (
+                <span aria-hidden="true" style={{
+                  position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--color-paper-dim)', fontSize: `${Math.max(9, CW * 0.42)}px`, fontWeight: 700, lineHeight: 1,
+                }}>↩</span>
+              )}
+            </div>
           ))}
           {/* flecha de la jugada que se prueba */}
           {arrow && (
@@ -176,7 +191,11 @@ function Demo({ scenes, compacto = false, sinTexto = false, celda, tono, breve =
                 okId === c.id ? 'demo-ok' : '',
               ].filter(Boolean).join(' ') || undefined} style={{
                 width: '100%', height: '100%', borderRadius: '8px', background: TEAM_HEX[c.team], boxSizing: 'border-box',
-                boxShadow: selected === i ? `0 0 0 3px ${acento ?? '#ffffff'}` : '0 2px 6px rgba(0,0,0,0.45)',
+                boxShadow: selected === i
+                  ? `0 0 0 3px ${acento ?? '#ffffff'}`
+                  : recien?.id === c.id
+                    ? '0 0 0 2px var(--color-paper-dim), 0 2px 6px rgba(0,0,0,0.45)'
+                    : '0 2px 6px rgba(0,0,0,0.45)',
               }} />
             </div>
           ))}
@@ -241,46 +260,51 @@ export const ESCENA_POR_ERROR: Record<string, {
   pieMal: string
   pieBien: string
 }> = {
+  // Las dos escenas arrancan en la misma posición Y con la misma primera
+  // jugada: lo único que cambia es el último movimiento. Así se ve qué se
+  // hizo mal comparándolo con lo que había que hacer, y no dos situaciones
+  // distintas. Importa sobre todo en la Regla 2, donde el error es «la misma
+  // ficha vuelve por donde vino» y sin el movimiento anterior no se entiende.
   ocupada: {
     regla: 1,
-    mal: { pattern: 'AB_', beats: [{ from: 0, to: 1 }] },
-    bien: { pattern: 'AB_', beats: [{ from: 1, to: 2 }] },
-    pieMal: 'la ficha empuja hacia una casilla que ya está ocupada y rebota.',
-    pieBien: 'la ficha que está junto a la casilla vacía se desliza hasta ella.',
+    mal: { pattern: 'AB_', beats: [{ from: 1, to: 2, ok: 'La roja se desliza a la casilla vacía.' }, { from: 0, to: 2 }] },
+    bien: { pattern: 'AB_', beats: [{ from: 1, to: 2, ok: 'La roja se desliza a la casilla vacía.' }, { from: 0, to: 1 }] },
+    pieMal: 'después la azul empuja hacia donde está la roja: esa casilla ya está ocupada y rebota.',
+    pieBien: 'después la azul entra en la casilla que quedó vacía, que es la única a la que se puede ir.',
   },
   lejos: {
     regla: 1,
-    mal: { pattern: 'AAB_', beats: [{ from: 0, to: 3 }] },
-    bien: { pattern: 'AAB_', beats: [{ from: 2, to: 3 }] },
-    pieMal: 'la ficha intenta recorrer tres casillas de una sola vez.',
-    pieBien: 'se mueve la ficha pegada al hueco: una casilla, deslizando.',
+    mal: { pattern: 'AABB_', beats: [{ from: 3, to: 4, ok: 'La roja del borde se desliza.' }, { from: 0, to: 3 }] },
+    bien: { pattern: 'AABB_', beats: [{ from: 3, to: 4, ok: 'La roja del borde se desliza.' }, { from: 2, to: 3 }] },
+    pieMal: 'después una ficha lejana intenta cruzar tres casillas de una vez y rebota.',
+    pieBien: 'después se mueve la ficha que está pegada al hueco: una casilla, deslizando.',
   },
   salto_propio: {
     regla: 3,
-    mal: { pattern: 'AA_', beats: [{ from: 0, to: 2 }] },
-    bien: { pattern: 'AA_', beats: [{ from: 1, to: 2 }] },
-    pieMal: 'intenta saltar por encima de una ficha de su mismo color.',
-    pieBien: 'en su lugar, la ficha vecina se desliza a la casilla vacía.',
+    mal: { pattern: 'AAB_', beats: [{ from: 2, to: 3, ok: 'La roja se desliza al borde.' }, { from: 0, to: 2 }] },
+    bien: { pattern: 'AAB_', beats: [{ from: 2, to: 3, ok: 'La roja se desliza al borde.' }, { from: 1, to: 2 }] },
+    pieMal: 'después la azul del fondo intenta saltar por encima de otra azul: solo se salta el color contrario.',
+    pieBien: 'después la azul vecina se desliza al hueco, sin saltar a nadie.',
   },
   salto_hueco: {
     regla: 3,
     mal: { pattern: 'A__', beats: [{ from: 0, to: 2 }] },
     bien: { pattern: 'A__', beats: [{ from: 0, to: 1 }] },
-    pieMal: 'intenta saltar, pero al lado no hay ninguna ficha que saltar.',
-    pieBien: 'con la casilla vacía al lado, avanza de a una casilla.',
+    pieMal: 'la ficha intenta saltar, pero al lado no hay ninguna ficha que saltar.',
+    pieBien: 'con la casilla de al lado vacía, avanza de a una casilla.',
   },
   regreso: {
     regla: 2,
     mal: {
       pattern: 'AA_BB',
-      beats: [{ from: 1, to: 2, ok: 'Primero la azul se desliza a la casilla vacía.' }, { from: 2, to: 1 }],
+      beats: [{ from: 1, to: 2, ok: 'La azul se desliza a la casilla vacía.' }, { from: 2, to: 1 }],
     },
     bien: {
       pattern: 'AA_BB',
-      beats: [{ from: 1, to: 2, ok: 'Primero la azul se desliza a la casilla vacía.' }, { from: 3, to: 1 }],
+      beats: [{ from: 1, to: 2, ok: 'La azul se desliza a la casilla vacía.' }, { from: 3, to: 1 }],
     },
-    pieMal: 'la misma ficha vuelve de inmediato a la casilla de donde salió.',
-    pieBien: 'se mueve otra ficha; después sí se puede volver por otro camino.',
+    pieMal: 'y enseguida ESA MISMA ficha vuelve a la casilla marcada, de donde acababa de salir.',
+    pieBien: 'se mueve OTRA ficha; más adelante la azul sí podrá volver, por otro camino.',
   },
 }
 

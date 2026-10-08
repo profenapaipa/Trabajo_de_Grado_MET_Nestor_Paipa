@@ -325,11 +325,15 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
             punto es la inicial de la pestaña y el número de intento (C = Control Mago de Oz, T = Tutorial guiado,
             L = Simulación libre, O = Observador). El eje vertical es el valor normalizado de 0 a 1. Aprender se ve como las
             dos primeras curvas bajando y la verde subiendo, <b>dentro de una misma franja</b>: entre pestañas y entre
-            niveles distintos los valores no son comparables.</>}>
+            niveles distintos los valores no son comparables. Donde la línea va punteada, ese intento no tuvo decisiones
+            reales que medir: no es un valor cero, es un hueco.</>}>
           <Evolucion
             etiquetas={intentos.map(i => `${SIGLA[i.seccion]}${i.numero}`)}
             etiquetaEjeX="intentos de la sesión, en orden y por pestaña"
             grupos={gruposPestana}
+            pie={<>Las franjas separan las pestañas. En las etiquetas: <b>C</b> = Control Mago de Oz ·
+              {' '}<b>T</b> = Tutorial guiado · <b>L</b> = Simulación libre · <b>O</b> = Vista de observador,
+              {' '}seguido del número de intento.</>}
             series={[
               { nombre: 'Ramificación R (0 es mejor)', color: 'var(--color-blue)', puntos: intentos.map(i => (i.metricas.puntosDecision ? i.metricas.ramificacion : null)) },
               { nombre: 'Buclicidad β (0 es mejor)', color: 'var(--color-caution)', puntos: intentos.map(i => (i.metricas.movimientos ? i.metricas.buclicidad : null)) },

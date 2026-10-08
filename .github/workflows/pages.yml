@@ -1,0 +1,72 @@
+name: Publicar la aplicación en GitHub Pages
+
+# Publica la interfaz (front-juego-acacia) en GitHub Pages cada vez que se
+# empuja a la rama de trabajo. La aplicación no necesita servidor: las
+# pestañas de tutorial, simulación e informes funcionan solas, y Control Mago
+# de Oz aparece como «Desconectado» porque del otro lado no hay hardware.
+#
+# Para que esto funcione hay que marcar una vez, en el repositorio:
+#   Settings → Pages → Build and deployment → Source: GitHub Actions
+
+on:
+  push:
+    branches: [rediseno-ui, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un despliegue a la vez; si llega otro empujón, se cancela el anterior.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: Desarrollo_cubos_juego_escalera/Frontend-Cubos-Inteligentes-main/front-juego-acacia
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: Desarrollo_cubos_juego_escalera/Frontend-Cubos-Inteligentes-main/front-juego-acacia/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Comprobaciones (tipos, estilo y auditorías del juego)
+        run: |
+          npx tsc -b
+          npx eslint src
+          npm run reglas:auditar
+          npm run grafo:verificar
+          npm run metricas:verificar
+          npm run animaciones:verificar
+          npm run importacion:verificar
+
+      - name: Compilar
+        run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: Desarrollo_cubos_juego_escalera/Frontend-Cubos-Inteligentes-main/front-juego-acacia/dist
+
+  publicar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - id: despliegue
+        uses: actions/deploy-pages@v4
