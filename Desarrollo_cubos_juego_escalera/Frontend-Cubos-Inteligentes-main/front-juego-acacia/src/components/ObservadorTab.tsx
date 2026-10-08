@@ -1,9 +1,13 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { PPA_HEX, PPA_TEXT, PPA_LABEL } from '../core/ppa/ppaColors'
 import { toCsvGeneric, downloadFile, nowIso } from '../core/bitacora/csv'
 import type { ControlSnapshot } from '../App'
 import { PageFrame, Panel, PersonField, Badge, SectionTitle, Collapsible, LogPanel, TwoColumn, Electrode } from '../ui/brand'
 import { sectionLabel, sessionBtn, TEAM_HEX } from '../ui/styles'
+import GrafoEstados from './simulation/GrafoEstados'
+import InformeNivel from './informe/InformeNivel'
+import { BotonInformeNivel } from './informe/botones'
+import { useSesion } from '../core/session/sesion'
 
 // Vista de observador — solo lectura. Ve en espejo lo mismo que el
 // operador en Control Mago de Oz (estado de la sesión, cronómetro, intento,
@@ -16,6 +20,10 @@ import { sectionLabel, sessionBtn, TEAM_HEX } from '../ui/styles'
 // el momento mientras se escribe.
 const TAGS = ['Confusión', 'Frustración', 'Pide ayuda', 'Distracción', 'Logro', 'Incidencia técnica'] as const
 
+// Listas vacías estables para el grafo (ver GrafoEstados).
+const SIN_RECORRIDOS: number[][] = []
+const SIN_RECORRIDO: number[] = []
+
 type Nota = {
   timestamp: string
   observador: string
@@ -27,18 +35,30 @@ type Nota = {
 }
 
 function ObservadorTab({ snapshot, operatorId }: { snapshot: ControlSnapshot | null; operatorId: string }) {
+  const sesion = useSesion()
   const [observerId, setObserverId] = useState('')
   const [draft, setDraft] = useState('')
   const [notas, setNotas] = useState<Nota[]>([])
   const [logOpen, setLogOpen] = useState(true)
+  const [informeNivel, setInformeNivel] = useState(false)
 
   const connected = snapshot?.connected ?? false
+  const pares = snapshot?.pares ?? 5
+  // Lo que el observador mira es el intento de Control: su informe del nivel
+  // es el de esa sección, en solo lectura.
+  const intentosControl = useMemo(
+    () => sesion.intentos.filter(i => i.seccion === 'control' && i.pares === pares),
+    [sesion.intentos, pares])
+  const recorridosPrevios = useMemo(
+    () => (intentosControl.length ? intentosControl.map(i => i.recorrido) : SIN_RECORRIDOS),
+    [intentosControl])
 
   function registrar(etiqueta: string) {
     const texto = draft.trim()
     if (etiqueta === 'Nota' && !texto) return
+    const ts = nowIso()
     setNotas(prev => [...prev, {
-      timestamp: nowIso(),
+      timestamp: ts,
       observador: observerId || '(sin nombre)',
       intento: snapshot?.intento || '',
       estadoSesion: snapshot?.status ?? 'sin datos',
@@ -46,6 +66,13 @@ function ObservadorTab({ snapshot, operatorId }: { snapshot: ControlSnapshot | n
       etiqueta,
       nota: texto,
     }])
+    // La nota también va a la sesión: antes la bitácora de observación se
+    // quedaba en esta pestaña y no aparecía en el informe general.
+    sesion.registrarEvento({
+      ts, seccion: 'observador', tipo: 'nota_observacion',
+      detalle: `${etiqueta}${texto ? `: ${texto}` : ''}${snapshot?.elapsed ? ` · cronómetro ${snapshot.elapsed}` : ''}`,
+      pares: snapshot?.pares, intentoNum: snapshot?.intento || undefined,
+    })
     setDraft('')
   }
 
@@ -130,6 +157,23 @@ function ObservadorTab({ snapshot, operatorId }: { snapshot: ControlSnapshot | n
         )}
       </Panel>
 
+      {/* Espejo del grafo de Control: el observador sigue el recorrido real
+          sobre el mapa del juego, con el mismo componente y el mismo
+          comportamiento que las demás vistas (solo lectura). */}
+      <Panel>
+        <SectionTitle right={
+          <BotonInformeNivel onClick={() => setInformeNivel(true)} pares={pares} intentos={intentosControl.length} />
+        }>
+          Grafo de estados · {pares} par{pares > 1 ? 'es' : ''} — recorrido de Control
+        </SectionTitle>
+        <GrafoEstados
+          pares={pares}
+          previos={recorridosPrevios}
+          actual={snapshot?.recorrido ?? SIN_RECORRIDO}
+          height={400}
+          terminado={!!snapshot && snapshot.status.startsWith('victoria')} />
+      </Panel>
+
       <Panel>
         <SectionTitle>Registrar observación</SectionTitle>
         <textarea
@@ -156,7 +200,8 @@ function ObservadorTab({ snapshot, operatorId }: { snapshot: ControlSnapshot | n
             style={{ ...sessionBtn(!!draft.trim(), 'var(--color-blue)'), marginLeft: 'auto' }}>Registrar nota</button>
         </div>
         <div style={{ fontSize: '11px', color: 'var(--color-paper-faint)', marginTop: '8px' }}>
-          Cada registro guarda el intento, el estado de la sesión y el momento del cronómetro de Control.
+          Cada registro guarda el intento, el estado de la sesión y el momento del cronómetro de Control,
+          y queda también en el informe general de la sesión.
         </div>
       </Panel>
 
@@ -209,6 +254,9 @@ function ObservadorTab({ snapshot, operatorId }: { snapshot: ControlSnapshot | n
       badge={<Badge color="var(--color-paper-dim)">SOLO LECTURA</Badge>}
     >
       <TwoColumn main={main} side={side} />
+      {informeNivel && (
+        <InformeNivel seccion="control" pares={pares} onCerrar={() => setInformeNivel(false)} />
+      )}
     </PageFrame>
   )
 }

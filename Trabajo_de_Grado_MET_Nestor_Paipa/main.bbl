@@ -120,6 +120,30 @@ Baron-Cohen, S.%
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
+Barth{\'e}lemy%
+}{%
+Barth{\'e}lemy%
+}{%
+{\protect \APACyear {2011}}%
+}]{%
+Barthelemy2011}
+\APACinsertmetastar {%
+Barthelemy2011}%
+\begin{APACrefauthors}%
+Barth{\'e}lemy, M.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2011}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Spatial Networks} {Spatial networks}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Physics Reports}{499}{1--3}{1--101}.
+\newblock
+\begin{APACrefDOI} \doi{10.1016/j.physrep.2010.11.002} \end{APACrefDOI}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
 Bear%
 , Connors%
 \BCBL {}\ \BBA {} Paradiso%
@@ -354,6 +378,52 @@ Diamond, A.%
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
+Diestel%
+}{%
+Diestel%
+}{%
+{\protect \APACyear {2017}}%
+}]{%
+Diestel2017}
+\APACinsertmetastar {%
+Diestel2017}%
+\begin{APACrefauthors}%
+Diestel, R.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYear{2017}.
+\newblock
+\APACrefbtitle {Graph Theory} {Graph theory}\ (\PrintOrdinal{5}\ \BEd,
+  \BVOL~173).
+\newblock
+\APACaddressPublisher{Berlin}{Springer}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Dijkstra%
+}{%
+Dijkstra%
+}{%
+{\protect \APACyear {1959}}%
+}]{%
+Dijkstra1959}
+\APACinsertmetastar {%
+Dijkstra1959}%
+\begin{APACrefauthors}%
+Dijkstra, E\BPBI W.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{1959}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {A Note on Two Problems in Connexion with Graphs} {A note
+  on two problems in connexion with graphs}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Numerische Mathematik}{1}{}{269--271}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
 Ecker%
 , Bookheimer%
 \BCBL {}\ \BBA {} Murphy%
@@ -379,6 +449,40 @@ Ecker, C.%
   disorder: Brain structure and function across the lifespan}.{\BBCQ}
 \newblock
 \APACjournalVolNumPages{The Lancet Neurology}{14}{11}{1121--1134}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Faber%
+, K{\"u}hnpast%
+, S{\"u}rer%
+, Danek%
+\BCBL {}\ \BBA {} Hinz%
+}{%
+Faber%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2009}}%
+}]{%
+HinzFaber2009}
+\APACinsertmetastar {%
+HinzFaber2009}%
+\begin{APACrefauthors}%
+Faber, A\BPBI H.%
+, K{\"u}hnpast, N.%
+, S{\"u}rer, F.%
+, Danek, A.%
+\BCBL {}\ \BBA {} Hinz, A\BPBI M.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2009}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {The iso-effect: Is there specific learning of {Tower of
+  London} iso-problems?} {The iso-effect: Is there specific learning of {Tower
+  of London} iso-problems?}{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Thinking \& Reasoning}{15}{2}{237--249}.
+\newblock
+\begin{APACrefDOI} \doi{10.1080/13546780902864570} \end{APACrefDOI}
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
@@ -557,6 +661,126 @@ Hill, E.%
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
+Hinz%
+}{%
+Hinz%
+}{%
+{\protect \APACyear {2012}}%
+}]{%
+Hinz2012}
+\APACinsertmetastar {%
+Hinz2012}%
+\begin{APACrefauthors}%
+Hinz, A\BPBI M.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2012}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Graph Theory of Tower Tasks} {Graph theory of tower
+  tasks}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Behavioural Neurology}{25}{1}{13--22}.
+\newblock
+\begin{APACrefDOI} \doi{10.3233/BEN-2012-0345} \end{APACrefDOI}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Hinz%
+, Klav{\v{z}}ar%
+, Milutinovi{\'c}%
+, Parisse%
+\BCBL {}\ \BBA {} Petr%
+}{%
+Hinz%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2005}}%
+}]{%
+HinzKlavzar2005}
+\APACinsertmetastar {%
+HinzKlavzar2005}%
+\begin{APACrefauthors}%
+Hinz, A\BPBI M.%
+, Klav{\v{z}}ar, S.%
+, Milutinovi{\'c}, U.%
+, Parisse, D.%
+\BCBL {}\ \BBA {} Petr, C.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2005}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Metric properties of the {Tower of Hanoi} graphs and
+  {Stern's} diatomic sequence} {Metric properties of the {Tower of Hanoi}
+  graphs and {Stern's} diatomic sequence}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{European Journal of Combinatorics}{26}{5}{693--708}.
+\newblock
+\begin{APACrefDOI} \doi{10.1016/j.ejc.2004.04.009} \end{APACrefDOI}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Hinz%
+, Klav{\v{z}}ar%
+\BCBL {}\ \BBA {} Petr%
+}{%
+Hinz%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2018}}%
+}]{%
+Hinz2018}
+\APACinsertmetastar {%
+Hinz2018}%
+\begin{APACrefauthors}%
+Hinz, A\BPBI M.%
+, Klav{\v{z}}ar, S.%
+\BCBL {}\ \BBA {} Petr, C.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYear{2018}.
+\newblock
+\APACrefbtitle {The Tower of Hanoi -- Myths and Maths} {The tower of hanoi --
+  myths and maths}\ (\PrintOrdinal{2}\ \BEd).
+\newblock
+\APACaddressPublisher{Cham}{Springer}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Hinz%
+, Kostov%
+, Kneissl%
+, S{\"u}rer%
+\BCBL {}\ \BBA {} Danek%
+}{%
+Hinz%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2009}}%
+}]{%
+HinzKostov2009}
+\APACinsertmetastar {%
+HinzKostov2009}%
+\begin{APACrefauthors}%
+Hinz, A\BPBI M.%
+, Kostov, A.%
+, Kneissl, F.%
+, S{\"u}rer, F.%
+\BCBL {}\ \BBA {} Danek, A.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2009}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {A mathematical model and a computer tool for the {Tower
+  of Hanoi} and {Tower of London} puzzles} {A mathematical model and a computer
+  tool for the {Tower of Hanoi} and {Tower of London} puzzles}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Information Sciences}{179}{17}{2934--2947}.
+\newblock
+\begin{APACrefDOI} \doi{10.1016/j.ins.2009.04.016} \end{APACrefDOI}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
 Hirota%
 \ \BBA {} King%
 }{%
@@ -718,6 +942,32 @@ Kanner, L.%
   disturbances of affective contact}.{\BBCQ}
 \newblock
 \APACjournalVolNumPages{Nervous Child}{2}{3}{217--250}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Kirchhoff%
+}{%
+Kirchhoff%
+}{%
+{\protect \APACyear {1847}}%
+}]{%
+Kirchhoff1847}
+\APACinsertmetastar {%
+Kirchhoff1847}%
+\begin{APACrefauthors}%
+Kirchhoff, G.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{1847}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {{\"U}ber die Aufl{\"o}sung der Gleichungen, auf welche
+  man bei der Untersuchung der linearen Verteilung galvanischer Str{\"o}me
+  gef{\"u}hrt wird} {{\"U}ber die aufl{\"o}sung der gleichungen, auf welche man
+  bei der untersuchung der linearen verteilung galvanischer str{\"o}me
+  gef{\"u}hrt wird}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Annalen der Physik und Chemie}{72}{12}{497--508}.
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
@@ -920,6 +1170,29 @@ Mazefsky, C\BPBI A.%
 \newblock
 \APACjournalVolNumPages{Journal of the American Academy of Child and Adolescent
   Psychiatry}{52}{7}{679--688}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+McCabe%
+}{%
+McCabe%
+}{%
+{\protect \APACyear {1976}}%
+}]{%
+McCabe1976}
+\APACinsertmetastar {%
+McCabe1976}%
+\begin{APACrefauthors}%
+McCabe, T\BPBI J.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{1976}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {A Complexity Measure} {A complexity measure}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{IEEE Transactions on Software
+  Engineering}{SE-2}{4}{308--320}.
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
@@ -1127,6 +1400,32 @@ Rodríguez, S.%
 \newblock
 \APACaddressSchool {Bogotá, Colombia}{Universidad Distrital Francisco José de
   Caldas}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Russell%
+\ \BBA {} Norvig%
+}{%
+Russell%
+\ \BBA {} Norvig%
+}{%
+{\protect \APACyear {2021}}%
+}]{%
+RussellNorvig2021}
+\APACinsertmetastar {%
+RussellNorvig2021}%
+\begin{APACrefauthors}%
+Russell, S.%
+\BCBT {}\ \BBA {} Norvig, P.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYear{2021}.
+\newblock
+\APACrefbtitle {Artificial Intelligence: A Modern Approach} {Artificial
+  intelligence: A modern approach}\ (\PrintOrdinal{4}\ \BEd).
+\newblock
+\APACaddressPublisher{Hoboken, NJ}{Pearson}.
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%

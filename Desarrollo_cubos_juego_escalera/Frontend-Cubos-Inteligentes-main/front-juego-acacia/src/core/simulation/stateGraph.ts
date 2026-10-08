@@ -47,6 +47,9 @@ export type StateGraph = {
   // `prev` (id de nodo, o 0/undefined si no hay historial), respetando la Regla 2.
   // -1 si desde ahí ya no se puede ganar.
   distFinDesde: (cur: number, prev?: number) => number
+  // Estados a los que se puede ir desde `cur` (sin aplicar la Regla 2): son los
+  // grados de libertad de esa posición una vez se descuenta el estado anterior.
+  vecinos: (cur: number) => number[]
 }
 
 export const boardKey = (b: Board) => b.map(c => c?.id ?? 0).join(',')
@@ -167,6 +170,7 @@ export function buildStateGraph(n: number): StateGraph {
     nodeIdOf: idOf,
     edgeIndexOf: (x, y) => edgeIdx.get(x < y ? `${x}-${y}` : `${y}-${x}`) ?? -1,
     distFinDesde,
+    vecinos: (cur) => adj[cur - 1] ?? [],
   }
   cache.set(n, graph)
   return graph

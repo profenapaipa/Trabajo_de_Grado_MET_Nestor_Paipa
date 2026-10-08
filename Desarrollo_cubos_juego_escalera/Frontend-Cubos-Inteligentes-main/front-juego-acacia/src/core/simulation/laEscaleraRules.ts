@@ -134,6 +134,20 @@ export function physicalWindow(ids: number[], pares: number): Board {
     .map(id => (id === 0 ? null : { id, team: (id <= PHYSICAL_PAIRS ? 'A' : 'B') as Team }))
 }
 
+// La misma ventana, pero renumerando las fichas como lo hace el grafo de
+// estados del ejercicio: A = 1..n y B = n+1..2n. En el tablero físico los
+// identificadores son siempre los de los cubos reales (1-10), de modo que para
+// 2 pares la ventana trae {4,5,6,7} mientras el grafo de n=2 usa {1,2,3,4};
+// sin esta traducción el recorrido físico no se puede localizar en el grafo.
+export function physicalWindowCanonico(ids: number[], pares: number): Board {
+  const off = physicalOffset(pares)
+  return physicalWindow(ids, pares).map(c => {
+    if (!c) return null
+    const id = c.team === 'A' ? c.id - off : c.id - PHYSICAL_PAIRS + pares
+    return { id, team: c.team }
+  })
+}
+
 // Destinos legales (índices FÍSICOS 0-10) de la ficha en el índice físico
 // `fullIndex`; `prevIds` son las posiciones asentadas anteriores (Regla 2).
 export function physicalLegalMoves(ids: number[], pares: number, fullIndex: number, prevIds?: number[] | null): number[] {

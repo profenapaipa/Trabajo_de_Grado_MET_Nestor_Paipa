@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import {
   type Board, createInitialBoard, computeWinBoard, boardsEqual, legalMovesFor, applyMove,
 } from '../../core/simulation/laEscaleraRules'
@@ -11,7 +11,11 @@ import { Panel, SectionTitle, Collapsible, LogPanel } from '../../ui/brand'
 import { sectionLabel, sessionBtn } from '../../ui/styles'
 import SimBoard, { type BoardHint } from './SimBoard'
 import RulesCard, { MiniBoard } from './RulesCard'
-import RulesAnimation from './RulesAnimation'
+import RulesAnimation, { AnimacionRegla } from './RulesAnimation'
+import InformeNivel from '../informe/InformeNivel'
+import { BotonInformeNivel } from '../informe/botones'
+import { metricasDeIntento } from '../../core/simulation/metricas'
+import { useSesion } from '../../core/session/sesion'
 import GrafoEstados from './GrafoEstados'
 import Workbench from './Workbench'
 import { buildStateGraph } from '../../core/simulation/stateGraph'
@@ -31,6 +35,9 @@ const TONE_COLOR: Record<Tone, string> = {
 
 const VERSION = 'tutorial-niveles-v1'
 
+// Lista vacía estable: `?? []` crearía un arreglo nuevo en cada render.
+const SIN_RECORRIDOS: number[][] = []
+
 function Stars({ n, size = 28 }: { n: number; size?: number }) {
   return (
     <span aria-label={`${n} de 3 estrellas`} style={{ display: 'inline-flex', gap: '4px' }}>
@@ -49,28 +56,41 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
   onGoToLevel: (level: number) => void
   onFinishAll: () => void
 }) {
+  const sesion = useSesion()
   const [phase, setPhase] = useState<'intro' | 'jugando' | 'superado'>('intro')
   const [board, setBoard] = useState<Board>(() => createInitialBoard(level))
   const [history, setHistory] = useState<Board[]>([])
   const [selected, setSelected] = useState<number | null>(null)
   const [hint, setHint] = useState<BoardHint>(null)
   const [errorCell, setErrorCell] = useState<number | null>(null)
+  // Última regla infringida, para mostrar su animación junto al mensaje.
+  const [reglaRota, setReglaRota] = useState<string | null>(null)
   const [deadEnd, setDeadEnd] = useState(false)
   const [counts, setCounts] = useState({ moves: 0, errors: 0, hints: 0, undos: 0 })
   const [feedback, setFeedback] = useState<Feedback>(introFeedback())
   const [events, setEvents] = useState<BitacoraEvent[]>([])
   const [rulesOpen, setRulesOpen] = useState(level === 1)
   const [logOpen, setLogOpen] = useState(true)
+  const [informeAbierto, setInformeAbierto] = useState(false)
+  const inicioRef = useRef(Date.now())
   // Recorridos de intentos ya terminados, por nivel (cada nivel es otro grafo).
   const [previosPorNivel, setPreviosPorNivel] = useState<Record<number, number[][]>>({})
+
+  // Los intentos terminados viven en la sesión (no en estado local): así el
+  // informe del nivel y la numeración sobreviven al cambio de pestaña.
+  const intentosTutorial = sesion.intentos.filter(i => i.seccion === 'tutorial')
+  const intentosDelNivel = intentosTutorial.filter(i => i.pares === level)
 
   const win = computeWinBoard(createInitialBoard(level))
   const graph = buildStateGraph(level)
   // Tablero anterior (Regla 2: no se vuelve a la posición inmediatamente anterior).
   const prev: Board | null = history.length ? history[history.length - 1] : null
   // El recorrido del intento en curso se deduce de las jugadas vigentes
-  // (al deshacer, el último paso sale del recorrido).
-  const actual = [...history, board].map(b => graph.nodeIdOf(b))
+  // (al deshacer, el último paso sale del recorrido). Memorizado: si cambiara
+  // de identidad en cada render, el grafo recalcularía intensidades de miles
+  // de nodos por cada pulsación.
+  const actual = useMemo(() => [...history, board].map(b => graph.nodeIdOf(b)), [history, board, graph])
+  const previos = useMemo(() => previosPorNivel[level] ?? SIN_RECORRIDOS, [previosPorNivel, level])
 
   function archivar(nivel: number) {
     // Se convierte con el grafo de ESE nivel: al cambiar de nivel, el tablero
@@ -87,10 +107,15 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
   }
 
   function log(partial: Omit<BitacoraEvent, 'timestamp' | 'esSimulacion' | 'operadorId' | 'participanteId' | 'versionConfiguracion' | 'pares' | 'posiciones' | 'nivel' | 'nodoGrafo'>, b: Board) {
-    setEvents(prev => [...prev, {
+    const ev: BitacoraEvent = {
       timestamp: nowIso(), esSimulacion: true, operadorId: operatorId || '(sin asignar)', participanteId: participante || '(sin nombre)',
       versionConfiguracion: VERSION, pares: level, nivel: level, posiciones: b.map(c => c?.id ?? null), nodoGrafo: graph.nodeIdOf(b), ...partial,
-    }])
+    }
+    setEvents(prev => [...prev, ev])
+    sesion.registrarEvento({
+      seccion: 'tutorial', ts: ev.timestamp, tipo: ev.tipo, detalle: ev.detalle,
+      errorTipo: ev.errorTipo, pares: level, nivel: level, nodoGrafo: ev.nodoGrafo,
+    })
   }
 
   function reset(toPhase: 'intro' | 'jugando') {
@@ -104,6 +129,7 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
     setDeadEnd(false)
     setCounts({ moves: 0, errors: 0, hints: 0, undos: 0 })
     setFeedback(introFeedback())
+    inicioRef.current = Date.now()
     setPhase(toPhase)
     if (toPhase === 'jugando') log({ tipo: 'intento_iniciado', detalle: `Nivel ${level} (${level} par${level > 1 ? 'es' : ''}) iniciado` }, initial)
   }
@@ -135,6 +161,7 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
   function handleMove(from: number, to: number) {
     const res = classifyAttempt(board, from, to, prev)
     if (!res.ok) return
+    setReglaRota(null)
     const piece = board[from]!
     const next = applyMove(board, from, to)
     const moves = counts.moves + 1
@@ -148,6 +175,13 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
 
     if (boardsEqual(next, win)) {
       const stars = starsFor(counts.errors, counts.hints, counts.undos)
+      const recorrido = [...history, board, next].map(b => graph.nodeIdOf(b))
+      const m = metricasDeIntento(level, recorrido)
+      const seg = Math.round((Date.now() - inicioRef.current) / 1000)
+      sesion.registrarIntento({
+        seccion: 'tutorial', numero: intentosTutorial.length + 1, pares: level, resultado: 'victoria',
+        segundos: seg, errores: counts.errors, recorrido, metricas: m,
+      })
       setPhase('superado')
       setDeadEnd(false)
       playAscending(523, 1046, 0.5)
@@ -181,6 +215,7 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
     const canMove = legalMovesFor(board, from, prev).length > 0
     playError()
     setErrorCell(to)
+    setReglaRota(res.error)
     setSelected(canMove ? from : null)
     setCounts(c => ({ ...c, errors: c.errors + 1 }))
     setFeedback({
@@ -271,6 +306,9 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
             <div style={{ fontSize: '18px', fontWeight: 700, margin: '4px 0' }}>{feedback.titulo}</div>
             <div style={{ fontSize: '14px', color: 'var(--color-paper-dim)', lineHeight: 1.5 }}>{feedback.texto}</div>
           </div>
+          {feedback.tone === 'error' && reglaRota && (
+            <div style={{ flex: '1 1 330px', minWidth: '240px', maxWidth: '430px' }}><AnimacionRegla error={reglaRota} /></div>
+          )}
           <div style={{ minWidth: '190px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', ...sectionLabel }}>
               <span>Movimientos</span><span style={{ color: 'var(--color-paper)' }}>{counts.moves} / {optimal}</span>
@@ -303,6 +341,7 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
           </div>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <button onClick={() => reset('jugando')} style={sessionBtn(true, 'var(--color-line-strong)')}>Repetir nivel</button>
+            <BotonInformeNivel onClick={() => setInformeAbierto(true)} pares={level} intentos={intentosDelNivel.length} />
             {level < 5
               ? <button onClick={() => onGoToLevel(level + 1)} style={{ ...sessionBtn(true, 'var(--color-blue)'), fontSize: '15px' }}>Siguiente nivel →</button>
               : <button onClick={onFinishAll} style={{ ...sessionBtn(true, 'var(--color-blue)'), fontSize: '15px' }}>Ir a simulación libre →</button>}
@@ -312,7 +351,17 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
 
       {phase !== 'intro' && (
         <Panel>
-          <SectionTitle right={<span style={{ fontSize: '11px', color: 'var(--color-paper-faint)' }}>toca y toca, o arrastra</span>}>
+          <SectionTitle right={
+            <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--color-paper-faint)' }}>toca y toca, o arrastra</span>
+              {intentosDelNivel.length > 0 && (
+                <button onClick={() => setInformeAbierto(true)} style={{
+                  background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
+                  fontSize: '11px', color: 'var(--color-blue)', textDecoration: 'underline',
+                }}>informe del nivel ({intentosDelNivel.length})</button>
+              )}
+            </span>
+          }>
             Tablero · nivel {level}
           </SectionTitle>
           <SimBoard
@@ -356,12 +405,21 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
     <Panel style={{ height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <SectionTitle>Grafo de estados · {level} par{level > 1 ? 'es' : ''} — todas las posiciones del juego</SectionTitle>
       <div style={{ flex: 1, minHeight: 0 }}>
-        <GrafoEstados pares={level} previos={previosPorNivel[level] ?? []} actual={actual} />
+        <GrafoEstados pares={level} previos={previos} actual={actual}
+          terminado={phase === 'superado'} />
       </div>
     </Panel>
   )
 
-  return <Workbench left={left} right={graphPanel} offset={300} />
+  return (
+    <>
+      <Workbench left={left} right={graphPanel} offset={300} />
+      {/* El informe del nivel se abre en una ventana emergente, no como un
+          panel más bajo el tablero: así se lee completo y no desordena la
+          pantalla de juego. */}
+      {informeAbierto && <InformeNivel seccion="tutorial" pares={level} onCerrar={() => setInformeAbierto(false)} />}
+    </>
+  )
 }
 
 export default Tutorial

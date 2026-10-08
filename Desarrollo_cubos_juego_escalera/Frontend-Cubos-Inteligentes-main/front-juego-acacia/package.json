@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "grafo:layout": "esbuild scripts/generarLayoutGrafos.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/generarLayoutGrafos.cjs --log-level=error && node node_modules/.cache/generarLayoutGrafos.cjs",
     "reglas:auditar": "esbuild scripts/auditarReglas.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/auditarReglas.cjs --log-level=error && node node_modules/.cache/auditarReglas.cjs",
-    "grafo:verificar": "esbuild scripts/verificarGrafo.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/verificarGrafo.cjs --log-level=error && node node_modules/.cache/verificarGrafo.cjs"
+    "metricas:verificar": "esbuild scripts/verificarMetricas.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/verificarMetricas.cjs --log-level=error && node node_modules/.cache/verificarMetricas.cjs",
+    "grafo:verificar": "esbuild scripts/verificarGrafo.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/verificarGrafo.cjs --log-level=error && node node_modules/.cache/verificarGrafo.cjs",
+    "animaciones:verificar": "esbuild scripts/verificarAnimaciones.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/verificarAnimaciones.cjs --log-level=error && node node_modules/.cache/verificarAnimaciones.cjs",
+    "importacion:verificar": "esbuild scripts/verificarImportacion.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/verificarImportacion.cjs --log-level=error && node node_modules/.cache/verificarImportacion.cjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",

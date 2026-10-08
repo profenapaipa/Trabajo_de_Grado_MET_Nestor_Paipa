@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   type Board, createInitialBoard, computeWinBoard, boardsEqual, isStuck, applyMove,
 } from '../../core/simulation/laEscaleraRules'
@@ -10,9 +10,14 @@ import { Panel, SectionTitle, Collapsible, LogPanel, SignalGlyph } from '../../u
 import { sectionLabel, sessionBtn, countdownSemaforo } from '../../ui/styles'
 import PpaChargeMeter from './PpaChargeMeter'
 import SimBoard from './SimBoard'
+import { AnimacionRegla } from './RulesAnimation'
 import GrafoEstados from './GrafoEstados'
 import Workbench from './Workbench'
 import EndBanner from './EndBanner'
+import InformeNivel from '../informe/InformeNivel'
+import { BotonInformeNivel } from '../informe/botones'
+import { metricasDeIntento } from '../../core/simulation/metricas'
+import { useSesion } from '../../core/session/sesion'
 import { buildStateGraph } from '../../core/simulation/stateGraph'
 
 // Práctica libre: el juego completo sin ayudas del tutorial (sin pistas ni
@@ -25,7 +30,11 @@ import { buildStateGraph } from '../../core/simulation/stateGraph'
 type SessionState = 'inactivo' | 'cuenta' | 'jugando' | 'victoria' | 'bloqueado'
 const VERSION = 'sim-config-v0.2'
 
+// Lista vacía estable: `?? []` crearía un arreglo nuevo en cada render.
+const SIN_RECORRIDOS: number[][] = []
+
 function PracticaLibre({ pares, operatorId, participante }: { pares: number; operatorId: string; participante: string }) {
+  const sesion = useSesion()
   const [session, setSession] = useState<SessionState>('inactivo')
   const [countdown, setCountdown] = useState<number | null>(null)
   const [board, setBoard] = useState<Board>(() => createInitialBoard(pares))
@@ -37,6 +46,8 @@ function PracticaLibre({ pares, operatorId, participante }: { pares: number; ope
   const [fallaCount, setFallaCount] = useState(0)
   const [intento, setIntento] = useState(0)
   const [message, setMessage] = useState<{ tone: 'ok' | 'error' | 'info'; text: string } | null>(null)
+  // Qué regla se infringió en la última jugada rechazada, y su explicación.
+  const [fallo, setFallo] = useState<{ error: string; titulo: string; texto: string } | null>(null)
   const [suggestion, setSuggestion] = useState<{ fase: PPAPhase; motivo: string } | null>(null)
   const [discardReason, setDiscardReason] = useState('')
   const [lastActivation, setLastActivation] = useState<{ fase: PPAPhase; at: string } | null>(null)
@@ -51,12 +62,29 @@ function PracticaLibre({ pares, operatorId, participante }: { pares: number; ope
   const [, setTick] = useState(0)
   const startRef = useRef(0)
   const [finalMs, setFinalMs] = useState(0) // duración del intento al terminar (el cronómetro se queda ahí)
+  const [informeAbierto, setInformeAbierto] = useState(false)
   const turnStartRef = useRef(Date.now())
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const intentoRef = useRef(0)
 
   const win = computeWinBoard(createInitialBoard(pares))
   const graph = buildStateGraph(pares)
+  // Los intentos terminados viven en la sesión: el informe del nivel y su
+  // conteo no se pierden al cambiar de pestaña.
+  const intentosDelNivel = useMemo(
+    () => sesion.intentos.filter(i => i.seccion === 'libre' && i.pares === pares),
+    [sesion.intentos, pares])
+  const previos = useMemo(() => previosPorPares[pares] ?? SIN_RECORRIDOS, [previosPorPares, pares])
+
+  // Guarda el intento terminado con sus métricas (ecuaciones de main.tex §3.3).
+  function registrarIntento(recorrido: number[], resultado: 'victoria' | 'bloqueo' | 'reiniciado', ms: number) {
+    const m = metricasDeIntento(pares, recorrido)
+    const seg = Math.round(ms / 1000)
+    sesion.registrarIntento({
+      seccion: 'libre', numero: intentoRef.current, pares, resultado,
+      segundos: seg, errores: errors, recorrido, metricas: m,
+    })
+  }
 
   function archivar(paresDelRecorrido: number) {
     if (actual.length > 1) setPreviosPorPares(p => ({ ...p, [paresDelRecorrido]: [...(p[paresDelRecorrido] ?? []), actual] }))
@@ -77,11 +105,16 @@ function PracticaLibre({ pares, operatorId, participante }: { pares: number; ope
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
 
   function log(partial: Omit<BitacoraEvent, 'timestamp' | 'esSimulacion' | 'operadorId' | 'participanteId' | 'versionConfiguracion' | 'pares' | 'posiciones' | 'intentoNum' | 'nodoGrafo'>, b: Board) {
-    setEvents(prev => [...prev, {
+    const ev: BitacoraEvent = {
       timestamp: nowIso(), esSimulacion: true, operadorId: operatorId || '(sin asignar)', participanteId: participante || '(sin nombre)',
       versionConfiguracion: VERSION, pares, posiciones: b.map(c => c?.id ?? null),
       intentoNum: intentoRef.current || undefined, nodoGrafo: graph.nodeIdOf(b), ...partial,
-    }])
+    }
+    setEvents(prev => [...prev, ev])
+    sesion.registrarEvento({
+      seccion: 'libre', ts: ev.timestamp, tipo: ev.tipo, detalle: ev.detalle,
+      errorTipo: ev.errorTipo, pares, intentoNum: ev.intentoNum, nodoGrafo: ev.nodoGrafo,
+    })
   }
 
   function abortToIdle(newPares: number) {
@@ -91,7 +124,7 @@ function PracticaLibre({ pares, operatorId, participante }: { pares: number; ope
     setBoard(createInitialBoard(newPares))
     setPrevBoard(null)
     setActual([1])
-    setSelected(null); setErrorCell(null); setSuggestion(null); setMessage(null)
+    setSelected(null); setErrorCell(null); setSuggestion(null); setMessage(null); setFallo(null)
     setMoves(0); setErrors(0); setFallaCount(0)
     setSession('inactivo')
   }
@@ -114,7 +147,7 @@ function PracticaLibre({ pares, operatorId, participante }: { pares: number; ope
     setActual([1])
     setPrevBoard(null)
     setBoard(initial)
-    setSelected(null); setErrorCell(null); setSuggestion(null); setMessage(null); setLastActivation(null)
+    setSelected(null); setErrorCell(null); setSuggestion(null); setMessage(null); setFallo(null); setLastActivation(null)
     setMoves(0); setErrors(0); setFallaCount(0)
     setSession('cuenta')
     log({ tipo: 'intento_iniciado', detalle: `Intento #${n} iniciado (${pares} pares)` }, initial)
@@ -133,6 +166,11 @@ function PracticaLibre({ pares, operatorId, participante }: { pares: number; ope
 
   function reiniciar() {
     log({ tipo: 'reinicio', detalle: `Intento #${intentoRef.current} reiniciado por el operador` }, board)
+    // Un intento abandonado a medias también se registra: su recorrido parcial
+    // es dato para el análisis, y sin él el informe de sesión perdería intentos.
+    if (session === 'jugando' && actual.length > 1) {
+      registrarIntento(actual, 'reiniciado', Date.now() - startRef.current)
+    }
     archivar(pares)
     abortToIdle(pares)
   }
@@ -148,14 +186,19 @@ function PracticaLibre({ pares, operatorId, participante }: { pares: number; ope
     setActual(a => [...a, graph.nodeIdOf(next)])
     setMoves(m); setFallaCount(0)
     turnStartRef.current = Date.now()
+    setFallo(null)
     setMessage({ tone: 'ok', text: successText(res.kind, piece.team, to > from ? 'derecha' : 'izquierda') })
     log({ tipo: 'movimiento', detalle: `Ficha ${piece.id} (${res.kind}) de la posición ${from + 1} a la ${to + 1}` }, next)
     if (boardsEqual(next, win)) {
-      setFinalMs(Date.now() - startRef.current)
+      const ms = Date.now() - startRef.current
+      setFinalMs(ms)
+      registrarIntento([...actual, graph.nodeIdOf(next)], 'victoria', ms)
       setSession('victoria')
       log({ tipo: 'victoria', detalle: `Intento #${intentoRef.current}: intercambio completo en ${m} movimientos y ${Math.round((Date.now() - startRef.current) / 1000)}s` }, next)
     } else if (isStuck(next, win, board)) {
-      setFinalMs(Date.now() - startRef.current)
+      const ms = Date.now() - startRef.current
+      setFinalMs(ms)
+      registrarIntento([...actual, graph.nodeIdOf(next)], 'bloqueo', ms)
       setSession('bloqueado')
       log({ tipo: 'derrota', detalle: `Intento #${intentoRef.current}: ninguna jugada permitida (bloqueo)` }, next)
     }
@@ -170,6 +213,7 @@ function PracticaLibre({ pares, operatorId, participante }: { pares: number; ope
     playError()
     setErrorCell(to)
     setErrors(e => e + 1)
+    setFallo({ error: res.error, titulo, texto })
     setMessage({ tone: 'error', text: `${titulo}. ${texto}` })
     log({ tipo: 'falla', errorTipo: res.error, detalle: `Ficha ${piece.id} a la posición ${to + 1}: ${titulo}` }, board)
     const nf = fallaCount + 1
@@ -235,6 +279,7 @@ function PracticaLibre({ pares, operatorId, participante }: { pares: number; ope
             style={sessionBtn(canReset, confirmReset ? 'var(--color-offline)' : 'var(--color-paper-dim)')}>
             {confirmReset ? '¿Confirmar reinicio?' : 'Reiniciar'}
           </button>
+          <BotonInformeNivel onClick={() => setInformeAbierto(true)} pares={pares} intentos={intentosDelNivel.length} />
         </div>
         {countdown !== null && (
           <div style={{
@@ -264,6 +309,26 @@ function PracticaLibre({ pares, operatorId, participante }: { pares: number; ope
           board={board} prev={prevBoard} disabled={session !== 'jugando'}
           selected={selected} onSelect={i => { setSelected(i); setErrorCell(null) }}
           onMove={handleMove} onInvalid={handleInvalid} errorCell={errorCell} />
+        {/* Jugada rechazada: se dice qué regla se rompió y se anima, igual que
+            en el tutorial. Antes solo aparecía una línea fina bajo el tablero. */}
+        {fallo && session === 'jugando' ? (
+          <div style={{
+            marginTop: '12px', padding: '12px 14px', borderRadius: 'var(--radius)',
+            background: 'rgba(250,77,86,0.10)', border: '2px solid var(--color-offline)',
+            display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap',
+          }}>
+            <span aria-hidden="true" style={{
+              width: '30px', height: '30px', flexShrink: 0, borderRadius: '50%', background: 'var(--color-offline)',
+              color: '#0B0F10', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800,
+            }}>✕</span>
+            <div style={{ flex: 1, minWidth: '220px' }}>
+              <div style={{ ...sectionLabel, color: 'var(--color-offline)' }}>Movimiento no permitido</div>
+              <div style={{ fontSize: '17px', fontWeight: 700, margin: '2px 0' }}>{fallo.titulo}</div>
+              <div style={{ fontSize: '13px', color: 'var(--color-paper-dim)', lineHeight: 1.5 }}>{fallo.texto}</div>
+            </div>
+            <div style={{ flex: '1 1 330px', minWidth: '240px', maxWidth: '430px' }}><AnimacionRegla error={fallo.error} /></div>
+          </div>
+        ) : (
         <div style={{
           marginTop: '12px', padding: '8px 12px', borderRadius: 'var(--radius)', background: 'var(--color-bg)', fontSize: '13px',
           borderLeft: `3px solid ${message?.tone === 'error' ? 'var(--color-offline)' : message?.tone === 'ok' ? 'var(--color-online)' : 'var(--color-blue)'}`,
@@ -274,6 +339,7 @@ function PracticaLibre({ pares, operatorId, participante }: { pares: number; ope
               : session === 'bloqueado' ? 'No queda ninguna jugada permitida (solo volver a la posición anterior, y eso no se puede) y no se completó el cambio. Inicia otro intento.'
                 : message?.text ?? 'Toca una ficha y luego la casilla a donde quieres llevarla.'}
         </div>
+        )}
       </Panel>
 
       {suggestion && (
@@ -330,12 +396,20 @@ function PracticaLibre({ pares, operatorId, participante }: { pares: number; ope
     <Panel style={{ height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <SectionTitle>Grafo de estados · {pares} par{pares > 1 ? 'es' : ''} — tu recorrido</SectionTitle>
       <div style={{ flex: 1, minHeight: 0 }}>
-        <GrafoEstados pares={pares} previos={previosPorPares[pares] ?? []} actual={actual} />
+        <GrafoEstados pares={pares} previos={previos} actual={actual}
+          terminado={session === 'victoria' || session === 'bloqueado'} />
       </div>
     </Panel>
   )
 
-  return <Workbench left={main} right={graphPanel} offset={264} />
+  return (
+    <>
+      <Workbench left={main} right={graphPanel} offset={264} />
+      {/* El informe del nivel se abre en ventana emergente (antes era otro
+          panel bajo el tablero, que tapaba el grafo y obligaba a bajar). */}
+      {informeAbierto && <InformeNivel seccion="libre" pares={pares} onCerrar={() => setInformeAbierto(false)} />}
+    </>
+  )
 }
 
 export default PracticaLibre

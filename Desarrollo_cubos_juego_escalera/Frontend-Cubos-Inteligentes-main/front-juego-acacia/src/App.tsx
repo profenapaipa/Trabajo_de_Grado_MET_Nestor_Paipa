@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import Cube, { CubeAction } from './components/Cube'
 import AmbientMusicPanel from './components/AmbientMusicPanel'
@@ -12,17 +12,30 @@ import {
 import hexToRgbArray from './core/utils/hextToRgb'
 import { playPpaFeedback, playError, playCountdownBeep } from './core/utils/ppaTones'
 import { PPA_RGB, PPA_HEX, PPA_TEXT, PPA_VIBRATION, PPA_SOUND_LABEL, PPA_LABEL, PPA_FRASE, ppaRgba, AUTO_OFF_MS, FALLAS_PARA_PAUSAR, type PPAPhase, EFECTOS } from './core/ppa/ppaColors'
-import { type Board, physicalLegalMoves, physicalWindow, computeWinBoard, boardsEqual, isStuck } from './core/simulation/laEscaleraRules'
+import { type Board, physicalLegalMoves, physicalOffset, physicalWindow, physicalWindowCanonico, computeWinBoard, boardsEqual, isStuck } from './core/simulation/laEscaleraRules'
+import { classifyAttempt, explainError } from './core/simulation/tutor'
+import { useSesion } from './core/session/sesion'
+import { metricasDeIntento } from './core/simulation/metricas'
+import { buildStateGraph } from './core/simulation/stateGraph'
 import {
   type SessionState, type SustainedCubeVisual,
   sessionVisualTier, resolveSustainedVisual, sustainedVisualToCommand, resolveCubeDisplay,
 } from './core/ppa/cubeVisualState'
 import PpaChargeMeter from './components/simulation/PpaChargeMeter'
-import { SignalGlyph, Electrode, StepMark, PageFrame, PersonField, ParesPicker, Collapsible, Badge, LogPanel } from './ui/brand'
+import GrafoEstados from './components/simulation/GrafoEstados'
+import EndBanner from './components/simulation/EndBanner'
+import { AnimacionRegla } from './components/simulation/RulesAnimation'
+import InformeNivel from './components/informe/InformeNivel'
+import { BotonInformeNivel } from './components/informe/botones'
+import { SignalGlyph, Electrode, StepMark, PageFrame, PersonField, ParesPicker, Collapsible, Badge, LogPanel, SectionTitle } from './ui/brand'
 import { panel, sectionLabel, sessionBtn, countdownSemaforo } from './ui/styles'
 
 const SND_H = [0.55, 0.75, 0.95, 0.60, 1.00, 0.80, 0.70, 0.90]
 const INITIAL_POSITIONS = [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10]
+
+// Lista vacía estable para el grafo (ver GrafoEstados: un arreglo nuevo en
+// cada render le haría recalcular las intensidades de todos los nodos).
+const SIN_RECORRIDOS: number[][] = []
 
 // Foto del estado de Control que se comparte con la Vista de observador —
 // solo lectura: el observador ve lo mismo que el operador sin duplicar el
@@ -37,6 +50,9 @@ export type ControlSnapshot = {
   intento: number
   moveCount: number
   pares: number
+  // Recorrido del intento sobre el grafo de estados, para que el observador
+  // vea el mismo mapa que el operador sin tocar el socket.
+  recorrido: number[]
 }
 
 function App({ onSnapshot, operatorId, setOperatorId }: {
@@ -86,6 +102,18 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
   const [cubeActions,    setCubeActions]    = useState<Record<number, CubeAction>>({})
   const [esclavos,       setEsclavos]       = useState<number[]>([])
   const [pares,          setPares]          = useState(5)
+  const sesion = useSesion()
+  // Recorrido del intento físico sobre el grafo de estados, para que Control
+  // aporte las mismas métricas que las pestañas de simulación. La referencia
+  // la escribe el listener del socket (fuera de React); el estado es la copia
+  // que dibuja el grafo en vivo.
+  const recorridoRef = useRef<number[]>([])
+  const [recorrido, setRecorrido] = useState<number[]>([])
+  // Qué regla infringió la última jugada rechazada del tablero físico: el
+  // hardware solo dice que algo cambió, así que se clasifica aquí con las
+  // mismas reglas del libro que usan el tutorial y la simulación.
+  const [fallo, setFallo] = useState<{ error: string; titulo: string; texto: string } | null>(null)
+  const [informeNivel, setInformeNivel] = useState(false)
   const [cuboEvents,     setCuboEvents]     = useState<EventoCubo[]>([])
   const [operatorEvents, setOperatorEvents] = useState<DecisionOperador[]>([])
   // Condición acumulada hacia Pausar/Pensar: fallas reales detectadas
@@ -146,6 +174,14 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
   const lastSentSessionRef   = useRef<string | null>(null)
   const sessionStateRef      = useRef<SessionState>('inactivo')
   useEffect(() => { paresRef.current = pares }, [pares])
+  // Cambiar de nivel cambia de grafo: el recorrido arranca en la posición
+  // actual del tablero físico dentro de la ventana de ese nivel.
+  useEffect(() => {
+    const nodo = buildStateGraph(pares).nodeIdOf(physicalWindowCanonico(lastSettledPositionsRef.current, pares))
+    recorridoRef.current = nodo > 0 ? [nodo] : []
+    setRecorrido([...recorridoRef.current])
+    setFallo(null)
+  }, [pares])
   useEffect(() => { operatorIdRef.current = operatorId }, [operatorId])
   useEffect(() => { sessionStateRef.current = sessionState }, [sessionState])
   useEffect(() => {
@@ -154,13 +190,23 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
   }, [])
   void tick // fuerza el re-render del medidor de Actuar cada 500ms; su valor no se muestra
 
-  function logCuboEvent(entry: Omit<EventoCubo, 'timestamp' | 'pares' | 'intentoId' | 'intentoNum'>) {
-    setCuboEvents(prev => [...prev, {
+  // `errorTipo` llega solo cuando la jugada rechazada se pudo clasificar
+  // contra las reglas del libro; si no, queda como falta sin clasificar.
+  function logCuboEvent(entry: Omit<EventoCubo, 'timestamp' | 'pares' | 'intentoId' | 'intentoNum'>, errorTipo?: string) {
+    const ev: EventoCubo = {
       timestamp: nowIso(), pares: paresRef.current,
       intentoId: intentoIdRef.current ?? undefined,
       intentoNum: intentoIdRef.current ? intentoNumRef.current : undefined,
       ...entry,
-    }])
+    }
+    setCuboEvents(prev => [...prev, ev])
+    sesion.registrarEvento({
+      seccion: 'control', ts: ev.timestamp, tipo: ev.tipo, detalle: ev.detalle,
+      // Una falla del tablero físico es una jugada que infringe las reglas,
+      // pero el hardware no dice cuál: se marca como falta sin clasificar.
+      errorTipo: ev.tipo === 'falla_movimiento' ? (errorTipo ?? 'movimiento_invalido') : undefined,
+      pares: ev.pares, intentoNum: ev.intentoNum,
+    })
   }
   function logOperatorEvent(entry: Omit<DecisionOperador, 'timestamp' | 'pares' | 'operadorId' | 'intentoId' | 'intentoNum'>) {
     setOperatorEvents(prev => [...prev, {
@@ -318,6 +364,7 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
         const legal = physicalLegalMoves(prevSettled, paresRef.current, fromIdx, previousSettledRef.current).includes(toIdx)
         if (legal) {
           setFallaCount(0)
+          setFallo(null)
           turnStartRef.current = Date.now()
         } else {
           // Segundo paso del algoritmo de dos pasos (DECISIONES_PROYECTO.md,
@@ -331,7 +378,32 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
           const cuboConectado = esclavosRef.current.includes(cuboImplicado)
           if (cuboConectado) {
             playError()
-            logCuboEvent({ tipo: 'falla_movimiento', detalle: `Movimiento inválido detectado: cubo #${cuboImplicado} de la posición ${fromIdx + 1} a la ${toIdx + 1}` })
+            // Qué regla se rompió: se clasifica sobre la ventana del
+            // ejercicio (2n+1 casillas), con la jugada anterior para la
+            // Regla 2 — el mismo clasificador del tutorial, así que la
+            // explicación y su animación son las mismas en las tres vistas.
+            const off = physicalOffset(paresRef.current)
+            const ventana = physicalWindow(prevSettled, paresRef.current)
+            const ventanaPrev = previousSettledRef.current ? physicalWindow(previousSettledRef.current, paresRef.current) : null
+            const fw = fromIdx - off, tw = toIdx - off
+            let tipoFalta: string | undefined
+            if (fw >= 0 && fw < ventana.length && tw >= 0 && tw < ventana.length) {
+              const res = classifyAttempt(ventana, fw, tw, ventanaPrev)
+              const ficha = ventana[fw]
+              if (!res.ok && ficha) {
+                tipoFalta = res.error
+                const { titulo, texto } = explainError(res.error, ficha.team)
+                setFallo({ error: res.error, titulo, texto })
+              }
+            }
+            if (!tipoFalta) {
+              setFallo({
+                error: 'ocupada',
+                titulo: 'Jugada no permitida',
+                texto: `El cubo #${cuboImplicado} pasó de la posición ${fromIdx + 1} a la ${toIdx + 1}, que no es un movimiento válido del juego. Devuélvelo y prueba otra ficha.`,
+              })
+            }
+            logCuboEvent({ tipo: 'falla_movimiento', detalle: `Movimiento inválido detectado: cubo #${cuboImplicado} de la posición ${fromIdx + 1} a la ${toIdx + 1}` }, tipoFalta)
             setFallaCount(nf => (nf + 1 >= FALLAS_PARA_PAUSAR ? 0 : nf + 1))
             // Reacción física casi inmediata: el cubo implicado se pone
             // naranja y vibra por su cuenta (EF=3, un solo mensaje, sin ida
@@ -350,6 +422,15 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
       // Solo cuenta como jugada si el tablero cambió (un cubo levantado y
       // devuelto a su sitio no mueve la "posición anterior").
       if (fromIdx !== -1 && toIdx !== -1) previousSettledRef.current = prevSettled
+      // Recorrido sobre el grafo del ejercicio, para las métricas del intento.
+      if (intentoIdRef.current) {
+        const nodo = buildStateGraph(paresRef.current).nodeIdOf(physicalWindowCanonico(positions, paresRef.current))
+        const r = recorridoRef.current
+        if (nodo > 0 && r[r.length - 1] !== nodo) {
+          r.push(nodo)
+          setRecorrido([...r])
+        }
+      }
       lastSettledPositionsRef.current = positions
       setCubesData(originalCubes)
       setPath(t => [...t, positions])
@@ -438,8 +519,11 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
     intentoIdRef.current = `intento-${Date.now()}`
     intentoNumRef.current = nextIntento
     previousSettledRef.current = null // intento nuevo: aún no hay posición anterior
+    recorridoRef.current = [buildStateGraph(pares).nodeIdOf(physicalWindowCanonico(lastSettledPositionsRef.current, pares))].filter(x => x > 0)
+    setRecorrido([...recorridoRef.current])
     sessionAccumMsRef.current = 0
     setFallaCount(0)
+    setFallo(null)
     setPath([[...gameState.cubesPositions]])
     setIntentoCount(nextIntento)
     logCuboEvent({ tipo: 'intento_iniciado', detalle: `Intento #${nextIntento} iniciado (${pares} pares)` })
@@ -525,6 +609,15 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
   function exportOperatorEventsJson() { downloadFile(`bitacora-operador-control-${Date.now()}.json`, JSON.stringify(operatorEvents, null, 2), 'application/json') }
 
   // ── Derived display values ──────────────────────────────────────────────────
+  // Intentos ya terminados de este nivel: alimentan el botón del informe y los
+  // recorridos de fondo del grafo. Memorizados porque Control se vuelve a
+  // dibujar cada 500 ms (el cronómetro) y el grafo no debe recalcular nada.
+  const intentosDelNivel = useMemo(
+    () => sesion.intentos.filter(i => i.seccion === 'control' && i.pares === pares),
+    [sesion.intentos, pares])
+  const recorridosPrevios = useMemo(
+    () => (intentosDelNivel.length ? intentosDelNivel.map(i => i.recorrido) : SIN_RECORRIDOS),
+    [intentosDelNivel])
   const moveCount    = path.length - 1
   const selAction    = selectedCubeId !== null ? cubeActions[selectedCubeId] : undefined
   // El cronómetro se apoya en el mismo re-render de 500ms de `tick` (arriba).
@@ -546,9 +639,10 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
     onSnapshot?.({
       board: visibleCubes.map(c => c.id), cubeActions, connected: isBaseConnected, esclavos,
       status: sessionStatusLabel, elapsed: sessionElapsedLabel, intento: intentoCount, moveCount, pares,
+      recorrido,
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boardIds, cubeActions, isBaseConnected, esclavos, sessionStatusLabel, sessionElapsedLabel, intentoCount, moveCount, pares])
+  }, [boardIds, cubeActions, isBaseConnected, esclavos, sessionStatusLabel, sessionElapsedLabel, intentoCount, moveCount, pares, recorrido])
 
   // Registra victoria/derrota una sola vez por partida (al pasar de
   // "jugando" a un estado final), no en cada render.
@@ -559,6 +653,13 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
           ? { tipo: 'victoria', detalle: `Intento #${intentoCount} — intercambio completo en ${moveCount} movimientos` }
           : { tipo: 'derrota', detalle: `Intento #${intentoCount} — no queda ninguna jugada permitida (bloqueo)` }
       )
+      const recorrido = [...recorridoRef.current]
+      sesion.registrarIntento({
+        seccion: 'control', numero: intentoCount, pares, segundos: Math.round(sessionElapsedMs / 1000),
+        resultado: controlStatus === 'victoria' ? 'victoria' : 'bloqueo',
+        errores: cuboEvents.filter(e => e.tipo === 'falla_movimiento' && e.intentoNum === intentoCount).length,
+        recorrido, metricas: metricasDeIntento(pares, recorrido),
+      })
       // Fin de partida: cierre del intento en curso en la bitácora + detener
       // el cronómetro. La señal física a los 10 cubos (EF=VICTORIA/BLOQUEO,
       // un solo mensaje, toda la secuencia corre en el propio cubo) la
@@ -713,6 +814,10 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
             >
               {confirmReset ? '¿Confirmar reinicio?' : 'Reiniciar'}
             </button>
+            {/* Mismo botón y mismo informe que en el tutorial y la
+                simulación libre: el nivel que se está jugando aquí. */}
+            <BotonInformeNivel onClick={() => setInformeNivel(true)} pares={pares}
+              intentos={intentosDelNivel.length} />
           </div>
 
           {sessionWarning && (
@@ -736,16 +841,13 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
           )}
         </div>
 
-        {(controlStatus === 'victoria' || controlStatus === 'derrota') && (
-          <div style={{
-            ...panel, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '10px',
-            borderColor: controlStatus === 'victoria' ? 'var(--color-blue)' : 'var(--color-offline)',
-          }}>
-            <Electrode on={controlStatus === 'victoria'} />
-            <span style={{ fontWeight: 700, fontSize: '13px' }}>
-              {controlStatus === 'victoria' ? `Victoria — intercambio completo en ${moveCount} movimientos` : 'Derrota — no queda ninguna jugada permitida'}
-            </span>
-          </div>
+        {controlStatus === 'victoria' && (
+          <EndBanner kind="victoria" title="¡Victoria!"
+            detail={`Intercambio completo en ${moveCount} movimientos (el mínimo posible con ${pares} par${pares > 1 ? 'es' : ''} es ${pares * pares + 2 * pares}). Reordena los cubos para iniciar otro intento.`} />
+        )}
+        {controlStatus === 'derrota' && (
+          <EndBanner kind="bloqueo" title="Camino sin retorno: bloqueado"
+            detail="La única jugada que queda es volver a la posición anterior, y la Regla 2 no lo permite. Mira en el grafo dónde se metió el recorrido y reordena los cubos para otro intento." />
         )}
 
         {/* Tablero — siempre en una sola fila (nowrap), incluso con 5
@@ -829,6 +931,32 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
               ))}
             </div>
           )}
+
+          {/* Jugada rechazada del tablero físico: se dice qué regla se rompió
+              y se anima, igual que en el tutorial y en la simulación libre.
+              Antes solo subía el medidor de fallas, sin explicar nada. */}
+          {fallo && (
+            <div style={{
+              marginTop: '12px', padding: '12px 14px', borderRadius: 'var(--radius)',
+              background: 'rgba(250,77,86,0.10)', border: '2px solid var(--color-offline)',
+              display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap',
+            }}>
+              <span aria-hidden="true" style={{
+                width: '30px', height: '30px', flexShrink: 0, borderRadius: '50%', background: 'var(--color-offline)',
+                color: '#0B0F10', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800,
+              }}>✕</span>
+              <div style={{ flex: 1, minWidth: '220px' }}>
+                <div style={{ ...sectionLabel, color: 'var(--color-offline)' }}>Movimiento no permitido en el tablero físico</div>
+                <div style={{ fontSize: '17px', fontWeight: 700, margin: '2px 0' }}>{fallo.titulo}</div>
+                <div style={{ fontSize: '13px', color: 'var(--color-paper-dim)', lineHeight: 1.5 }}>{fallo.texto}</div>
+              </div>
+              <div style={{ flex: '1 1 330px', minWidth: '240px', maxWidth: '430px' }}><AnimacionRegla error={fallo.error} /></div>
+              <button onClick={() => setFallo(null)} style={{
+                background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
+                fontSize: '11px', color: 'var(--color-paper-faint)', textDecoration: 'underline',
+              }}>ocultar</button>
+            </div>
+          )}
         </div>
 
         {/* ── Señal PPA — cada botón con su glifo de señal neuronal, no un
@@ -886,6 +1014,27 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
               </div>
             </button>
           </div>
+        </div>
+
+        {/* ── Grafo de estados del intento físico — el mismo componente y el
+             mismo comportamiento que en el tutorial y la simulación libre
+             (margen, acercamiento automático centrado en la posición actual,
+             vista completa al terminar): el operador y el observador siguen
+             el recorrido real de los cubos sobre el mapa del juego. ── */}
+        <div style={{ ...panel, flexShrink: 0 }}>
+          <SectionTitle right={
+            <span style={{ fontSize: '11px', color: 'var(--color-paper-faint)' }}>
+              recorrido del tablero físico
+            </span>
+          }>
+            Grafo de estados · {pares} par{pares > 1 ? 'es' : ''}
+          </SectionTitle>
+          <GrafoEstados
+            pares={pares}
+            previos={recorridosPrevios}
+            actual={recorrido}
+            height={420}
+            terminado={controlStatus !== 'jugando'} />
         </div>
 
         {/* ── Histórico, colapsable — solo bitácoras: son registro de lo ya
@@ -957,6 +1106,10 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
           </div>
         </div>
         </div>
+
+        {informeNivel && (
+          <InformeNivel seccion="control" pares={pares} onCerrar={() => setInformeNivel(false)} />
+        )}
     </PageFrame>
   )
 }

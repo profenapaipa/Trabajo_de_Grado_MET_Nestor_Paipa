@@ -125,9 +125,64 @@ body {
   0%, 100% { transform: translateY(0); }
   45% { transform: translateY(-16px); }
 }
-.demo-shake { animation: demo-shake 0.45s ease-in-out; outline: 3px solid var(--color-offline); outline-offset: 1px; }
+.demo-shake { animation: demo-shake 0.45s ease-in-out; outline: 3px solid var(--tono-demo, var(--color-offline)); outline-offset: 1px; }
 .demo-hop { animation: demo-hop 0.65s ease-in-out; }
+/* Confirmación de la jugada correcta: un destello del color del acento
+   (verde) al llegar la ficha a la casilla. El error ya se comunica con la
+   sacudida y el naranja; esto es su contraparte. */
+@keyframes demo-ok {
+  0% { box-shadow: 0 0 0 0 var(--tono-demo, var(--color-online)); }
+  40% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--tono-demo, var(--color-online)) 35%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--tono-demo, var(--color-online)) 0%, transparent); }
+}
+.demo-ok { animation: demo-ok 0.7s ease-out; }
 @media (prefers-reduced-motion: reduce) {
   .demo-piece { transition: none !important; }
-  .demo-shake, .demo-hop { animation: none; }
+  .demo-shake, .demo-hop, .demo-ok { animation: none; }
+}
+
+/* ── Superficie "documento" de los informes ─────────────────────────────────
+   Un informe no es otro panel de la consola: es el documento que se lee, se
+   descarga y se le muestra al tutor. Por eso se dibuja sobre papel blanco,
+   dentro de la aplicación oscura, como una hoja sobre la mesa — y así
+   destaca sin pelearse con la interfaz.
+   La armonía se conserva porque NO cambia la paleta, cambia el paso: los
+   mismos acentos de IBM Carbon que ya usa todo el sistema (Blue, Red, Green,
+   Yellow) en sus pasos para fondo claro (60/70) en vez de los de fondo
+   oscuro (40/50). Todo lo que vive dentro hereda estos valores por variable
+   CSS, así que paneles, tablas, chips y el propio grafo se adaptan solos sin
+   duplicar ni un estilo. */
+.doc {
+  --color-bg: #ffffff;
+  --color-panel: #f2f5f6;
+  --color-line: #dbe1e3;
+  --color-line-strong: #aeb9bc;
+  --color-paper: #0c1315;
+  --color-paper-dim: #455457;
+  --color-paper-faint: #6a787b;
+  --color-blue: #0f62fe;   /* Carbon Blue 60 */
+  --color-red: #da1e28;    /* Carbon Red 60 */
+  --color-online: #198038; /* Carbon Green 60 */
+  --color-offline: #da1e28;
+  --color-caution: #8e6a00; /* Carbon Yellow 70 — legible sobre blanco */
+  background: var(--color-bg);
+  color: var(--color-paper);
+}
+
+/* Ventana emergente de los informes: el fondo oscurece la consola y la hoja
+   queda centrada arriba, con su propio desplazamiento en el fondo (no dos
+   barras anidadas). */
+.modal-informe {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(3, 7, 8, 0.74);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 22px 18px; overflow-y: auto;
+}
+.modal-informe__hoja {
+  width: 100%; max-width: 1180px; border-radius: 5px;
+  box-shadow: 0 26px 72px rgba(0, 0, 0, 0.6);
+}
+@media (max-width: 760px) {
+  .modal-informe { padding: 0; }
+  .modal-informe__hoja { border-radius: 0; min-height: 100%; }
 }

@@ -58,6 +58,8 @@ desktop.ini
 # =========================
 # Archivos temporales
 # =========================
+# Archivos de bloqueo de Word/Office (se crean al abrir un .docx)
+~$*
 *.tmp
 *.temp
 *.bak

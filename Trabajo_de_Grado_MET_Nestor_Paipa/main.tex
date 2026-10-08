@@ -1739,11 +1739,11 @@ real de cada aprendiz. Cada movimiento que el estudiante realiza por
 fuera de esa ruta óptima constituye una unidad medible de desviación que
 puede deberse a exploración deliberada, a error recuperable o a una
 decisión impulsiva que cierra caminos de solución. La métrica de
-ramificación $C_m = |1 - D_j/D_{\min}|$, donde $D_j$ es la distancia al
-nodo meta desde el estado alcanzado tras el movimiento $j$ y $D_{\min}$
-es la distancia mínima posible en ese punto, cuantifica precisamente esa
-desviación para cada movimiento individual, y toma como referencia la
-distancia óptima calculada por el algoritmo de Dijkstra. En este sentido,
+calidad del movimiento (Sección~\ref{sec:fundamento_ecuaciones}) cuantifica esa
+desviación para cada decisión individual, comparando la distancia que deja
+la jugada elegida con el rango de distancias que las jugadas disponibles
+permitían alcanzar; todas esas distancias se obtienen del algoritmo de
+Dijkstra sobre el grafo de estados. En este sentido,
 el algoritmo no es solo el instrumento computacional que genera la línea
 verde de referencia visible en los grafos de trayectorias: es la
 demostración matemática de que esa línea representa el camino de menor
@@ -1759,20 +1759,6 @@ inhibitorio de los aprendices.
 
 \textbf{Los bucles.} Retornos a estados anteriores.
 
-\section{Métricas para analizar las trayectorias}
-
-\begin{equation}
-C_m = \left|1 - \frac{D_j}{D_{min}}\right|
-\end{equation}
-
-\begin{equation}
-B_i = \frac{n^2}{2} + 2n
-\end{equation}
-
-%
-%
-%
-
 %Fin de aporte
 
 
@@ -1783,253 +1769,497 @@ B_i = \frac{n^2}{2} + 2n
 %Inicio aportes 8 de mayo para revisión 
 \section{Fundamento matemático de las métricas de análisis}
 \label{sec:fundamento_ecuaciones}
- 
+
 El análisis de las trayectorias de resolución del juego La
-Escalera requiere traducir el recorrido visual del aprendiz
-sobre el grafo en valores cuantitativos que permitan comparar
-sesiones, participantes y condiciones de mediación de manera
-sistemática. Para ello, la investigación retoma y adapta el
-modelo de métricas propuesto por Liévano Chaparro y Molina
-Monguí \cite{LievanoMolina2022}, quienes diseñaron dos
-indicadores complementarios —\textbf{buclicidad} y
-\textbf{ramificación}— a partir del espacio del problema del
-juego. A continuación se explica el significado, la estructura
-matemática y la pertinencia de cada ecuación en el contexto
-de la presente investigación.
- 
+Escalera requiere traducir el recorrido del aprendiz sobre el
+espacio del problema en valores cuantitativos que permitan
+comparar intentos, participantes y condiciones de mediación de
+manera sistemática. La investigación parte de las dos métricas
+propuestas por Liévano Chaparro y Molina Monguí
+\cite{LievanoMolina2022} —buclicidad y ramificación— y las
+reformula sobre el grafo de estados del juego, de modo que cada
+indicador se calcule directamente sobre el recorrido observado y
+no sobre un valor de referencia estructural.
+
+Esa reformulación responde a dos limitaciones de la formulación
+heredada. La primera es que su ecuación de buclicidad predice el
+\textit{tamaño} esperado de un bucle completo, magnitud que se
+obtiene del grafo y no de la conducta, por lo que no permite
+establecer cuántos bucles recorrió efectivamente el aprendiz. La
+segunda es que su ecuación de calidad del movimiento compara dos
+distancias medidas desde el mismo estado hasta la meta; como en un
+grafo la distancia entre dos vértices ya es por definición la
+mínima, ambas coinciden y el indicador se anula para todo
+movimiento. Las ecuaciones que siguen conservan el propósito
+analítico de la fuente y corrigen ambos puntos.
+
 % -------------------------------------------------------
-\subsection*{Movimientos óptimos y espacio del problema}
- 
-El punto de referencia de todas las métricas es la
-\textbf{ruta óptima}: la secuencia mínima de movimientos
-válidos que conduce desde el estado inicial hasta el estado
-meta sin ningún retroceso ni redundancia. Para el juego La
-Escalera con $n$ fichas por color, esta cantidad se obtiene
-de la expresión general
- 
-\begin{equation}
-    D_{\min} \;=\; n^{2} + 2n
-    \label{eq:optimo}
-\end{equation}
- 
-donde $n$ es el número de fichas por equipo. Con $n = 5$
-(versión utilizada en esta investigación), la solución
-óptima requiere exactamente $35$ movimientos
-\cite{LievanoMolina2022, PaezGonzalez2022}. Este valor
-actúa como denominador de referencia en la métrica de
-ramificación y como umbral para interpretar la longitud de
-los bucles. Cualquier trayectoria real que supere
-$D_{\min}$ refleja decisiones no planificadas; la
-diferencia entre ambas constituye una medida conductual
-del \textbf{control inhibitorio}: a mayor exceso de
-movimientos, mayor evidencia de dificultad para suprimir
-la respuesta impulsiva y sostener una estrategia deliberada
-\cite{Diamond2013}.
- 
-% -------------------------------------------------------
-\subsection*{Métrica de buclicidad}
- 
-Un \textbf{bucle} ocurre cuando el aprendiz regresa, dentro
-de un mismo intento, a una configuración del tablero que
-ya había visitado previamente, sin haber llegado al estado
-meta entre ambas visitas. Los bucles son informativos porque
-reflejan dos fenómenos cognitivos distintos según el nivel
-de experiencia del jugador: en un novato, un bucle involuntario
-indica que no ha detectado la repetición de estados; en un
-jugador más avanzado, un bucle consciente puede ser una
-estrategia de exploración o de «no perder» mientras reorganiza
-la planificación \cite{LievanoMolina2022}.
- 
-La longitud mínima de un bucle completo —el número de
-movimientos necesarios para salir y regresar a un nodo—
-depende de la cantidad de fichas involucradas. Liévano
-Chaparro y Molina Monguí distinguen dos casos.
- 
-\medskip
-\noindent\textbf{Caso con cantidad par de fichas involucradas:}
-\begin{equation}
-    B_{i} \;=\; \frac{n^{2}}{2} + 2n
-    \label{eq:bucle_par}
-\end{equation}
- 
-\noindent\textbf{Caso con cantidad impar de fichas involucradas:}
-\begin{equation}
-    B_{i} \;=\; \frac{n^{2}}{2} + 2n - \frac{1}{2}
-    \label{eq:bucle_impar}
-\end{equation}
- 
-Ambas expresiones se unifican en la forma general
-\begin{equation}
-    B_{i} \;=\; \frac{n^{2}}{2} + 2n + C
-    \label{eq:bucle_general}
-\end{equation}
- 
-donde $C$ es una constante que toma el valor $0$ en el caso
-par y $-\tfrac{1}{2}$ en el caso impar, y $n$ es el número
-de fichas involucradas en el bucle. Las ecuaciones contemplan
-únicamente bucles completos que siguen la ruta óptima,
-desviándose de ella y retornando; en la práctica se acepta
-una tolerancia de aproximadamente $\pm 2$ movimientos cuando
-la configuración del tablero impide transitar exactamente
-por el camino previsto \cite{LievanoMolina2022}.
- 
-A partir de la buclicidad por intento se define la
-\textbf{buclicidad por experiencia}
- 
-\begin{equation}
-    B_{e} \;=\; \frac{1}{m}\sum_{j=1}^{m} B_{i,j}
-    \label{eq:bucle_exp}
-\end{equation}
- 
-donde $m$ es el número total de intentos registrados. Este
-promedio permite observar si el tamaño o la frecuencia de
-los bucles disminuye a medida que el aprendiz acumula
-experiencia, lo que constituye evidencia de aprendizaje
-progresivo.
- 
-En el contexto de la presente investigación con el niño
-con TEA nivel~1, la buclicidad adquiere una relevancia
-adicional: los retornos involuntarios y frecuentes a estados
-ya visitados son coherentes con las dificultades en el
-control inhibitorio sostenido y en la memoria de trabajo
-que caracterizan a esta población \cite{Geurts2009,
-Diamond2013}. La comparación de los valores de $B_{e}$
-entre la sesión sin mediación y la sesión con activación
-de los cubos inteligentes permitirá explorar si la
-herramienta con agentividad reduce la tasa de bucles
-involuntarios.
- 
-\begin{figure}[H]
-\centering
-\fbox{\parbox{0.82\textwidth}{%
-    \textcolor{red}{\textbf{[INSERTAR AQUÍ]} Gráfica de buclicidad
-    por intento ($B_i$) para el participante. Eje $x$: número
-    de intento; eje $y$: valor $B_i$. Comparar sesión sin mediación
-    (línea/color A) vs. sesión con cubos (línea/color B).}
-}}
-\caption{Buclicidad por intento: comparación entre sesiones.}
-\label{fig:grafica_buclicidad}
-\end{figure}
- 
-% -------------------------------------------------------
-\subsection*{Métrica de ramificación}
- 
-La \textbf{ramificación} mide la calidad de cada movimiento
-individual en relación con la ruta óptima. Formalmente, la
-\textbf{calidad del movimiento} $C_m$ se define como
- 
-\begin{equation}
-    C_{m} \;=\; \left|1 - \frac{D_{j}}{D_{\min}}\right|
-    \label{eq:calidad_movimiento}
-\end{equation}
- 
-donde $D_{j}$ es la distancia —en número de movimientos
-válidos restantes— desde el estado actual del jugador hasta
-el estado meta, y $D_{\min}$ es la distancia mínima posible
-desde ese mismo estado hasta la meta (es decir, la longitud
-del camino óptimo restante desde ese nodo). Cuando el
-aprendiz elige el movimiento óptimo disponible, $D_{j} =
-D_{\min}$ y $C_m = 0$; a medida que el movimiento elegido
-lo aleja de la meta, el cociente $D_{j}/D_{\min}$ aumenta
-y $C_m$ crece. Un valor de $C_m$ cercano a cero en todos
-los movimientos de un intento indica que el aprendiz siguió
-la ruta óptima; valores dispersos y elevados reflejan
-exploración no planificada o decisiones impulsivas
-\cite{LievanoMolina2022}.
- 
-La \textbf{ramificación por intento} agrega los valores
-individuales de calidad a lo largo de los $n_i$ movimientos
-de un intento:
- 
-\begin{equation}
-    R_{i} \;=\; \sum_{k=1}^{n_i} C_{m,k}
-    \label{eq:ramif_intento}
-\end{equation}
- 
-Y la \textbf{ramificación por experiencia} promedia sobre
-los $n$ intentos realizados:
- 
-\begin{equation}
-    R_{e} \;=\; \frac{1}{n}\sum_{j=1}^{n} R_{i,j}
-    \label{eq:ramif_exp}
-\end{equation}
- 
-En los grafos de dispersión (eje $x$: número de movimiento
-dentro del intento; eje $y$: valor de $C_m$), los puntos
-cercanos al eje horizontal representan movimientos óptimos
-y los puntos dispersos hacia arriba representan desviaciones
-de la ruta óptima. La evolución de esta dispersión a lo
-largo de los intentos —desde alta variabilidad inicial
-hacia concentración en el eje— refleja la consolidación
-del esquema de solución \cite{LievanoMolina2022}.
- 
-En la presente investigación, la ramificación se interpreta
-en clave de control inhibitorio: cada movimiento con
-$C_m > 0$ puede leerse como un episodio en el que el
-aprendiz no inhibió la respuesta disponible más inmediata
-en favor de la más eficiente. Los patrones de ramificación
-diferenciales entre la sesión sin cubos y la sesión con
-cubos inteligentes, correlacionados con los mapas de
-potencia alfa relativa (Alpha TRP) obtenidos con EEG,
-constituyen la evidencia integrada central del análisis
-de resultados de esta tesis.
- 
-\begin{figure}[H]
-\centering
-\fbox{\parbox{0.82\textwidth}{%
-    \textcolor{red}{\textbf{[INSERTAR AQUÍ]} Gráfica de ramificación
-    por intento para el participante. Dispersión de $C_m$
-    (eje $y$) vs. número de movimiento en el intento (eje $x$).
-    Sesión sin mediación vs. sesión con cubos. Incluir línea
-    de tendencia o curva suavizada si es posible.}
-}}
-\caption{Ramificación por movimiento: comparación entre sesiones.}
-\label{fig:grafica_ramificacion}
-\end{figure}
- 
-\medskip
-\noindent La Tabla~\ref{tab:resumen_metricas} presenta un
-resumen de las ecuaciones, su dominio de aplicación y su
-interpretación en el marco de esta investigación.
- 
+\subsection*{El espacio del problema como grafo de estados}
+
+El modelo matemático apropiado para el espacio del problema de las
+tareas de transformación de torres es el grafo de estados que
+representa las posiciones de las fichas y sus movimientos
+\cite{Hinz2012}. Esa misma fuente precisa qué se obtiene del modelo
+y cómo se usa: los caminos de solución de los sujetos pueden
+\textit{proyectarse} sobre el grafo, y son cantidades propiamente
+grafísticas —distancias, excentricidades, grados de los vértices y
+simetrías del grafo— las que sustentan tanto la elección de los
+problemas y la selección de tareas como el análisis del desempeño
+de quien las resuelve. El modelo no es solo descriptivo: está en la
+base de una herramienta computarizada para administrar tareas de
+torre y registrar lo que hace el sujeto movimiento a movimiento
+\cite{HinzKostov2009}, que es exactamente el papel que cumple el
+aplicativo desarrollado en esta investigación.
+
+De ahí se sigue el criterio metodológico que ordena toda esta
+sección y que conviene hacer explícito, porque de él dependen las
+dos métricas que siguen. Hay que distinguir dos planos: el
+\textbf{grafo}, que es el espacio del problema y no cambia de un
+aprendiz a otro, y el \textbf{paseo} que cada aprendiz traza sobre
+él, que es la conducta observada. Las propiedades del grafo
+—cuántos ciclos admite, de qué longitud, cuántas opciones ofrece
+cada posición— caracterizan la dificultad de la tarea; las
+propiedades del paseo —cuánto se desvió, dónde eligió mal, cuántas
+veces volvió sobre sus pasos— caracterizan al aprendiz. Una
+ecuación que describa el grafo no puede, por construcción, medir a
+quien juega.
+
+La Escalera pertenece a la misma familia de problemas que la Torre
+de Hanói y la Torre de Londres, cuyo tratamiento estructural
+exhaustivo —grafos de Hanói y de Sierpiński, sus distancias, sus
+grados y su estructura de ciclos— se encuentra en \cite{Hinz2018};
+las propiedades métricas de esos grafos, que son las que habilitan
+el uso de la distancia como medida de desempeño, se establecen en
+\cite{HinzKlavzar2005}. La familia comparte el modelo pero no la
+estructura fina: el grafo de Hanói de tres varillas contiene
+triángulos, de modo que en esa tarea es posible regresar a una
+posición ya visitada en tres movimientos, mientras que en La
+Escalera el ciclo más corto mide seis
+(Tabla~\ref{tab:propiedades_grafo}). Esa diferencia no es anecdótica
+para esta investigación: fija el precio mínimo de un bucle en el
+juego que efectivamente se usa con el participante. Las nociones
+generales de teoría de grafos empleadas en adelante son las
+estándar \cite{Johnsonbaugh2005, Diestel2017}.
+
+Sea $G=(V,E)$ el grafo no dirigido en que cada vértice es una
+configuración posible del tablero y cada arista un movimiento
+legal. La Tabla~\ref{tab:propiedades_grafo} recoge sus propiedades
+para los cinco tamaños de ejercicio previstos en el protocolo,
+calculadas de manera exhaustiva.
+
 \begin{table}[H]
 \centering
-\caption{Resumen de métricas para el análisis de trayectorias}
+\caption{Propiedades del grafo de estados del juego La Escalera.}
+\label{tab:propiedades_grafo}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+\textbf{Pares} & \textbf{$|V|$} & \textbf{$|E|$} & \textbf{$\mu(G)$} & \textbf{Cuello} & \textbf{Grados 1/2/3/4} \\
+\hline
+1 & 6    & 6    & 1    & 6 & 0 / 6 / 0 / 0 \\
+2 & 30   & 36   & 7    & 6 & 4 / 14 / 8 / 4 \\
+3 & 140  & 180  & 41   & 6 & 16 / 52 / 48 / 24 \\
+4 & 630  & 840  & 211  & 6 & 60 / 210 / 240 / 120 \\
+5 & 2772 & 3780 & 1009 & 6 & 224 / 868 / 1120 / 560 \\
+\hline
+\end{tabular}
+\end{table}
+
+Tres propiedades de este grafo traducen a lenguaje formal nociones
+que la fuente había descrito cualitativamente. Los
+\textbf{puntos críticos} son los vértices de grado tres y cuatro,
+aquellos en que el aprendiz enfrenta una decisión genuina. Los
+\textbf{caminos sin retorno} son los vértices de grado uno: al
+llegar a ellos la única arista disponible es la de regreso, que las
+reglas del juego prohíben recorrer de inmediato. Y el
+\textbf{cuello} del grafo —la longitud de su ciclo más corto— vale
+seis en los cinco tamaños, de modo que ningún bucle puede medir
+menos de seis movimientos, lo que coincide con la observación de la
+fuente sobre el primer bucle que alcanza un jugador novato.
+
+% -------------------------------------------------------
+\subsection*{Notación}
+
+El recorrido de un intento es un \textbf{paseo} sobre el grafo,
+$W = (s_0, s_1, \ldots, s_{L})$, donde $s_0$ es el estado inicial y
+cada par consecutivo está unido por una arista. Se escribe $L_i$
+para el número de movimientos del intento $i$, $V(W)$ para el
+conjunto de estados distintos visitados y $E(W)$ para el de aristas
+distintas recorridas.
+
+Se distinguen dos distancias que la formulación anterior designaba
+con un mismo símbolo. La \textbf{ruta óptima global} del ejercicio
+de $n$ fichas por equipo es
+
+\begin{equation}
+    D^{*}(n) \;=\; n^{2} + 2n
+    \label{eq:optimo}
+\end{equation}
+
+y vale $35$ movimientos para $n=5$, la versión utilizada en esta
+investigación \cite{LievanoMolina2022, PaezGonzalez2022}. La
+\textbf{distancia local} $d(s)$ es el número mínimo de movimientos
+que restan desde el estado $s$ hasta la meta, calculado sobre el
+grafo mediante el algoritmo de Dijkstra \cite{Dijkstra1959}. Nótese
+que $D^{*}(n) = d(s_0)$.
+
+% -------------------------------------------------------
+\subsection*{Grados de libertad y puntos de decisión}
+
+Evaluar la calidad de un movimiento solo tiene sentido si el
+aprendiz tuvo algo que decidir. Sea $A_k$ el conjunto de jugadas
+legales disponibles antes del movimiento $k$; su cardinal es el
+\textbf{grado de libertad} de esa posición:
+
+\begin{equation}
+    \delta_k \;=\; |A_k|
+    \label{eq:grados_libertad}
+\end{equation}
+
+Para cada jugada disponible puede calcularse la distancia a la meta
+que dejaría. Sean $d_{k,\min}$ y $d_{k,\max}$ la menor y la mayor de
+esas distancias. El movimiento $k$ constituye un
+\textbf{punto de decisión} si y solo si
+
+\begin{equation}
+    \delta_k \geq 2 \quad \text{y} \quad d_{k,\max} > d_{k,\min}
+    \label{eq:punto_decision}
+\end{equation}
+
+esto es, si existía más de una opción y no todas conducían al mismo
+resultado. El conjunto de puntos de decisión de un intento se
+denota $K$.
+
+Esta restricción no es una precaución teórica. En el tablero de
+cinco pares, de las $10\,105$ situaciones alcanzables —cada una
+definida por el estado y el estado anterior, pues las reglas del
+juego prohíben deshacer de inmediato la última jugada— un
+$19{,}4\,\%$ ofrece una única jugada legal: el aprendiz no decide,
+ejecuta. Solo un $68{,}2\,\%$ constituye un punto de decisión real.
+Promediar la calidad sobre todos los movimientos introduciría, por
+tanto, ruido sistemático procedente de situaciones en las que no
+hubo elección.
+
+% -------------------------------------------------------
+\subsection*{Circuidad de la ruta}
+
+El primer indicador compara la longitud del recorrido con la del
+camino más corto. En el análisis de redes espaciales esta razón se
+denomina factor de ruta, índice de rodeo o circuidad, y se define
+como el cociente entre la distancia efectivamente recorrida y la
+distancia mínima; su valor es siempre mayor o igual que uno, y
+cuanto más próximo a uno, más eficiente es el trayecto
+\cite{Barthelemy2011}. Aplicada al juego:
+
+\begin{equation}
+    Q_i \;=\; \frac{L_i}{D^{*}(n)}
+    \label{eq:circuidad}
+\end{equation}
+
+Vale exactamente $1$ en una partida óptima y crece con el rodeo. Al
+ser un cociente adimensional resulta comparable entre ejercicios de
+uno a cinco pares, a diferencia del exceso absoluto de movimientos.
+
+Esta magnitud da forma cuantitativa a la figura del
+\textit{WAZE cognitivo} con que la fuente describe el uso analítico
+del grafo \cite{LievanoMolina2022}: es la misma razón que un sistema
+de navegación emplea para evaluar cuánto se desvía una ruta de la
+mínima posible.
+
+% -------------------------------------------------------
+\subsection*{Métrica de ramificación}
+
+La ramificación mide la calidad de las decisiones del aprendiz allí
+donde efectivamente decidió. En cada punto de decisión, la
+\textbf{calidad del movimiento} se define como la posición relativa
+del resultado obtenido dentro del rango de resultados que estaban
+disponibles:
+
+\begin{equation}
+    C_k \;=\; \frac{d(s_k) - d_{k,\min}}{d_{k,\max} - d_{k,\min}}
+    \label{eq:calidad_movimiento}
+\end{equation}
+
+La expresión toma valores en $[0,1]$: vale $0$ cuando el aprendiz
+eligió la mejor jugada posible y $1$ cuando eligió la peor. Queda
+indefinida exactamente cuando no hubo decisión, en cuyo caso el
+movimiento se excluye en lugar de computarse como acierto. El
+denominador es la amplitud de los grados de libertad de esa
+posición, de modo que el indicador pondera cada elección por lo que
+estaba en juego al realizarla: equivocarse donde todas las opciones
+eran casi equivalentes pesa menos que hacerlo donde una conducía a
+la meta y otra a un camino sin retorno.
+
+
+Conviene subrayar de qué está hecha la ecuación~\ref{eq:calidad_movimiento},
+porque es lo que la ancla en la literatura y no en una decisión de
+diseño de este trabajo. Sus dos únicos ingredientes son las dos
+cantidades que \cite{Hinz2012} señala como pertinentes para analizar
+el desempeño sobre un grafo de estados: el \textbf{grado del
+vértice}, que aquí aparece como el grado de libertad $\delta_k$ y
+define el denominador —cuánto estaba realmente en juego en esa
+posición—, y la \textbf{distancia} al estado meta, que define el
+numerador —cuánto costó la elección—. La ramificación no es, por
+tanto, un índice nuevo: es la forma normalizada de leer, sobre el
+paseo del aprendiz, las dos magnitudes que el modelo ya ofrece.
+Que la distancia pueda usarse así en esta familia de grafos es
+consecuencia de sus propiedades métricas, establecidas en
+\cite{HinzKlavzar2005}.
+
+Esta lectura explica también por qué el índice se promedia por
+intento y se compara \textit{entre} intentos sucesivos del mismo
+nivel. Al repetir un problema isomorfo, lo que cambia no es la
+tarea sino el esquema de solución de quien la resuelve; el estudio
+del aprendizaje específico en problemas isomorfos de la Torre de
+Londres muestra precisamente que la mejora se manifiesta al
+comparar intentos equivalentes y no en una medida aislada
+\cite{HinzFaber2009}. En términos de esta investigación: un valor
+de $R_i$ no dice casi nada; la serie $R_{i,1}, R_{i,2}, \ldots$
+sobre el mismo nivel es la evidencia.
+
+La \textbf{ramificación por intento} promedia esos valores sobre los
+puntos de decisión:
+
+\begin{equation}
+    R_i \;=\; \frac{1}{|K|}\sum_{k \in K} C_k
+    \label{eq:ramif_intento}
+\end{equation}
+
+Se emplea un promedio y no una suma porque esta última crece con la
+longitud del intento, de modo que una partida larga pero bien
+jugada arrojaría un valor mayor que una corta y errática, y además
+no sería comparable entre ejercicios de distinto tamaño. El
+promedio, acotado en $[0,1]$, es invariante a ambas cosas.
+
+Se acompaña de dos indicadores complementarios. La
+\textbf{tasa de acierto en puntos críticos}
+
+\begin{equation}
+    \alpha_i \;=\; \frac{|\{\,k \in K : C_k = 0\,\}|}{|K|}
+    \label{eq:tasa_acierto}
+\end{equation}
+
+y el \textbf{grado de libertad medio} del recorrido, que es el
+factor de ramificación del trayecto en el sentido habitual de la
+búsqueda en espacios de estados \cite{RussellNorvig2021}:
+
+\begin{equation}
+    \bar{\delta}_i \;=\; \frac{1}{L_i}\sum_{k=1}^{L_i} \delta_k
+    \label{eq:grado_medio}
+\end{equation}
+
+Dado que un promedio resume pero oculta la distribución temporal de
+los errores, el análisis reporta además el \textbf{perfil} de la
+secuencia $C_k$ a lo largo del intento, que permite distinguir a
+quien yerra al comienzo y se corrige de quien empieza bien y se
+desorganiza al avanzar.
+
+% -------------------------------------------------------
+\subsection*{Métrica de buclicidad}
+
+Un \textbf{bucle} ocurre cuando el aprendiz regresa, dentro de un
+mismo intento, a una configuración del tablero que ya había
+visitado, sin haber alcanzado la meta entre ambas visitas. Los
+bucles son informativos porque reflejan fenómenos cognitivos
+distintos según el nivel de experiencia: en un novato, un retorno
+involuntario indica que no ha detectado la repetición de estados;
+en un jugador avanzado, un bucle deliberado puede ser una estrategia
+de exploración mientras reorganiza la planificación
+\cite{LievanoMolina2022}.
+
+
+Que los bucles existan y puedan medirse es una propiedad del modelo,
+no un supuesto de este trabajo. El grafo de estados de una tarea de
+torre no es un árbol: admite ciclos, y por eso un camino de solución
+proyectado sobre él puede volver a un vértice ya visitado
+\cite{Hinz2012, Hinz2018}. Aquí se separan con cuidado las dos caras
+de ese hecho, siguiendo la distinción entre grafo y paseo:
+
+\begin{itemize}
+    \item Del \textbf{grafo} se obtiene lo que la tarea permite: su
+    cuello —seis movimientos en los cinco tamaños, frente a tres en
+    el grafo de Hanói de tres varillas \cite{Hinz2018}—, que fija el
+    bucle más corto posible, y su número ciclomático $\mu(G)$
+    (Tabla~\ref{tab:propiedades_grafo}), que cuenta cuántos ciclos
+    independientes ofrece. Son medidas de dificultad del ejercicio.
+    \item Del \textbf{paseo} se obtiene lo que el aprendiz hizo:
+    $\nu_i$, $\beta_i$ y $\mu_i$, calculados sobre el subgrafo
+    efectivamente recorrido. Son medidas de conducta.
+\end{itemize}
+
+La ecuación de buclicidad de la fuente pertenece al primer plano
+—predice el tamaño de un bucle completo a partir del número de
+fichas— y por eso, aun siendo correcta, no puede responder cuántos
+bucles dio el aprendiz: esa pregunta se contesta en el segundo
+plano. Heredarla como instrumento de medida habría confundido una
+propiedad del tablero con una observación del sujeto.
+
+El \textbf{número de retornos} cuenta cuántas veces el paseo llega a
+un estado ya visitado:
+
+\begin{equation}
+    \nu_i \;=\; (L_i + 1) - |V(W_i)|
+    \label{eq:retornos}
+\end{equation}
+
+Vale $0$ si el aprendiz no repitió ninguna posición. Su versión
+normalizada expresa qué proporción de los movimientos condujo a una
+posición conocida:
+
+\begin{equation}
+    \beta_i \;=\; \frac{\nu_i}{L_i}
+    \label{eq:buclicidad_norm}
+\end{equation}
+
+Finalmente, el \textbf{número de ciclos independientes}
+efectivamente recorridos se obtiene del número ciclomático del
+subgrafo que el aprendiz transitó:
+
+\begin{equation}
+    \mu_i \;=\; |E(W_i)| - |V(W_i)| + 1
+    \label{eq:ciclomatico}
+\end{equation}
+
+Esta cantidad —el mínimo de aristas que habría que retirar para
+destruir todos los ciclos— fue introducida por Kirchhoff en el
+análisis de redes eléctricas \cite{Kirchhoff1847} y reintroducida
+por McCabe como medida de complejidad de un programa a partir de los
+ciclos de su grafo de flujo \cite{McCabe1976}. Su pertinencia aquí
+es que $\nu_i$ y $\mu_i$ no son redundantes: un aprendiz que repite
+diez veces el mismo bucle y otro que recorre diez bucles distintos
+presentan números de retornos semejantes pero números de ciclos
+independientes muy diferentes. La distinción separa el
+estancamiento de la exploración.
+
+El análisis registra además el tamaño de cada bucle observado. Por
+el cuello del grafo, ningún bucle puede medir menos de seis
+movimientos en ninguno de los cinco tamaños de tablero.\footnote{La
+ecuación de buclicidad propuesta por la fuente,
+$B_i = n^{2}/2 + 2n + C$, predice el tamaño de un bucle completo de
+$n$ fichas. Se verificó frente a la enumeración exhaustiva de los
+ciclos del grafo: para dos y tres fichas proporciona el valor
+exacto —seis y diez movimientos— y para cuatro fichas predice
+dieciséis, que es el largo más frecuente entre los observados. La
+ecuación es, por tanto, correcta; no se emplea como instrumento de
+medida porque describe una propiedad estructural del grafo y no la
+conducta del aprendiz.}
+
+% -------------------------------------------------------
+\subsection*{Agregación e interpretación}
+
+Todas las magnitudes se promedian sobre los $m$ intentos del nivel o
+de la sesión. Para la ramificación y la buclicidad:
+
+\begin{equation}
+    R_e \;=\; \frac{1}{m}\sum_{j=1}^{m} R_{i,j}
+    \qquad
+    B_e \;=\; \frac{1}{m}\sum_{j=1}^{m} \beta_{i,j}
+    \label{eq:agregacion}
+\end{equation}
+
+y de manera análoga para los demás indicadores. La tendencia de
+estos promedios a lo largo de los intentos constituye la evidencia
+de aprendizaje que el diseño busca observar: una circuidad que se
+aproxima a uno, una ramificación que desciende hacia cero y una
+buclicidad decreciente describen a un aprendiz que consolida su
+esquema de solución.
+
+En el marco de esta investigación, los indicadores se interpretan en
+clave de control inhibitorio. Cada punto de decisión con $C_k > 0$
+puede leerse como un episodio en que el aprendiz no inhibió la
+respuesta más inmediata en favor de la más eficiente, y los retornos
+involuntarios frecuentes son coherentes con las dificultades en el
+control inhibitorio sostenido y en la memoria de trabajo que
+caracterizan a la población con TEA nivel~1 \cite{Geurts2009,
+Diamond2013}. La comparación de estos valores entre los ejercicios
+de complejidad creciente permitirá explorar si la mediación de los
+cubos inteligentes modifica el perfil de decisiones del
+participante.
+
+La Tabla~\ref{tab:resumen_metricas} resume el conjunto.
+
+\begin{table}[H]
+\centering
+\caption{Resumen de métricas para el análisis de trayectorias.}
 \label{tab:resumen_metricas}
 \renewcommand{\arraystretch}{1.35}
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{|p{3.2cm}|p{3.5cm}|p{3.5cm}|p{4.2cm}|}
+\begin{tabular}{|p{3.4cm}|p{3.4cm}|p{1.6cm}|p{5.2cm}|}
 \hline
-\textbf{Métrica} & \textbf{Ecuación} & \textbf{Interpretación cognitiva} & \textbf{Relevancia en TEA nivel~1} \\
+\textbf{Magnitud} & \textbf{Ecuación} & \textbf{Rango} & \textbf{Interpretación} \\
 \hline
-Ruta óptima & $D_{\min} = n^2 + 2n$ &
-Referencia de la planificación perfecta &
-Permite medir la brecha entre la conducta real y la conducta estratégica \\
+Ruta óptima &
+$D^{*}(n) = n^2 + 2n$ &
+--- &
+Referencia de la planificación perfecta \\
 \hline
-Buclicidad por intento & $B_i = \tfrac{n^2}{2} + 2n + C$ &
-Retorno a estados ya visitados; refleja ausencia de memoria de trabajo activa &
-Indicador de dificultad inhibitoria sostenida: bucles frecuentes = menor control ejecutivo \\
+Circuidad &
+$Q_i = L_i / D^{*}(n)$ &
+$\geq 1$ &
+Cuánto se desvía la ruta real de la mínima \\
 \hline
-Buclicidad por experiencia & $B_e = \tfrac{1}{m}\sum B_{i,j}$ &
-Evolución del aprendizaje: $B_e$ decreciente indica menor impulsividad acumulada &
-Permite comparar progreso intra-sesión entre condición sin y con mediación \\
+Calidad del movimiento &
+$C_k = \dfrac{d(s_k) - d_{k,\min}}{d_{k,\max} - d_{k,\min}}$ &
+$[0,1]$ &
+Calidad de una decisión, ponderada por los grados de libertad \\
 \hline
-Calidad del movimiento & $C_m = |1 - D_j/D_{\min}|$ &
-Distancia relativa al óptimo en cada decisión puntual &
-$C_m = 0$: decisión planificada; $C_m > 0$: respuesta impulsiva no inhibida \\
+Ramificación por intento &
+$R_i = \frac{1}{|K|}\sum_{k \in K} C_k$ &
+$[0,1]$ &
+Calidad media de las decisiones del intento \\
 \hline
-Ramificación por intento & $R_i = \sum C_{m,k}$ &
-Exploración acumulada respecto a la ruta óptima en un intento &
-Valor alto: mayor dificultad para sostener la estrategia \\
+Tasa de acierto &
+$\alpha_i = |\{C_k = 0\}| / |K|$ &
+$[0,1]$ &
+Proporción de puntos críticos resueltos de forma óptima \\
 \hline
-Ramificación por experiencia & $R_e = \tfrac{1}{n}\sum R_{i,j}$ &
-Tendencia general de la toma de decisiones a lo largo de la sesión &
-Comparación entre sesiones: efecto de los cubos sobre la planificación global \\
+Grado de libertad medio &
+$\bar{\delta}_i = \frac{1}{L_i}\sum_k \delta_k$ &
+$[1,4]$ &
+Factor de ramificación del trayecto recorrido \\
+\hline
+Retornos &
+$\nu_i = (L_i + 1) - |V(W_i)|$ &
+$\geq 0$ &
+Veces que vuelve a un estado ya visitado \\
+\hline
+Buclicidad normalizada &
+$\beta_i = \nu_i / L_i$ &
+$[0,1]$ &
+Proporción de movimientos que son retorno \\
+\hline
+Ciclos independientes &
+$\mu_i = |E(W_i)| - |V(W_i)| + 1$ &
+$\geq 0$ &
+Bucles esencialmente distintos explorados \\
 \hline
 \end{tabular}}
 \end{table}
- 
- 
+
+Las ecuaciones anteriores se verificaron sobre el grafo del tablero
+de cinco pares aplicándolas a cuatro trayectorias de referencia. La
+ruta óptima produce los valores extremos esperados —circuidad igual
+a uno, ramificación nula y acierto del cien por ciento en los
+veinticuatro puntos de decisión que atraviesa, sin ningún retorno— y
+los indicadores se separan de forma monótona a medida que aumenta la
+exploración. La verificación mostró además que circuidad y
+buclicidad son dimensiones independientes: una trayectoria puede
+alejarse considerablemente de la ruta óptima sin repetir jamás un
+estado, lo que justifica mantener ambas familias de indicadores en
+lugar de un índice agregado único.
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox{0.82\textwidth}{%
+    \textcolor{red}{\textbf{[INSERTAR AQUÍ]} Evolución de los
+    indicadores a lo largo de los intentos del participante. Eje
+    $x$: número de intento; eje $y$: valor de $Q_i$, $R_i$ y
+    $\beta_i$. Una serie por ejercicio (de uno a cinco pares).}
+}}
+\caption{Evolución de las métricas de trayectoria por intento.}
+\label{fig:grafica_metricas}
+\end{figure}
+
 
 % 2 -> Fin cap agregado para revisión
 

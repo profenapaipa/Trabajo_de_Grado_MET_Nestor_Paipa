@@ -1,31 +1,43 @@
 import { useState } from 'react'
 import App, { type ControlSnapshot } from './App'
+import PantallaInicio from './components/PantallaInicio'
+import InformeGeneral from './components/informe/InformeGeneral'
+import { BotonTerminarSesion } from './components/informe/botones'
+import { SesionProvider, useSesion } from './core/session/sesion'
 import TutorialTab from './components/TutorialTab'
 import SimulacionLibreTab from './components/SimulacionLibreTab'
 import ObservadorTab from './components/ObservadorTab'
+import InformesTab from './components/InformesTab'
 import { StepMark, WIDE_MAX } from './ui/brand'
 
-type Tab = 'control' | 'tutorial' | 'libre' | 'observador'
+type Tab = 'control' | 'tutorial' | 'libre' | 'observador' | 'informes'
 
 const TABS: { id: Tab; label: string; mode: string; modeColor: string }[] = [
   { id: 'control', label: '1 · Control Mago de Oz', mode: 'Hardware real', modeColor: 'var(--color-online)' },
   { id: 'tutorial', label: '2 · Tutorial guiado', mode: 'Sin hardware — aprendizaje', modeColor: 'var(--color-blue)' },
   { id: 'libre', label: '3 · Simulación libre', mode: 'Sin hardware — práctica', modeColor: 'var(--color-blue)' },
   { id: 'observador', label: '4 · Vista de observador', mode: 'Solo lectura', modeColor: 'var(--color-paper-dim)' },
+  { id: 'informes', label: '5 · Informes', mode: 'Sesiones guardadas', modeColor: 'var(--color-blue)' },
 ]
 
-function AppShell() {
+function Shell() {
+  const { perfil, abrirSesion, cerrarSesion } = useSesion()
+  const [informeAbierto, setInformeAbierto] = useState(false)
   const [tab, setTab] = useState<Tab>('control')
   // Estado de Control que la Vista de observador ve en espejo (solo lectura).
   const [snapshot, setSnapshot] = useState<ControlSnapshot | null>(null)
-  // Un solo operador para toda la aplicación: se escribe una vez al entrar.
-  const [operatorId, setOperatorId] = useState('')
-  // Quién hace el tutorial o la simulación libre — uno solo para ambas
-  // pestañas, para no reescribirlo al pasar del tutorial a la práctica.
-  const [participante, setParticipante] = useState('')
   const [simPares, setSimPares] = useState(1)
 
+  // El operador y el participante son los del perfil de la sesión: se piden
+  // una sola vez al entrar y acompañan a todos los registros, de modo que la
+  // trazabilidad no dependa de reescribirlos en cada pestaña.
+  const operatorId = perfil?.operador ?? ''
+  const participante = perfil?.participante ?? ''
+  const noop = () => { /* el perfil se fija al abrir la sesión */ }
+
   const current = TABS.find(t => t.id === tab)!
+
+  if (!perfil) return <PantallaInicio onAbrir={abrirSesion} />
 
   return (
     <div style={{
@@ -64,36 +76,53 @@ function AppShell() {
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: current.modeColor }} />
             {current.mode}
           </span>
+          <span style={{ alignSelf: 'center', display: 'flex', alignItems: 'center', gap: '10px', marginLeft: '14px' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-paper-dim)' }}>
+              {perfil.participante}
+            </span>
+            <BotonTerminarSesion onClick={() => setInformeAbierto(true)} />
+          </span>
         </div>
       </div>
 
       {/* Cada pestaña maneja su propio scroll interno dentro de esta región
-          de altura fija — un único scrollbar visible por pestaña. Control
-          queda siempre montado (display none) para no perder la conexión. */}
+          de altura fija — un único scrollbar visible por pestaña. Las cuatro
+          quedan montadas aunque no se vean: antes se desmontaban al cambiar
+          de pestaña y se perdía su bitácora. El informe general ya no
+          reemplaza la pestaña: se abre encima, en una ventana emergente. */}
       <div style={{ display: tab === 'control' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0 }}>
         <App
-          operatorId={operatorId} setOperatorId={setOperatorId}
+          operatorId={operatorId} setOperatorId={noop}
           onSnapshot={setSnapshot} />
       </div>
-      {tab === 'tutorial' && (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-          <TutorialTab operatorId={operatorId} participante={participante} setParticipante={setParticipante}
-            onGoToFreeSim={() => { setSimPares(5); setTab('libre') }} />
-        </div>
-      )}
-      {tab === 'libre' && (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-          <SimulacionLibreTab operatorId={operatorId} participante={participante} setParticipante={setParticipante}
-            pares={simPares} setPares={setSimPares} />
-        </div>
-      )}
-      {tab === 'observador' && (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-          <ObservadorTab snapshot={snapshot} operatorId={operatorId} />
-        </div>
+      <div style={{ display: tab === 'tutorial' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        <TutorialTab operatorId={operatorId} participante={participante} setParticipante={noop}
+          onGoToFreeSim={() => { setSimPares(5); setTab('libre') }} />
+      </div>
+      <div style={{ display: tab === 'libre' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        <SimulacionLibreTab operatorId={operatorId} participante={participante} setParticipante={noop}
+          pares={simPares} setPares={setSimPares} />
+      </div>
+      <div style={{ display: tab === 'observador' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        <ObservadorTab snapshot={snapshot} operatorId={operatorId} />
+      </div>
+      {/* Los informes guardados: la única pestaña que no mira la sesión en
+          curso sino el archivo de todas las anteriores. */}
+      <div style={{ display: tab === 'informes' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        <InformesTab activo={tab === 'informes'} />
+      </div>
+
+      {informeAbierto && (
+        <InformeGeneral
+          onCerrar={() => setInformeAbierto(false)}
+          onCerrarSesion={() => { cerrarSesion(); setInformeAbierto(false) }} />
       )}
     </div>
   )
+}
+
+function AppShell() {
+  return <SesionProvider><Shell /></SesionProvider>
 }
 
 export default AppShell
