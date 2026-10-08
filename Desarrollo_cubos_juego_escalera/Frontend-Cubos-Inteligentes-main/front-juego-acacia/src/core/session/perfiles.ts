@@ -104,10 +104,22 @@ function ultimaActividad(a: Archivo, perfilId: string): string | undefined {
 
 export function perfiles(): PerfilGuardado[] {
   const a = cargarArchivo()
+  // Un perfil puede estar en una sesión archivada sin figurar en la lista
+  // (por ejemplo si la lista se recortó por falta de espacio): se reconstruye
+  // desde las sesiones, para que la pantalla de inicio y la pestaña de
+  // informes no puedan mostrar cosas distintas.
+  const conocidos = new Map(a.perfiles.map(p => [p.id, p]))
+  for (const s of a.sesiones) {
+    if (conocidos.has(s.perfilId)) continue
+    conocidos.set(s.perfilId, {
+      id: s.perfilId, nombre: s.participante || s.perfilId.toUpperCase(),
+      rol: 'participante', creado: s.inicio,
+    })
+  }
   // Admin primero (entrada rápida); el resto, el de actividad más reciente arriba.
-  const resto = a.perfiles.filter(p => p.id !== ID_ADMIN)
+  const resto = [...conocidos.values()].filter(p => p.id !== ID_ADMIN)
     .sort((x, y) => (ultimaActividad(a, y.id) ?? y.creado).localeCompare(ultimaActividad(a, x.id) ?? x.creado))
-  return [a.perfiles.find(p => p.id === ID_ADMIN) ?? PERFIL_ADMIN, ...resto]
+  return [conocidos.get(ID_ADMIN) ?? PERFIL_ADMIN, ...resto]
 }
 
 // Crea el perfil si no existía y lo devuelve.

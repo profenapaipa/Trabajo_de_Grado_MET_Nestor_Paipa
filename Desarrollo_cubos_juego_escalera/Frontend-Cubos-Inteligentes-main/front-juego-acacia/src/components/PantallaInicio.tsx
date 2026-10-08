@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Zap, UserPlus } from 'lucide-react'
 import { Logo, EegTrace } from '../ui/brand'
+import LogosFondo from '../ui/LogosFondo'
 import { sectionLabel, sessionBtn, panel } from '../ui/styles'
 import { ID_ADMIN, perfiles, resumenDePerfil, type RolPerfil } from '../core/session/perfiles'
 
@@ -36,9 +37,13 @@ export default function PantallaInicio({ onAbrir }: { onAbrir: (participante: st
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
       background: 'var(--color-bg)', color: 'var(--color-paper)', fontFamily: 'var(--font-sans)',
       backgroundImage: 'radial-gradient(circle, var(--color-line) 1px, transparent 1px)',
-      backgroundSize: '22px 22px', padding: '20px', overflowY: 'auto',
+      backgroundSize: '22px 22px', padding: '20px', overflowY: 'auto', position: 'relative',
     }}>
-      <div style={{ ...panel, width: '100%', maxWidth: '540px', padding: '26px 28px' }}>
+      {/* La misma marca de agua de las cinco secciones, pero viva: aquí los
+          logos se mueven y cambian de tamaño en vez de recolocarse al
+          recargar. */}
+      <LogosFondo />
+      <div style={{ ...panel, width: '100%', maxWidth: '540px', padding: '26px 28px', position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
           <Logo size={42} />
           <div>
@@ -94,6 +99,18 @@ export default function PantallaInicio({ onAbrir }: { onAbrir: (participante: st
             )
           })}
         </div>
+
+        {lista.length <= 1 && (
+          <div style={{
+            fontSize: '11px', color: 'var(--color-paper-faint)', lineHeight: 1.55,
+            borderLeft: '2px solid var(--color-line-strong)', paddingLeft: '9px', margin: '-8px 0 18px',
+          }}>
+            Todavía no hay perfiles guardados aquí. Si ya jugaste antes y no aparecen, comprueba que estés abriendo la
+            aplicación en la misma dirección de siempre: el historial se guarda por navegador <b>y por dirección</b>{' '}
+            (no es lo mismo <span style={{ fontFamily: 'var(--font-mono)' }}>localhost:5173</span> que otro puerto).
+            También puedes recuperar una sesión antigua desde «5 · Informes → Importar bitácoras» con su archivo .json.
+          </div>
+        )}
 
         <div style={{ borderTop: '1px solid var(--color-line)', paddingTop: '16px' }}>
           <label style={{ display: 'block', marginBottom: '12px' }}>
