@@ -335,8 +335,8 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
               derecha={<span style={{ fontSize: '11px', color: 'var(--color-paper-faint)' }}>decisiones: {leerTendencia(tR, 'sesiones')}</span>}
               comoLeer={<>cada punto es una sesión completa, en orden cronológico (eje horizontal); el eje vertical es el
                 promedio normalizado de esa sesión, de 0 a 1. Esta es la lectura de trazabilidad entre sesiones: si las dos
-                primeras curvas bajan y la verde sube, el esquema de solución se está consolidando. Un hueco significa que esa
-                sesión no tuvo decisiones reales que medir.{gruposPerfil ? ' Cada franja es un participante distinto, '
+                primeras curvas bajan y la verde sube, el esquema de solución se está consolidando. Donde la línea va punteada,
+                esa sesión no tuvo decisiones reales que medir: el punteado salta el hueco en vez de inventar un cero.{gruposPerfil ? ' Cada franja es un participante distinto, '
                 + 'separada por una línea punteada: la comparación se hace dentro de una franja, no entre participantes.' : ''}</>}>
               <Evolucion
                 etiquetas={sesiones.map((_, i) => `S${i + 1}`)}

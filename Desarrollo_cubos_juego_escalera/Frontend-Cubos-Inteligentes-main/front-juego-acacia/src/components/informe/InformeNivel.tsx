@@ -245,8 +245,9 @@ export default function InformeNivel({ seccion, pares, onCerrar }: { seccion: Se
         <Figura numero={figEvolucion} titulo="Evolución dentro del nivel, intento a intento" identificacion={ident}
           derecha={<span style={{ fontSize: '11px', color: 'var(--color-paper-faint)' }}>{plural(delNivel.length, 'intento', 'intentos')}</span>}
           comoLeer={<>cada punto es un intento, en orden (eje horizontal); el eje vertical es el valor normalizado de 0 a 1.
-            Aprender se ve como las dos primeras curvas bajando y la verde subiendo. Un intento sin decisiones reales deja un hueco
-            en la línea en vez de inventar un valor.</>}>
+            Aprender se ve como las dos primeras curvas bajando y la verde subiendo. Donde la línea va punteada, ese intento no
+            tuvo ninguna jugada en la que hubiera que elegir, así que no hay valor que medir: el punteado salta ese hueco en vez
+            de inventar un cero.</>}>
           <Evolucion
             etiquetas={delNivel.map(i => `#${i.numero}`)}
             etiquetaEjeX="intentos de este nivel, en orden"

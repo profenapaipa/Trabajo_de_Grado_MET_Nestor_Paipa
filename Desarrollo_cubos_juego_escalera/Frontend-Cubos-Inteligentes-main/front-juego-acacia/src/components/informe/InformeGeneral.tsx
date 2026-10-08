@@ -325,8 +325,9 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
             punto es la inicial de la pestaña y el número de intento (C = Control Mago de Oz, T = Tutorial guiado,
             L = Simulación libre, O = Observador). El eje vertical es el valor normalizado de 0 a 1. Aprender se ve como las
             dos primeras curvas bajando y la verde subiendo, <b>dentro de una misma franja</b>: entre pestañas y entre
-            niveles distintos los valores no son comparables. Donde la línea va punteada, ese intento no tuvo decisiones
-            reales que medir: no es un valor cero, es un hueco.</>}>
+            niveles distintos los valores no son comparables. Los dos punteados de la gráfica están en su leyenda: el
+            horizontal salta los intentos sin decisiones que medir —no es un cero— y el vertical marca dónde cambia la
+            pestaña.</>}>
           <Evolucion
             etiquetas={intentos.map(i => `${SIGLA[i.seccion]}${i.numero}`)}
             etiquetaEjeX="intentos de la sesión, en orden y por pestaña"

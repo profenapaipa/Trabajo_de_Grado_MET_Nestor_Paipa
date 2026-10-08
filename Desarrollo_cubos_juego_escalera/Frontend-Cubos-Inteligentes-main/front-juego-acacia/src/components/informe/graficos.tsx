@@ -52,7 +52,9 @@ export function Figura({ numero, titulo, identificacion, derecha, comoLeer, chil
 }
 
 // Leyenda explícita de colores/marcas: todos los que aparecen en la gráfica.
-export function Leyenda({ items }: { items: { color?: string; marca?: 'linea' | 'punto' | 'barra' | 'regla'; texto: string }[] }) {
+export function Leyenda({ items }: {
+  items: { color?: string; marca?: 'linea' | 'punto' | 'barra' | 'regla' | 'punteada' | 'separador'; texto: string }[]
+}) {
   return (
     <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginBottom: '8px' }}>
       {items.map((it, i) => (
@@ -60,11 +62,15 @@ export function Leyenda({ items }: { items: { color?: string; marca?: 'linea' | 
           <span aria-hidden="true" style={
             it.marca === 'regla'
               ? { width: '3px', height: '13px', background: it.color ?? 'var(--color-paper)' }
-              : it.marca === 'linea'
-                ? { width: '15px', height: '3px', borderRadius: '2px', background: it.color ?? 'var(--color-paper)' }
-                : it.marca === 'punto'
-                  ? { width: '9px', height: '9px', borderRadius: '50%', background: it.color ?? 'var(--color-paper)' }
-                  : { width: '11px', height: '11px', borderRadius: '2px', background: it.color ?? 'var(--color-paper)' }
+              : it.marca === 'separador'
+                ? { width: '0', height: '14px', borderLeft: `1px dashed ${it.color ?? 'var(--color-line-strong)'}` }
+                : it.marca === 'punteada'
+                  ? { width: '17px', height: '0', borderTop: `2px dashed ${it.color ?? 'var(--color-paper-dim)'}` }
+                  : it.marca === 'linea'
+                    ? { width: '15px', height: '3px', borderRadius: '2px', background: it.color ?? 'var(--color-paper)' }
+                    : it.marca === 'punto'
+                      ? { width: '9px', height: '9px', borderRadius: '50%', background: it.color ?? 'var(--color-paper)' }
+                      : { width: '11px', height: '11px', borderRadius: '2px', background: it.color ?? 'var(--color-paper)' }
           } />
           {it.texto}
         </span>
@@ -304,10 +310,26 @@ export function Evolucion({ etiquetas, series, alto = 132, etiquetaEjeX = 'inten
   const izqDe = (g: GrupoEje) => (g.desde === 0 ? padL : (px(g.desde - 1) + px(g.desde)) / 2)
   const derDe = (g: GrupoEje) => (g.hasta >= n - 1 ? padL + w : (px(g.hasta) + px(g.hasta + 1)) / 2)
   const conGrupos = !!grupos && grupos.length > 0 && ancho > 0
+  // ¿Alguna serie se queda sin dato en medio? Entonces hay tramos punteados
+  // que hay que explicar en la leyenda, no en el texto de al lado.
+  const hayPuentes = series.some(s => {
+    const i = s.puntos.findIndex(v => v !== null)
+    const f = s.puntos.length - 1 - [...s.puntos].reverse().findIndex(v => v !== null)
+    return i >= 0 && s.puntos.slice(i, f + 1).some(v => v === null)
+  })
+  const leyenda = [
+    ...series.map(s => ({ marca: 'linea' as const, color: s.color, texto: s.nombre })),
+    ...(hayPuentes
+      ? [{ marca: 'punteada' as const, texto: 'tramo sin dato: ese intento no tuvo decisiones reales que medir' }]
+      : []),
+    ...(conGrupos && grupos!.length > 1
+      ? [{ marca: 'separador' as const, texto: 'cambio de pestaña (la franja lleva su nombre encima)' }]
+      : []),
+  ]
 
   return (
     <div>
-      <Leyenda items={series.map(s => ({ marca: 'linea' as const, color: s.color, texto: s.nombre }))} />
+      <Leyenda items={leyenda} />
       <div style={{ display: 'flex', gap: '4px' }}>
         <EtiquetaY alto={alto}>valor normalizado (0–1)</EtiquetaY>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -339,9 +361,12 @@ export function Evolucion({ etiquetas, series, alto = 132, etiquetaEjeX = 'inten
                     )}
                   </g>
                 ))}
+                {/* Rejilla de referencia, continua y tenue: en esta gráfica el
+                    punteado significa otra cosa (tramo sin dato y cambio de
+                    pestaña), así que no se usa para nada más. */}
                 {[0, 0.25, 0.5, 0.75, 1].map(t => (
                   <line key={t} x1={padL} x2={padL + w} y1={py(t)} y2={py(t)}
-                    stroke="var(--color-line)" strokeWidth={1} strokeDasharray={t === 0 || t === 1 ? undefined : '3 3'} />
+                    stroke="var(--color-line)" strokeWidth={1} opacity={t === 0 || t === 1 ? 1 : 0.55} />
                 ))}
                 {[1, 0.5, 0].map(t => (
                   <text key={t} x={padL - 5} y={py(t) + 3} textAnchor="end"
