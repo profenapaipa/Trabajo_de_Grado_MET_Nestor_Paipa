@@ -10,7 +10,10 @@ name: Publicar la aplicación en GitHub Pages
 
 on:
   push:
-    branches: [rediseno-ui, main]
+    # Solo main: es la rama desde la que GitHub Pages permite publicar, y así
+    # empujar otra rama no cancela un despliegue en curso (la concurrencia de
+    # abajo cancela el anterior del mismo grupo).
+    branches: [main]
   workflow_dispatch:
 
 permissions:
