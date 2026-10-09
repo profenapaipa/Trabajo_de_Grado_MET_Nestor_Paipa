@@ -3101,19 +3101,172 @@ cualquier momento si el aprendiz ya respondió a la señal antes de que
 concluya el intervalo temporizado, garantizando que el estímulo no
 persista más allá de lo necesario.
  
-% [SUJETO A VERIFICACIÓN TÉCNICA]
-Al finalizar la sesión, el sistema debería permitir exportar el registro
-de activaciones en formato CSV, con marca de tiempo en milisegundos desde
-el inicio de la sesión, identificador del cubo, fase y estado emocional
-de cada evento, de modo que ese archivo pueda sincronizarse con el registro
-de movimientos del juego y con la marca de inicio del registro EEG para el
-análisis posterior. Esta función de exportación está pendiente de
-implementación y de verificación en el prototipo.
+Al finalizar la sesión, el sistema exporta el registro completo de la
+bitácora en formato CSV y JSON. Cada evento lleva marca de tiempo ISO 8601
+con milisegundos, el identificador del operador y el del participante, la
+versión de configuración vigente, el tipo de evento, la posición del
+tablero resultante y —cuando se trata de una activación del ciclo— la fase
+y el estado emocional correspondientes. Ese archivo es el que se
+sincroniza con el registro de movimientos del juego y con la marca de
+inicio del registro EEG para el análisis posterior. La exportación está
+implementada y verificada: la subsección siguiente describe el aplicativo
+que la produce.
  
 %% fin portes 8 de mayo 
 
 
 
+
+
+\subsection{La aplicación de registro y análisis}
+
+El instrumento con el que se administra la tarea y se registra lo que hace
+el participante es una aplicación web desarrollada en el marco de esta
+investigación. Cumple el papel que \citet{HinzKostov2009} describen para
+las tareas de torre —administrar el problema y registrar el desempeño
+movimiento a movimiento— y añade lo que esta investigación necesita: la
+mediación Pausar--Pensar--Actuar, el enlace con los cubos físicos y la
+devolución de resultados al docente en lenguaje interpretable.
+
+Se ejecuta en el navegador y no requiere instalación. Las vistas de
+simulación, tutorial e informes funcionan sin servidor; el enlace con el
+hardware solo es necesario en la vista de Control Mago de Oz, donde la
+aplicación se comunica con la base de los cubos. Una versión pública,
+compilada automáticamente desde el repositorio de la investigación, queda
+disponible en línea\footnote{\url{https://profenapaipa.github.io/Trabajo_de_Grado_MET_Nestor_Paipa/}},
+de modo que cualquier lector pueda abrir el instrumento, jugar los cinco
+niveles y descargar los informes sin montar nada. En esa versión, Control
+Mago de Oz aparece como desconectado, porque del otro lado no hay
+hardware.
+
+\subsubsection{Las cinco vistas}
+
+\begin{itemize}
+    \item \textbf{Control Mago de Oz.} El tablero físico. El docente ve el
+    estado real de los diez cubos, activa las señales del ciclo y registra
+    lo que ocurre sobre el tablero.
+
+    \item \textbf{Tutorial guiado.} Cinco niveles progresivos, de uno a
+    cinco pares, con las tres reglas explicadas mediante animaciones
+    breves, pistas a demanda y la posibilidad de deshacer. Sirve para que
+    el participante aprenda el juego antes de la sesión de medición.
+
+    \item \textbf{Simulación libre.} El mismo juego sin ayudas, en
+    pantalla. Permite ensayar el protocolo completo sin disponer del
+    hardware.
+
+    \item \textbf{Vista de observador.} Espejo de lo que ocurre en
+    Control, con registro de notas y marcas cualitativas por parte de un
+    segundo observador.
+
+    \item \textbf{Informes.} El historial de todos los perfiles y sus
+    sesiones guardadas, con acceso a los informes y a la exportación.
+\end{itemize}
+
+Las cuatro primeras dibujan, junto al tablero, el grafo de estados del
+nivel en curso, con el recorrido del intento superpuesto y las posiciones
+más transitadas resaltadas. Las dos rutas mínimas pueden mostrarse como
+referencia, pero permanecen ocultas mientras se juega: mostrarlas sería
+entregar la solución.
+
+\subsubsection{La bitácora}
+
+Todo lo que ocurre en una sesión queda en una bitácora de eventos. Cada
+evento registra la marca de tiempo en formato ISO 8601 con milisegundos,
+el identificador del operador y el del participante, la versión de
+configuración vigente, el número de pares del nivel, el tipo de evento, la
+posición completa del tablero resultante y, cuando corresponde, la fase
+del ciclo, el motivo, la decisión del operador y si la activación llegó a
+producirse. Toda sesión de simulación queda marcada como tal, para que no
+pueda confundirse con una sesión real.
+
+Un campo merece mención aparte: cada evento guarda el identificador del
+estado alcanzado en el grafo del juego. Es ese campo el que permite
+reconstruir el paseo $W$ de cada intento sobre el grafo y, con él,
+calcular las métricas de la sección~\ref{sec:fundamento_ecuaciones}. Sin
+él, la bitácora sería una lista de jugadas; con él, es una trayectoria.
+
+\subsubsection{Los informes}
+
+La aplicación produce tres informes, de alcance creciente:
+
+\begin{itemize}
+    \item \textbf{Informe del nivel.} Los intentos de un nivel dentro de una
+    vista: sus métricas, la evolución entre intentos y el grafo con los
+    recorridos.
+
+    \item \textbf{Informe de la sesión.} Todo lo jugado en la sesión, en
+    todas las vistas y niveles, con un grafo por nivel.
+
+    \item \textbf{Informe macro.} La trayectoria de un participante
+    \textit{entre} sesiones: la mejor marca de cada nivel, la evolución
+    sesión a sesión y los grafos acumulados. Es el que responde a la
+    pregunta del iso-efecto \citep{HinzFaber2009}: si lo que cambia es el
+    esquema de solución, hay que poder comparar intentos equivalentes a lo
+    largo del tiempo.
+\end{itemize}
+
+Los tres se abren en ventana emergente sobre fondo claro y siguen la misma
+estructura: un balance general en lenguaje llano, una síntesis en prosa,
+las tablas de detalle, las figuras numeradas con su instrucción de lectura
+y, al cierre, tres bloques fijos —qué mide cada métrica sin fórmulas, las
+ecuaciones con el número que tienen en este documento, y las referencias
+completas—. Esa duplicación de registro es deliberada: el informe lo lee
+tanto quien acompaña la sesión, que no tiene por qué saber qué es un
+número ciclomático, como el director o el jurado, que sí va a preguntar de
+dónde sale cada fórmula.
+
+Cada informe se descarga como página HTML autocontenida —viaja sola, con
+sus gráficos y sus referencias dentro—, y los datos en CSV y JSON para el
+análisis posterior.
+
+\subsubsection{Perfiles y trazabilidad}
+
+Cada participante tiene un perfil, y cada sesión terminada se archiva en
+él. De ahí salen el historial, el informe macro y la exportación del
+historial completo en CSV. La aplicación también importa bitácoras
+exportadas en sesiones anteriores y reconstruye a partir de ellas los
+intentos, los recorridos y las métricas, de modo que una sesión registrada
+antes de que existiera el archivo de perfiles no se pierde.
+
+\subsubsection{Verificación automática del instrumento}
+
+Un instrumento de medición tiene que poder justificar sus números. Las
+afirmaciones que este documento hace sobre el juego, el grafo y las
+métricas no se sostienen en una revisión visual: un grafo de 2772 estados
+no se comprueba a ojo. Por eso cada una está atada a una comprobación que
+se ejecuta sola cada vez que la aplicación se compila y se publica; si
+alguna dejara de ser cierta, la publicación se detiene en lugar de pasar
+inadvertida.
+
+\begin{table}[H]
+\centering
+\caption{Comprobaciones automáticas del instrumento. Se ejecutan en cada
+compilación, antes de publicar.}
+\label{tab:auditorias}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{4.1cm}|p{10.4cm}|}
+\hline
+\textbf{Comprobación} & \textbf{Qué garantiza} \\
+\hline
+Reglas & Las reglas que aplica la aplicación son las tres de la Figura~3.3 de \citet{LievanoMolina2022}, y el grafo que generan coincide con el del script original. \\
+\hline
+Grafo & El número de estados, de jugadas y el estado meta de cada uno de los cinco niveles. \\
+\hline
+Métricas & Las ecuaciones calculadas sobre cuatro trayectorias de referencia dan los valores esperados; y los números de ecuación que los informes muestran al lector son los que esa ecuación tiene en este documento. \\
+\hline
+Propiedades métricas & Los valores de las Tablas~\ref{tab:propiedades_grafo} y \ref{tab:propiedades_metricas}, las dos rutas mínimas, la simetría que las intercambia y que la Regla~2 no encarece la solución. \\
+\hline
+Animaciones & Cada regla se enseña con jugadas válidas e inválidas verificadas contra el motor del juego, y cada error detectable tiene su regla asociada. \\
+\hline
+Importación & Una bitácora exportada se reconstruye con sus intentos, sus recorridos y sus métricas. \\
+\hline
+\end{tabular}
+\end{table}
+
+La última de ellas es la que hace comprobable la afirmación del apartado
+anterior sobre los perfiles; la cuarta es la que respalda el resultado
+sobre la no unicidad de la solución mínima.
 
 \section{Procedimiento}
 \subsection{Generación de gráficas EEG}

@@ -108,6 +108,20 @@ Este archivo contiene **únicamente decisiones ya tomadas** por el autor y confi
 - Esto determina directamente cómo se representa cada cubo en el frontend (estados Levantado / Reubicado / No detectado).
 - La señal o proceso concreto para confirmar la desconexión todavía no está definida ni evaluada contra hardware real; queda registrada como pendiente en `PENDIENTES_TESIS.md`, junto con el candidato ya disponible en el sistema (el reporte periódico de esclavos conectados que hace el maestro).
 
+## Informes, perfiles y publicación (2026-10-02/09)
+
+- **Tres niveles de informe, no uno.** Del nivel (los intentos de un nivel en una vista), de la sesión (todo lo jugado hoy) y macro (la trayectoria del participante entre sesiones). Se abren en ventana emergente sobre hoja clara, no empotrados en la consola oscura: un informe se lee, se imprime y se envía, y eso pide fondo de documento.
+- **Doble registro en todo informe.** Cada métrica se describe dos veces y en paralelo: qué significa en lenguaje llano con un ejemplo, y su ecuación con el número que tiene en `main.tex` y su procedencia. No es redundancia: el informe lo leen el docente que acompaña la sesión y el jurado, y ninguno de los dos debe quedar fuera. Fuente única de verdad: `src/components/informe/fuentes.ts`.
+- **Perfil `admin` por defecto.** Para poder entrar rápido en una prueba sin inventar un participante, pero dejando que todo quede registrado igual.
+- **Las dos rutas mínimas se muestran en el informe y se ocultan mientras se juega.** Dibujarlas durante la partida sería entregar la solución; en el informe son la referencia que permite ver por dónde no pasó.
+- **Ninguna métrica compara el paseo contra «la» ruta óptima.** Consecuencia directa de Hinz et al. (2005) y de la comprobación propia sobre el grafo de La Escalera: hay dos recorridos mínimos, de modo que apartarse de uno puede ser seguir el otro. La circuidad compara longitudes; la ramificación y la tasa de acierto comparan distancias. Las tres son invariantes frente a la elección de ruta mínima.
+- **Los números de ecuación de los informes se comprueban contra `main.tex`.** Los asigna LaTeX contando las ecuaciones del capítulo, así que basta insertar una antes para que todos los posteriores se desplacen. Esto ya había ocurrido: cuatro informes citaban mal. Ahora `metricas:verificar` recalcula la numeración leyendo el documento y falla si vuelve a desfasarse.
+- **La cita de la aplicación queda reservada.** El panel de créditos deja la sección lista y declara que la referencia formal se incorporará cuando se publique el artículo derivado. No se inventa una cita de algo no publicado.
+- **El PDF del artículo de Hinz et al. (2005) no se versiona.** El repositorio es público y es un artículo de pago de Elsevier. Queda en la carpeta de trabajo, fuera del control de versiones. *(Pendiente: el repositorio ya versiona otros dos artículos de terceros en la misma situación — ver `PENDIENTES_TESIS.md`.)*
+- **La verificación se hace contra la compilación de producción, nunca contra el servidor de desarrollo.** En este equipo el servidor de desarrollo sirve módulos viejos y ha invalidado mediciones dos veces. Todo se comprueba con `vite preview` sobre `npm run build`.
+
+---
+
 ## Regla editorial
 
 - La tesis debe presentarse como un documento académico consolidado de la propuesta y el desarrollo tecnológico, no como un diario de depuración.

@@ -191,3 +191,51 @@ esto es, en cuántos puntos críticos (grado ≥ 3, los que el libro llama así)
 1. **Denominador de C_m** (Problema 1): formulación A, formulación B, o lectura literal del libro con D_min global.
 2. **Buclicidad** (Problema 2): conservar B_i como valor de referencia y añadir el recuento ν_i y el número ciclomático μ_i, o sustituirla.
 3. **Sección duplicada en `main.tex`:** existe un `\section{Métricas para analizar las trayectorias}` (línea ~1765) que solo contiene C_m y B_i sueltas, sin texto, justo antes de la sección completa. Parece un resto de una versión anterior y habría que eliminarlo.
+
+---
+
+## 8. La solución mínima no es única (auditoría 2026-10-08/09)
+
+El director aportó **Hinz, Klavžar, Milutinović, Parisse y Petr (2005), «Metric properties of the Tower of Hanoi graphs and Stern's diatomic sequence»**, *European Journal of Combinatorics* 26(5), 693–708. Leído íntegro.
+
+### 8.1 Qué prueba ese artículo (y qué no)
+
+- Entre dos estados cualesquiera de un grafo de Hanói hay **a lo sumo dos** caminos mínimos.
+- Para un estado *v*, el número de estados unidos a él por dos caminos mínimos es el término **b(d(v))** de la sucesión diatómica de Stern (Teorema 3.5).
+- Los **estados perfectos** son los únicos desde los cuales la secuencia mínima de movimientos hacia cualquier otro estado es única (Corolario 3.7).
+- **No** establece «las propiedades métricas que habilitan el uso de la distancia como medida de desempeño». Eso es Hinz (2012) y Hinz y Kostov (2009). La cita estaba mal atribuida en dos lugares de `main.tex` y en el campo de procedencia de la métrica C en la aplicación; los tres quedaron corregidos.
+
+### 8.2 Lo que se comprobó sobre el grafo de La Escalera
+
+Cálculo exhaustivo para n = 1…5 (`scripts/verificarCaminos.ts`, se ejecuta en cada compilación):
+
+| Pares | D* | Diámetro | Radio | exc(s₀) | Distancia media | Rutas mínimas | Máx. caminos mínimos entre dos estados |
+|---|---|---|---|---|---|---|---|
+| 1 | 3 | 3 | 3 | 3 | 1,80 | 2 | 2 |
+| 2 | 8 | 10 | 6 | 8 | 4,14 | 2 | 8 |
+| 3 | 15 | 19 | 11 | 16 | 7,10 | 2 | 42 |
+| 4 | 24 | 30 | 16 | 26 | 10,58 | 2 | 450 |
+| 5 | 35 | 43 | 23 | 38 | 14,44 | 2 | 1350 |
+
+Cinco hechos, todos verificados:
+
+1. Del Inicio al Fin hay **exactamente dos** recorridos de longitud mínima, en los cinco niveles.
+2. Son **reflejo uno del otro**: invertir el tablero y cambiar de equipo cada ficha es un automorfismo del grafo que deja fijos el Inicio y el Fin e intercambia las dos rutas.
+3. El **único punto de decisión** de una partida mínima es el estado inicial: después del primer movimiento, cada jugada mínima está forzada.
+4. La **Regla 2 no encarece** la solución: el mínimo sigue siendo n² + 2n con y sin ella.
+5. La cota de Hanói **no se hereda**: en el nivel de cinco pares, el 77,6 % de los pares de estados admite más de un camino mínimo, y uno de ellos admite 1350.
+
+### 8.3 Consecuencias técnicas aplicadas
+
+- **Ninguna métrica compara el paseo contra «la» ruta óptima.** El documento definía la desviación como «cada movimiento que el estudiante realiza por fuera de esa ruta óptima», lo cual es falso con dos rutas mínimas: apartarse de una puede ser seguir la otra. Reescrito: la referencia es la distancia *d(s)*, invariante frente a la elección de ruta.
+- **Nuevo apartado §3.3 «La solución mínima no es única»** con su tabla de propiedades métricas (Tabla 3.2).
+- **Las dos rutas mínimas se dibujan en el grafo** (ocultas mientras se juega, visibles en los informes). El documento describía una «línea verde de referencia» que no existía; ahora existe, y son dos.
+- **La ruta mínima atraviesa 32 puntos de decisión**, no 24 como decía el documento. Corregido y fijado con una comprobación automática.
+- **Cuatro informes citaban mal el número de ecuación** (D*, δ, β, μ), porque la ecuación de Dijkstra se lleva la 3.1. Corregidos, y `metricas:verificar` ahora recalcula la numeración leyendo `main.tex`.
+- **La meta no es el estado más lejano del Inicio**: su excentricidad es 38 y la meta está a 35. Hay posiciones desde las que faltan más movimientos que al empezar, lo que justifica seguir *d(s)* movimiento a movimiento.
+
+### 8.4 Qué más podría usarse de esa línea de trabajo
+
+- La **distancia media** del grafo (14,44 en el nivel de cinco pares) permitiría contextualizar la circuidad: hoy Q se compara solo contra 1, sin decir qué es un valor típico.
+- La **excentricidad** daría un indicador de «lo lejos que llegó a estar», hoy no reportado.
+- Klahr (1978), citado por Hinz et al. (2005), es literatura psicológica sobre planificación infantil con tareas de torre: línea de lectura pertinente para el marco teórico, **todavía sin leer en el original**.

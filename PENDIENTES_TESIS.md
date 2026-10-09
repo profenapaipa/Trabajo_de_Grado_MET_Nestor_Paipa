@@ -1,6 +1,6 @@
 # PENDIENTES DE LA TESIS Y EL PROTOTIPO
 
-*Última actualización: 2026-09-18*
+*Última actualización: 2026-10-09*
 
 Leyenda de prioridad: 🔴 CRÍTICO · 🟠 ALTO · 🟡 MEDIO · 🟢 BAJO
 
@@ -120,6 +120,20 @@ Registrado el 2026-09-02. El algoritmo de dos pasos (validar contra las reglas d
 
 ---
 
+---
+
+## Informes, publicación y auditoría de grafos (sesiones 2026-10-02/09)
+
+| Pendiente | Prioridad | Estado | Dependencia | Evidencia necesaria | Próximo paso |
+|---|---|---|---|---|---|
+| Decidir qué se hace con los artículos de terceros versionados en un repositorio público | 🟠 ALTO | El repositorio es público y versiona `Human-Robot Scaffolding.pdf` (ACM) y `liang2018.pdf`. El de Hinz et al. (2005) se dejó fuera por la misma razón, lo que deja el criterio inconsistente | Decisión del autor | — | Decidir: retirarlos del control de versiones, o asumir el criterio y añadir también el de Hinz |
+| Las cuatro preguntas abiertas de `Informe_Metricas_v2_Ecuaciones_Propuestas.docx` | 🟠 ALTO | Enviadas al director, sin respuesta registrada | Director | Respuesta escrita | Incluirlas en la próxima reunión |
+| Dedicatoria y Agradecimientos | 🟠 ALTO | Siguen con marcadores `XXXX` en `main.tex` | Autor | — | Redactarlos |
+| Ortografía de nombres propios | 🟡 MEDIO | «Jeniffer López» (aplicación y manual de ACACIA) frente a «Jennifer López» (`bibliografia.bib`, entrada `ACACIA2025`); «Jhon Jairo Páez Rodríguez» (portada) frente a «John Páez» (publicaciones) | Autor | Grafía correcta de cada persona | Unificar en los tres sitios: `main.tex`, `bibliografia.bib` y `Creditos.tsx` |
+| Datos de ejemplo en la guía didáctica | 🟡 MEDIO | Tres figuras de la guía (barras del iso-efecto, ejemplo numérico de la calidad y distancias 12/14/17) llevan valores inventados, señalados como tales en la propia lámina | Datos reales | Sesiones de Joel o Jerónimo | Sustituirlos si la guía se usa ante terceros |
+| Revisar el párrafo nuevo de §3.3 «La solución mínima no es única» y la subsección «La aplicación de registro y análisis» | 🟡 MEDIO | Escritos, compilados y verificados por máquina; sin leer por el autor ni el director | Ninguna | Lectura y visto bueno | Revisar en la próxima pasada de `main.tex` |
+| Contraste del hallazgo de no unicidad con la literatura | ⚪ BAJO | Se comprobó de forma exhaustiva sobre el grafo de La Escalera, pero no se buscó si alguien ya lo había publicado para este juego | Ninguna | Búsqueda bibliográfica | Verificar antes de presentarlo como resultado original en un artículo |
+
 ## Reglas del libro, grafo de estados y simulación (sesión 2026-10-02)
 
 | Pendiente | Prioridad | Estado | Dependencia | Evidencia necesaria | Próximo paso |
@@ -129,9 +143,9 @@ Registrado el 2026-09-02. El algoritmo de dos pasos (validar contra las reglas d
 | Corregir `Escalera.m` o documentar que tiene un descuido | 🟠 ALTO | El script tiene dos condiciones de borde (`idx >= B` y `idx < B-2`) que no son reglas del libro. No cambian el grafo no dirigido (3780 aristas en n=5) pero sí asimetrizan las jugadas | Ninguna | Decisión del autor | Corregirlas en el script, o dejar una nota en `Grafos/` explicando que solo afectan a la numeración de nodos |
 | ¿Qué pasa al violar una regla? | 🟠 ALTO | En el juego digital del libro, violar una regla reinicia el juego. La simulación y Control rechazan la jugada, la explican y la cuentan como falla (criterio PPA), sin reiniciar | Decisión metodológica | Confirmar con el director cuál semántica se usa en la sesión real | Decidir y, si se elige reiniciar, implementarlo |
 | Botón «Deshacer» del tutorial | 🟡 MEDIO | Es una ayuda pedagógica que sí deshace la última jugada, aunque la Regla 2 prohíbe volver de inmediato | Decisión de diseño | — | Decidir si se conserva (aclarando que es una ayuda) o se quita |
-| Replicar el grafo de estados en Control Mago de Oz y en la Vista de observador | 🟡 MEDIO | Hoy solo está en Tutorial y Simulación libre. Control y Observador no se ensancharon ni usan la nueva distribución | Ninguna | — | Reutilizar `GrafoEstados` con la ruta que reporta la base |
+| Replicar el grafo de estados en Control Mago de Oz y en la Vista de observador | — | ✅ **Resuelto** (2026-10-08): las cuatro vistas dibujan el grafo; Control usa la ruta que reporta la base y el Observador la ve en espejo. Verificado con una base simulada por sockets | — | — | — |
 | Prueba exhaustiva por interfaz para n=5 | 🟡 MEDIO | Hecha para n=1, 2, 3 y 4 (todas las combinaciones posición+historial: 7, 65, 337 y 1593, con 9100 jugadas ilegales rechazadas solo en n=4); n=5 con partidas aleatorias y guiadas, además de la auditoría exhaustiva de la lógica (`npm run reglas:auditar`) | Tiempo de ejecución (≈7000 combinaciones en n=5) | — | Correrla en segundo plano si se quiere cobertura total |
 | Texto nuevo de la tesis (párrafo de las tres reglas, grafo no dirigido, 2772 nodos y 3780 aristas, caminos sin retorno) | 🟡 MEDIO | Escrito y compilado, sin revisar por el autor ni el director | Ninguna | Lectura y visto bueno | Revisar el párrafo de la línea ~564 de `main.tex` |
-| Cambios sin `commit` | 🟡 MEDIO | Todo el trabajo de la sesión está sin confirmar en la rama `rediseno-ui` (incluidos `package.json`/`package-lock.json` por Cytoscape y d3-force) | Ninguna | — | Revisar el diff y hacer commit |
+| Cambios sin `commit` | — | ✅ **Resuelto** (2026-10-08): `rediseno-ui` fusionada en `main` y publicada; desde entonces se trabaja y se publica solo desde `main` | — | — | — |
 | 3 advertencias de lint antiguas en `App.tsx` (líneas ≈586, 598, 642) | ⚪ BAJO | Preexistentes, no tocadas | Ninguna | — | Limpiar cuando convenga |
 
