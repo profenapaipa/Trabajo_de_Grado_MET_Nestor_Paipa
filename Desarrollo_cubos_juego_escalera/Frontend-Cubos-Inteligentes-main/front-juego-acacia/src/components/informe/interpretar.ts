@@ -179,7 +179,7 @@ export function sintesisNivel(intentos: IntentoSesion[], seccion: Seccion, pares
   out.push(
     `En ${NOMBRE_SECCION[seccion]}, nivel de ${nivelLabel(pares)}, se jugaron `
     + `${plural(intentos.length, 'intento', 'intentos')} y se ganaron ${victorias.length}. `
-    + `El mínimo para ganar este nivel es ${optimo} movimientos.`,
+    + `El mínimo para ganar este nivel es ${optimo} movimientos, y se alcanza por dos recorridos distintos: no hay una única forma correcta de jugar bien.`,
   )
 
   if (victorias.length > 0) {

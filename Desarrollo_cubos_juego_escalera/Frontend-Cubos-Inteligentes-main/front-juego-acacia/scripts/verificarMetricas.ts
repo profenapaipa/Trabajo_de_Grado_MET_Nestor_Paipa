@@ -1,7 +1,11 @@
-// Comprueba el módulo de métricas contra trayectorias de referencia.
+// Comprueba el módulo de métricas contra trayectorias de referencia, y que
+// los números de ecuación que los informes muestran al lector sean los que esa
+// ecuación tiene de verdad en el documento del trabajo de grado.
 // Uso: npm run metricas:verificar
+import { existsSync, readFileSync } from 'node:fs'
 import { buildStateGraph } from '../src/core/simulation/stateGraph'
 import { metricasDeIntento } from '../src/core/simulation/metricas'
+import { METRICAS } from '../src/components/informe/fuentes'
 
 const n = 5
 const g = buildStateGraph(n)
@@ -52,10 +56,54 @@ chk(o.movimientos === 35, 'la ruta óptima debe tener 35 movimientos')
 chk(o.circuidad === 1, 'la ruta óptima debe tener circuidad exactamente 1')
 chk(o.ramificacion === 0, 'la ruta óptima debe tener ramificación exactamente 0')
 chk(o.tasaAcierto === 1, 'la ruta óptima debe acertar el 100%')
+// El documento afirma que esa ruta atraviesa treinta y dos puntos de decisión:
+// si el motor cambiara, la afirmación dejaría de ser cierta sin avisar.
+chk(o.puntosDecision === 32, `la ruta óptima atraviesa 32 puntos de decisión (calculados: ${o.puntosDecision})`)
 chk(o.retornos === 0 && o.ciclosIndependientes === 0, 'la ruta óptima no tiene bucles')
 // Un intento sin movimientos no debe romper nada
 const v = metricasDeIntento(n, [g.inicioId])
 chk(v.movimientos === 0 && v.ramificacion === 0, 'intento vacío')
 
+// ── Numeración de las ecuaciones ─────────────────────────────────────────
+// Los informes citan cada fórmula por su número («ec. 3.6»). Ese número no lo
+// decide la aplicación: lo asigna LaTeX contando las ecuaciones del capítulo,
+// así que basta con insertar una ecuación antes para que todos los posteriores
+// se desplacen y los informes empiecen a citar mal. Aquí se recalcula la
+// numeración leyendo main.tex y se compara con la que muestran los informes.
+const TESIS = '../../../Trabajo_de_Grado_MET_Nestor_Paipa/main.tex'
+// Qué ecuación corresponde a cada métrica de los informes.
+const ETIQUETA: Record<string, string[]> = {
+  'D*': ['eq:optimo'], 'δ': ['eq:grados_libertad'], 'Q': ['eq:circuidad'],
+  'C': ['eq:punto_decision', 'eq:calidad_movimiento'], 'R': ['eq:ramif_intento'],
+  'α': ['eq:tasa_acierto'], 'δ media': ['eq:grado_medio'], 'ν': ['eq:retornos'],
+  'β': ['eq:buclicidad_norm'], 'μ': ['eq:ciclomatico'],
+}
+if (!existsSync(TESIS)) {
+  console.log('\n(no se encontró main.tex: se omite la comprobación de la numeración de ecuaciones)')
+} else {
+  const tex = readFileSync(TESIS, 'utf8')
+  const capitulos = [...tex.matchAll(/\\chapter\{/g)].map(m => m.index ?? 0)
+  const numeroDe = new Map<string, string>()
+  let capitulo = 0, contador = 0
+  for (const m of tex.matchAll(/\\begin\{equation\}([\s\S]*?)\\end\{equation\}/g)) {
+    const pos = m.index ?? 0
+    const cap = capitulos.filter(c => c <= pos).length
+    if (cap !== capitulo) { capitulo = cap; contador = 0 }
+    contador++
+    const etiqueta = /\\label\{([^}]*)\}/.exec(m[1])
+    if (etiqueta) numeroDe.set(etiqueta[1], `${capitulo}.${contador}`)
+  }
+  for (const [simbolo, etiquetas] of Object.entries(ETIQUETA)) {
+    const metrica = METRICAS.find(x => x.simbolo === simbolo)
+    if (!metrica) { chk(false, `la métrica «${simbolo}» ya no está en los informes`); continue }
+    const numeros = etiquetas.map(e => numeroDe.get(e))
+    if (numeros.some(x => !x)) { chk(false, `main.tex no tiene la ecuación ${etiquetas.join(' ni ')}`); continue }
+    const esperado = 'ec. ' + numeros.join(' y ')
+    chk(metrica.numero === esperado,
+      `${simbolo}: el informe cita «${metrica.numero}» y en main.tex esa ecuación es la ${numeros.join(' y ')}`)
+  }
+  console.log(`\nNumeración comprobada contra main.tex: ${numeroDe.size} ecuaciones etiquetadas.`)
+}
+
 if (fallos) { console.error(`\n${fallos} fallos`); process.exit(1) }
-console.log('\nMÉTRICAS OK: coinciden con las ecuaciones de main.tex y con el cálculo independiente.')
+console.log('\nMÉTRICAS OK: coinciden con las ecuaciones de main.tex, con su numeración y con el cálculo independiente.')

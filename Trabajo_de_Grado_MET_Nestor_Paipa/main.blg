@@ -15,7 +15,7 @@ Reallocating 'wiz_functions' (item size: 4) to 9000 items.
 Reallocating 'singl_function' (item size: 4) to 100 items.
 Database file #1: bibliografia.bib
 Warning--entry type for "cenie_lobulo" isn't style-file defined
---line 581 of file bibliografia.bib
+--line 1161 of file bibliografia.bib
 apacite.bst [2013/07/21 v6.03 APA bibliography style]
 You've used 61 entries,
             6951 wiz_defined-function locations,

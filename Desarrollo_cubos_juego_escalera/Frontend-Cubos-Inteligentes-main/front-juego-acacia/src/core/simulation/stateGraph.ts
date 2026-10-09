@@ -50,7 +50,25 @@ export type StateGraph = {
   // Estados a los que se puede ir desde `cur` (sin aplicar la Regla 2): son los
   // grados de libertad de esa posición una vez se descuenta el estado anterior.
   vecinos: (cur: number) => number[]
+  // Las rutas mínimas del Inicio al Fin. No hay una sola: son dos, imagen
+  // especular la una de la otra (ver abajo).
+  rutasMinimas: RutasMinimas
 }
+
+// Conjunto de estados y de aristas que están en ALGUNA ruta mínima del Inicio
+// al Fin, y cuántas rutas mínimas distintas hay.
+//
+// Que sean varias no es un detalle: en los grafos de la Torre de Hanói, entre
+// dos estados cualesquiera hay a lo sumo dos caminos mínimos, y los únicos
+// estados desde los que la solución más corta es única son los estados
+// perfectos (Hinz, Klavžar, Milutinović, Parisse y Petr, 2005, Cor. 3.7). En
+// La Escalera ocurre lo propio en el punto que importa: del Inicio al Fin hay
+// exactamente dos recorridos de longitud n² + 2n, intercambiados por la
+// simetría del tablero (invertirlo y cambiar de equipo cada ficha). Por eso
+// ninguna métrica de este proyecto compara el recorrido del aprendiz contra
+// «la» ruta óptima: todas se calculan con longitudes y distancias, que no
+// dependen de cuál de las dos se tome.
+export type RutasMinimas = { nodos: Set<number>; aristas: Set<number>; caminos: number }
 
 export const boardKey = (b: Board) => b.map(c => c?.id ?? 0).join(',')
 
@@ -156,6 +174,35 @@ export function buildStateGraph(n: number): StateGraph {
     return best
   }
 
+  // Rutas mínimas Inicio → Fin. Distancia al Fin en el grafo simple (sin la
+  // Regla 2) y conteo de caminos mínimos por capas: un estado está en una ruta
+  // mínima si d(Inicio, s) + d(s, Fin) = d(Inicio, Fin). La Regla 2 no cambia
+  // nada aquí —los dos recorridos mínimos la respetan— y se comprueba en
+  // scripts/verificarCaminos.ts.
+  const distF = new Array<number>(N + 1).fill(-1)
+  distF[finId] = 0
+  const qf = [finId]
+  for (let h = 0; h < qf.length; h++) {
+    const u = qf[h]
+    for (const v of adj[u - 1]) if (distF[v] < 0) { distF[v] = distF[u] + 1; qf.push(v) }
+  }
+  const D = dist[finId]
+  const nodosMin = new Set<number>()
+  const aristasMin = new Set<number>()
+  const caminosHasta = new Array<number>(N + 1).fill(0)
+  caminosHasta[inicioId] = 1
+  const enRuta = (id: number) => dist[id] >= 0 && distF[id] >= 0 && dist[id] + distF[id] === D
+  const porCapa = [...Array(N).keys()].map(i => i + 1).filter(enRuta).sort((a, b) => dist[a] - dist[b])
+  for (const u of porCapa) {
+    nodosMin.add(u)
+    for (const v of adj[u - 1]) {
+      if (!enRuta(v) || dist[v] !== dist[u] + 1) continue
+      aristasMin.add(edgeIdx.get(u < v ? `${u}-${v}` : `${v}-${u}`)!)
+      caminosHasta[v] += caminosHasta[u]
+    }
+  }
+  const rutasMinimas: RutasMinimas = { nodos: nodosMin, aristas: aristasMin, caminos: caminosHasta[finId] }
+
   const nodes: GraphNode[] = boards.map((board, i) => {
     const id = i + 1
     const sinSalida = id !== finId && adj[i].every(p => distFinDesde(id, p) < 0)
@@ -171,6 +218,7 @@ export function buildStateGraph(n: number): StateGraph {
     edgeIndexOf: (x, y) => edgeIdx.get(x < y ? `${x}-${y}` : `${y}-${x}`) ?? -1,
     distFinDesde,
     vecinos: (cur) => adj[cur - 1] ?? [],
+    rutasMinimas,
   }
   cache.set(n, graph)
   return graph

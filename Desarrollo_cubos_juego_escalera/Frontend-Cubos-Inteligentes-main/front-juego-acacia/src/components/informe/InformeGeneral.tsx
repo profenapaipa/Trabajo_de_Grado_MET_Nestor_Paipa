@@ -255,7 +255,7 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
         titulo: `Figura ${primeraFigGrafo + 1 + i}. Grafo de estados · ${NOMBRE_SECCION[c.seccion]} · ${nivelLabel(c.pares)} · `
           + `${plural(c.recorridos.length, 'recorrido', 'recorridos')} · ${ident}`,
         dataUrl: imagenDe(`${c.seccion}|${c.pares}`),
-        nota: 'verde = inicio, azul = final, amarillo = último recorrido, trazo más grueso = camino más repetido, rombo rojo = camino sin retorno',
+        nota: 'punto verde = inicio, punto azul = final, línea amarilla = último recorrido, trazo más grueso = camino más repetido, rombo rojo = camino sin retorno, líneas verdes = las dos rutas mínimas (los dos recorridos más cortos posibles, que solo se ven donde no pasó por ellos)',
       })),
     }
   }

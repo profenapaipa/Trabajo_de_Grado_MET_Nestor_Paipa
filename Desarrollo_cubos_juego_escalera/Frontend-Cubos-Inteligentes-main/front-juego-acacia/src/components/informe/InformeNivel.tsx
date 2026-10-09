@@ -144,7 +144,7 @@ export default function InformeNivel({ seccion, pares, onCerrar }: { seccion: Se
       graficos: [{
         titulo: `Figura ${figGrafo}. Grafo de estados · ${ident} · ${plural(recorridos.length, 'recorrido', 'recorridos')}`,
         dataUrl: imagen,
-        nota: 'verde = inicio, azul = final, amarillo = último recorrido, trazo más grueso = camino más repetido, rombo rojo = camino sin retorno',
+        nota: 'punto verde = inicio, punto azul = final, línea amarilla = último recorrido, trazo más grueso = camino más repetido, rombo rojo = camino sin retorno, líneas verdes = las dos rutas mínimas (los dos recorridos más cortos posibles, que solo se ven donde no pasó por ellos)',
       }],
     }
   }
@@ -197,7 +197,9 @@ export default function InformeNivel({ seccion, pares, onCerrar }: { seccion: Se
         <Figura numero={figBarras} titulo="Movimientos de cada intento frente al mínimo del nivel" identificacion={ident}
           derecha={<span style={{ fontSize: '11px', color: 'var(--color-paper-faint)' }}>mínimo del nivel: {optimo}</span>}
           comoLeer={<>la barra es lo que recorrió y la marca vertical, el mínimo posible ({optimo} movimientos para {nivelLabel(pares)}).
-            Cuanto más cerca de la marca, más directa fue la ruta. El eje horizontal cuenta movimientos; cada fila es un intento.</>}>
+            Cuanto más cerca de la marca, más directa fue la ruta. El eje horizontal cuenta movimientos; cada fila es un intento.
+            Lo que se compara es la longitud, no el camino: a ese mínimo se llega por dos recorridos distintos, de modo que tomar
+            uno u otro no cambia la lectura.</>}>
           <BarrasConReferencia
             etiquetaEjeX="movimientos del intento"
             etiquetaEjeY="intento"

@@ -98,6 +98,11 @@ function buildStyle(c: Palette, t: Tema, k: number, fs: number): cytoscape.Style
     { selector: 'node.bloqueo', style: { 'background-color': c.offline, shape: 'diamond', width: 6 * k, height: 6 * k } },
     { selector: 'node.inicio', style: { 'background-color': c.online, width: 12 * k, height: 12 * k, 'z-index': 5 } },
     { selector: 'node.fin', style: { 'background-color': c.blue, width: 12 * k, height: 12 * k, 'z-index': 5 } },
+    // Las dos rutas mínimas, como referencia. Van ANTES de las reglas de
+    // intensidad y de recorrido para que, donde el aprendiz pasó de verdad,
+    // se vea su recorrido y no la referencia: el verde queda solo en los
+    // tramos del camino más corto por los que no pasó.
+    { selector: 'edge.minima.ver', style: { 'line-color': c.online, width: 2.4 * k, opacity: 1, 'z-index': 6 } },
     { selector: 'edge[int > 0]', style: { 'line-color': `mapData(int, 0, 1, ${t.rampaArista[0]}, ${t.rampaArista[1]})`, width: `mapData(int, 0, 1, ${1.8 * k}, ${7 * k})` as unknown as number, 'z-index': 3 } },
     { selector: 'node[int > 0]', style: { 'background-color': `mapData(int, 0, 1, ${t.rampaNodo[0]}, ${t.rampaNodo[1]})`, width: `mapData(int, 0, 1, ${5 * k}, ${11 * k})` as unknown as number, height: `mapData(int, 0, 1, ${5 * k}, ${11 * k})` as unknown as number, 'z-index': 4 } },
     { selector: 'node.bloqueo[int > 0]', style: { 'background-color': c.offline } },
@@ -152,6 +157,10 @@ function GrafoEstados({ pares, previos, actual, height, terminado = false, segui
   const [visible, setVisible] = useState(false)
   const [ready, setReady] = useState(false)
   const [hover, setHover] = useState<number | null>(null)
+  // Las dos rutas mínimas, dibujadas como referencia. En el informe se ven
+  // de entrada; mientras se juega, no: serían la solución servida. Quien
+  // acompaña la sesión (Control o el observador) puede encenderlas.
+  const [verMinimas, setVerMinimas] = useState(modo === 'informe')
   // Tema efectivo (lo decide el fondo del contenedor al dibujar): la leyenda
   // de abajo tiene que usar los mismos colores que el lienzo.
   const [tema, setTema] = useState<Tema>(TEMA_OSCURO)
@@ -220,6 +229,7 @@ function GrafoEstados({ pares, previos, actual, height, terminado = false, segui
           ...graph.edges.map(e => ({
             group: 'edges' as const,
             data: { id: `e${e.index}`, source: `n${e.a}`, target: `n${e.b}`, int: 0 },
+            classes: graph.rutasMinimas.aristas.has(e.index) ? 'minima' : '',
           })),
         ],
         layout: { name: 'preset' },
@@ -346,6 +356,14 @@ function GrafoEstados({ pares, previos, actual, height, terminado = false, segui
     verTodoAnimado(cy)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [terminado, ready])
+
+  // Encender o apagar la referencia. Son 2·D* aristas (70 en el nivel de 5
+  // pares), así que recalcular su estilo al pulsar el botón no se nota.
+  useEffect(() => {
+    const cy = cyRef.current
+    if (!cy || !ready) return
+    cy.edges('.minima').toggleClass('ver', verMinimas)
+  }, [verMinimas, ready, pares])
 
   // Actualizar intensidades, ruta y etiquetas.
   //
@@ -501,6 +519,10 @@ function GrafoEstados({ pares, previos, actual, height, terminado = false, segui
         )}
         <span style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
           {!enInforme && <button onClick={irAMiPosicion} style={smallBtn}>Ir a mi posición</button>}
+          <button onClick={() => setVerMinimas(v => !v)} style={smallBtn}
+            title="Los dos recorridos más cortos posibles del Inicio al Fin. Son exactamente dos, reflejo uno del otro.">
+            {verMinimas ? 'Ocultar rutas mínimas' : 'Ver rutas mínimas'}
+          </button>
           <button onClick={verTodo} style={smallBtn}>Ver todo</button>
         </span>
       </div>
@@ -526,6 +548,7 @@ function GrafoEstados({ pares, previos, actual, height, terminado = false, segui
         {chip('var(--color-online)', 'Inicio')}
         {chip('var(--color-blue)', 'Fin')}
         {chip('var(--color-caution)', enInforme ? 'Último recorrido' : 'Intento en curso', 'line')}
+        {verMinimas && chip('var(--color-online)', `Rutas mínimas: los ${graph.rutasMinimas.caminos} caminos más cortos (${graph.nodes[graph.finId - 1].distInicio} movimientos)`, 'line')}
         {chip(tema.chipRampa, tema.textoRampa, 'line')}
         {chip('var(--color-offline)', 'Camino sin retorno', 'diamond')}
         {chip(tema.sinSalida, 'Sin salida')}

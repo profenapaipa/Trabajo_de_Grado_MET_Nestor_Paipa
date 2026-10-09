@@ -265,7 +265,7 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
         titulo: `Figura ${primeraFigGrafo + 1 + i}. Grafo acumulado · ${nivelLabel(pares)} · `
           + `${plural(rutas.length, 'recorrido', 'recorridos')} de todas las sesiones · ${ident}`,
         dataUrl: imagenDe(pares),
-        nota: 'verde = inicio, azul = final, trazo más grueso = camino más repetido a lo largo de las sesiones',
+        nota: 'punto verde = inicio, punto azul = final, trazo más grueso = camino más repetido a lo largo de las sesiones, líneas verdes = las dos rutas mínimas (los dos recorridos más cortos posibles, que solo se ven donde no pasó por ellos)',
       })),
     }
   }

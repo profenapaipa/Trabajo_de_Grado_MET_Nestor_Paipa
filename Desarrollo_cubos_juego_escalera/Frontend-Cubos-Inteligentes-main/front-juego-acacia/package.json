@@ -13,6 +13,7 @@
     "metricas:verificar": "esbuild scripts/verificarMetricas.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/verificarMetricas.cjs --log-level=error && node node_modules/.cache/verificarMetricas.cjs",
     "grafo:verificar": "esbuild scripts/verificarGrafo.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/verificarGrafo.cjs --log-level=error && node node_modules/.cache/verificarGrafo.cjs",
     "animaciones:verificar": "esbuild scripts/verificarAnimaciones.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/verificarAnimaciones.cjs --log-level=error && node node_modules/.cache/verificarAnimaciones.cjs",
+    "caminos:verificar": "esbuild scripts/verificarCaminos.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/verificarCaminos.cjs --log-level=error && node node_modules/.cache/verificarCaminos.cjs",
     "importacion:verificar": "esbuild scripts/verificarImportacion.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/verificarImportacion.cjs --log-level=error && node node_modules/.cache/verificarImportacion.cjs"
   },
   "dependencies": {

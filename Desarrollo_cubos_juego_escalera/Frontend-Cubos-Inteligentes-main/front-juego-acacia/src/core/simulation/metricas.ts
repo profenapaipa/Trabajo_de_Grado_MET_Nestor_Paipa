@@ -1,6 +1,6 @@
 // Métricas de trayectoria del juego La Escalera, según las ecuaciones de
 // main.tex, sección "Fundamento matemático de las métricas de análisis"
-// (3.1 a 3.10). Se calculan sobre el recorrido del aprendiz proyectado
+// (3.2 a 3.13). Se calculan sobre el recorrido del aprendiz proyectado
 // sobre el grafo de estados: el paseo W = (s0, s1, …, sL).
 //
 // Tres familias independientes, porque miden conductas distintas:
@@ -8,8 +8,15 @@
 //   · Ramificación — qué tan buenas fueron sus decisiones, allí donde decidió.
 //   · Buclicidad   — cuántas veces volvió sobre sus pasos.
 //
-// Una trayectoria puede alejarse mucho de la ruta óptima sin repetir jamás un
-// estado, o repetir mucho sin alejarse: por eso no se agregan en un índice único.
+// Una trayectoria puede alejarse mucho del recorrido más corto sin repetir jamás
+// un estado, o repetir mucho sin alejarse: por eso no se agregan en un índice
+// único.
+//
+// Ninguna de las tres compara el paseo contra una ruta óptima de referencia, y
+// no por comodidad: del Inicio al Fin hay DOS recorridos mínimos (ver
+// stateGraph.ts), así que apartarse de uno puede ser seguir el otro. La
+// circuidad compara longitudes y la ramificación compara distancias; ambas dan
+// lo mismo se tome el recorrido mínimo que se tome.
 
 import { buildStateGraph, type StateGraph } from './stateGraph'
 
@@ -33,10 +40,10 @@ export type MetricasIntento = {
   // Perfil: la secuencia de C_k a lo largo del intento. El promedio resume;
   // el perfil muestra en qué tramo se concentraron los errores.
   perfil: { movimiento: number; calidad: number }[]
-  // Retornos ν_i (ec. 3.10) y su versión normalizada β_i.
+  // Retornos ν_i (ec. 3.10) y su versión normalizada β_i (ec. 3.11).
   retornos: number
   buclicidad: number
-  // Ciclos independientes μ_i = |E(W)| − |V(W)| + 1 (número ciclomático).
+  // Ciclos independientes μ_i = |E(W)| − |V(W)| + 1 (número ciclomático, ec. 3.12).
   ciclosIndependientes: number
   // Tamaño de cada bucle observado. Por el cuello del grafo, nunca menor que 6.
   tamanosBucle: number[]
@@ -142,7 +149,7 @@ export type MetricasSesion = {
   intentos: number
   victorias: number
   bloqueos: number
-  // Promedios por experiencia (ec. 3.11): la tendencia de estos valores a lo
+  // Promedios por experiencia (ec. 3.13): la tendencia de estos valores a lo
   // largo de los intentos es la evidencia de aprendizaje que se busca observar.
   circuidadMedia: number // solo sobre los intentos ganados (ver `circuidad`)
   ramificacionMedia: number // R_e

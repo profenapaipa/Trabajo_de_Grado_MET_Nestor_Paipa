@@ -52,6 +52,7 @@ jobs:
           npm run reglas:auditar
           npm run grafo:verificar
           npm run metricas:verificar
+          npm run caminos:verificar
           npm run animaciones:verificar
           npm run importacion:verificar
 

@@ -584,16 +584,17 @@ el grafo se representa sin dirección (Figura~\ref{fig:espacio-problema-propio})
 La segunda regla da lugar a los caminos sin retorno: estados en los que 
 la única jugada posible es volver a la posición anterior, es decir, 
 infringir una regla. Para la versión de cinco fichas por lado el grafo 
-tiene 2772 nodos y 3780 aristas. El camino óptimo de solución, 
-calculado mediante el patrón alternado de movimientos individuales 
-y saltos, requiere como mínimo 35 movimientos para esa misma versión, resultado que se obtiene de la expresión 
+tiene 2772 nodos y 3780 aristas. La solución más corta, 
+que sigue el patrón alternado de movimientos individuales 
+y saltos, requiere 35 movimientos para esa misma versión —y la consiguen 
+dos recorridos distintos, no uno—, resultado que se obtiene de la expresión 
 general $n^2 + 2n$, donde $n$ representa el número de fichas 
 por conjunto \cite{PaezGonzalez2022}. Sin embargo, los 
 aprendices que enfrentan el juego por primera vez, sin conocer 
 la estrategia de análisis de medios y fines, suelen superar 
 ampliamente ese número de movimientos, produciendo ciclos y 
 retrocesos que reflejan decisiones impulsivas no planificadas. 
-La diferencia entre el camino óptimo y el camino real del 
+La diferencia entre esa longitud mínima y la del recorrido real del 
 aprendiz constituye una medida observable de la planificación 
 y del control inhibitorio: a mayor cantidad de ciclos y 
 movimientos redundantes, mayor evidencia de dificultad para 
@@ -1723,33 +1724,50 @@ configuración inicial, expandiendo en cada iteración la frontera de
 estados alcanzables, hasta que la configuración meta recibe etiqueta
 permanente con valor $L(z) = 35$. Este resultado corresponde a la
 expresión general $n^2 + 2n$, que para $n = 5$ produce $25 + 10 = 35$
-movimientos como longitud de la ruta óptima. La solución óptima sigue el
-patrón alternado de movimientos individuales y saltos que puede
-describirse como la secuencia
+movimientos como longitud de la ruta óptima. Esa longitud mínima se
+alcanza siguiendo el patrón alternado de movimientos individuales y
+saltos que puede describirse como la secuencia
 1A-2R-3A-4R-5A-5R-5A-4R-3A-2R-1A (donde A indica una ficha azul y R una
 ficha roja, y el número indica cuántas fichas de ese color se mueven
-consecutivamente), cuya efectividad queda demostrada precisamente porque
-es la trayectoria que el algoritmo de Dijkstra identifica como de costo
-mínimo en este grafo.
+consecutivamente). Conviene decirlo con precisión: esa secuencia es
+\textit{una} de las soluciones mínimas, no la única. Hay exactamente dos
+—la descrita y su reflejo, que empieza moviendo una ficha roja—, y las
+dos miden $35$ movimientos; el apartado «La solución mínima no es única»
+de la sección~\ref{sec:fundamento_ecuaciones} lo demuestra para los cinco
+tamaños del protocolo y extrae sus consecuencias para la medición. En la
+implementación, por tratarse de un grafo con todas las aristas de peso
+uno, el cálculo se hace con un recorrido en anchura, que es el caso
+particular del algoritmo de Dijkstra para pesos unitarios y entrega el
+mismo resultado exacto.
  
 La relevancia de este resultado para el análisis del control inhibitorio
-reside en que la ruta óptima encontrada por Dijkstra proporciona una
-referencia matemáticamente exacta contra la cual comparar la trayectoria
-real de cada aprendiz. Cada movimiento que el estudiante realiza por
-fuera de esa ruta óptima constituye una unidad medible de desviación que
-puede deberse a exploración deliberada, a error recuperable o a una
-decisión impulsiva que cierra caminos de solución. La métrica de
-calidad del movimiento (Sección~\ref{sec:fundamento_ecuaciones}) cuantifica esa
-desviación para cada decisión individual, comparando la distancia que deja
-la jugada elegida con el rango de distancias que las jugadas disponibles
-permitían alcanzar; todas esas distancias se obtienen del algoritmo de
-Dijkstra sobre el grafo de estados. En este sentido,
-el algoritmo no es solo el instrumento computacional que genera la línea
-verde de referencia visible en los grafos de trayectorias: es la
-demostración matemática de que esa línea representa el camino de menor
-costo posible dentro del espacio del problema, lo que otorga validez a su
-uso como patrón normativo para el análisis del desempeño y del control
-inhibitorio de los aprendices.
+reside en que el grafo proporciona una referencia matemáticamente exacta
+contra la cual comparar la trayectoria real de cada aprendiz. Esa
+referencia, sin embargo, no es un recorrido sino una \textbf{distancia}:
+para cada estado $s$, el número mínimo de movimientos $d(s)$ que faltan
+todavía para llegar a la meta. La diferencia no es terminológica. Si la
+referencia fuera un recorrido concreto, todo movimiento «fuera de la
+ruta» contaría como desviación, y eso sería sencillamente falso: hay dos
+recorridos mínimos, de manera que apartarse de uno de ellos puede ser,
+exactamente, seguir el otro. Medir con la distancia evita ese error de
+base, porque $d(s)$ no depende de qué camino mínimo se tenga en mente.
+
+Con esa referencia cada jugada admite una lectura precisa: la que reduce
+$d$ en una unidad avanza por un camino mínimo —cualquiera de los dos—, y
+la que no lo hace aleja de la meta en una cantidad medible, que puede
+deberse a exploración deliberada, a error recuperable o a una decisión
+impulsiva que cierra caminos de solución. La métrica de calidad del
+movimiento (Sección~\ref{sec:fundamento_ecuaciones}) cuantifica esa
+desviación para cada decisión individual, comparando la distancia que
+deja la jugada elegida con el rango de distancias que las jugadas
+disponibles permitían alcanzar. En la aplicación, las dos rutas mínimas
+pueden superponerse al grafo de trayectorias como líneas verdes de
+referencia —durante el juego permanecen ocultas, porque serían la
+solución servida—, y lo que esas líneas representan está demostrado: son
+los dos únicos recorridos de costo mínimo dentro del espacio del
+problema. Lo que sirve de patrón normativo para el análisis del
+desempeño y del control inhibitorio no es, con todo, ninguna de las dos
+líneas, sino la distancia que ambas realizan.
  
 
 % Fin de aportes 8 de mayo 
@@ -1827,10 +1845,8 @@ quien juega.
 La Escalera pertenece a la misma familia de problemas que la Torre
 de Hanói y la Torre de Londres, cuyo tratamiento estructural
 exhaustivo —grafos de Hanói y de Sierpiński, sus distancias, sus
-grados y su estructura de ciclos— se encuentra en \cite{Hinz2018};
-las propiedades métricas de esos grafos, que son las que habilitan
-el uso de la distancia como medida de desempeño, se establecen en
-\cite{HinzKlavzar2005}. La familia comparte el modelo pero no la
+grados y su estructura de ciclos— se encuentra en \cite{Hinz2018}.
+La familia comparte el modelo pero no la
 estructura fina: el grafo de Hanói de tres varillas contiene
 triángulos, de modo que en esa tarea es posible regresar a una
 posición ya visitada en tres movimientos, mientras que en La
@@ -1877,6 +1893,119 @@ seis en los cinco tamaños, de modo que ningún bucle puede medir
 menos de seis movimientos, lo que coincide con la observación de la
 fuente sobre el primer bucle que alcanza un jugador novato.
 
+
+% -------------------------------------------------------
+\subsection*{La solución mínima no es única}
+
+Antes de escribir ninguna ecuación conviene establecer un hecho del
+grafo que condiciona cómo puede medirse el desempeño sobre él. En los
+grafos de Hanói, entre dos estados cualesquiera existen a lo sumo
+\textit{dos} caminos mínimos distintos, y \citet{HinzKlavzar2005}
+determinan exactamente cuántos pares de estados están en ese caso: para
+un estado $v$, el número de estados unidos a él por dos caminos mínimos
+es el término $b(d(v))$ de la sucesión diatómica de Stern. De ese
+recuento se sigue el enunciado que aquí interesa: los estados perfectos
+—aquellos en que todos los discos reposan en una misma varilla— son los
+únicos desde los cuales la secuencia mínima de movimientos hacia
+cualquier otro estado es única \citep[Corolario~3.7]{HinzKlavzar2005}.
+Desde cualquier otro estado existe al menos un destino al que se llega
+por dos caminos igual de cortos. El hecho no se advirtió primero en la
+matemática sino en la psicología del desarrollo: Klahr ya lo había
+señalado en 1978, estudiando cómo planifican los niños, según refieren
+\citet{HinzKlavzar2005}.
+
+La pregunta pertinente para esta investigación no es, sin embargo, qué
+ocurre en Hanói, sino qué ocurre en el grafo del juego que efectivamente
+se usa con el participante. Se comprobó de manera exhaustiva sobre los
+cinco tamaños del protocolo, con un recorrido en anchura que cuenta
+caminos mínimos además de medirlos, y el resultado es el siguiente.
+
+\begin{enumerate}
+    \item Del estado inicial $s_0$ al estado meta hay
+    \textbf{exactamente dos} recorridos de longitud mínima
+    $D^{*}(n) = n^{2}+2n$, para $n = 1, \ldots, 5$. La partida perfecta
+    existe, pero no es una sola.
+
+    \item Los dos son imagen especular el uno del otro. La
+    transformación que invierte el tablero y cambia de equipo cada ficha
+    es un automorfismo del grafo de estados que deja fijos el inicio y
+    la meta, e intercambia entre sí los dos recorridos mínimos. En
+    términos del juego: la única elección libre de una partida mínima es
+    con qué color se empieza.
+
+    \item En efecto, el único estado de esos recorridos en el que hay
+    más de una continuación mínima es $s_0$. A partir del primer
+    movimiento, cada jugada de una partida mínima está forzada.
+
+    \item La Regla 2 no encarece la solución. Aunque prohíbe deshacer de
+    inmediato la jugada anterior —y por tanto restringe los paseos
+    admisibles—, el mínimo sigue siendo $n^{2}+2n$: los dos recorridos
+    mínimos la respetan.
+
+    \item La cota de Hanói, en cambio, no se hereda. Entre pares
+    cualesquiera de estados de La Escalera puede haber muchos más de dos
+    caminos mínimos —hasta $1350$ para $n=5$—, y en ese tamaño el
+    $77{,}6\,\%$ de los pares admite más de uno.
+\end{enumerate}
+
+\begin{table}[H]
+\centering
+\caption{Propiedades métricas del grafo de estados del juego La
+Escalera, calculadas de manera exhaustiva. $D^{*}$ es la distancia del
+estado inicial a la meta; $\mathrm{exc}(s_0)$, la excentricidad del
+estado inicial, es decir la distancia al estado más alejado de él;
+$\bar{d}$, la distancia media entre pares de estados. Las dos últimas
+columnas son el número de recorridos mínimos del inicio a la meta y el
+mayor número de caminos mínimos que admite un par de estados
+cualquiera. Las distancias se miden sobre el grafo no dirigido $G$; para
+$D^{*}$ el valor es el mismo imponiendo o no la Regla~2.}
+\label{tab:propiedades_metricas}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{|c|c|c|c|c|c|c|c|}
+\hline
+\textbf{Pares} & \textbf{$D^{*}$} & \textbf{Diámetro} & \textbf{Radio} &
+\textbf{$\mathrm{exc}(s_0)$} & \textbf{$\bar{d}$} & \textbf{Rutas mín.} &
+\textbf{Máx. caminos mín.} \\
+\hline
+1 & 3  & 3  & 3  & 3  & 1,80  & 2 & 2 \\
+2 & 8  & 10 & 6  & 8  & 4,14  & 2 & 8 \\
+3 & 15 & 19 & 11 & 16 & 7,10  & 2 & 42 \\
+4 & 24 & 30 & 16 & 26 & 10,58 & 2 & 450 \\
+5 & 35 & 43 & 23 & 38 & 14,44 & 2 & 1350 \\
+\hline
+\end{tabular}
+\end{table}
+
+La tabla desmiente además una intuición cómoda. La meta no es el estado
+más alejado del inicio: en el juego completo su excentricidad es $38$
+mientras que la meta está a $35$ movimientos. Existen, por tanto,
+posiciones desde las cuales faltan más movimientos que al empezar la
+partida, y alcanzarlas no requiere infringir ninguna regla. Esto es
+precisamente lo que justifica seguir $d(s)$ movimiento a movimiento en
+lugar de contar solo cuántas jugadas lleva hechas el aprendiz: la
+distancia a la meta puede empeorar, y cuánto empeora es observable.
+
+La consecuencia metodológica es directa y vale para las tres familias
+de métricas que siguen. \textbf{Ninguna puede definirse como la
+comparación del paseo del aprendiz contra un recorrido óptimo de
+referencia}, porque ese recorrido no es uno. Las que aquí se formulan no
+lo hacen: la circuidad compara \textit{longitudes} —cuántos movimientos
+empleó frente a $D^{*}(n)$—, y la ramificación y la tasa de acierto
+comparan \textit{distancias} —cuánto acercó a la meta la jugada elegida
+frente a lo que permitían las disponibles—. Longitudes y distancias son
+invariantes: no cambian según cuál de los dos recorridos mínimos se tome
+como referencia, ni según cuál de los muchos caminos mínimos entre dos
+estados intermedios haya seguido el aprendiz. Esa invariancia no es un
+detalle técnico, sino la condición que hace que los indicadores midan al
+aprendiz y no una elección arbitraria de quien analiza.
+
+Los valores de esta tabla, junto con la unicidad o no de la solución
+mínima y la simetría que intercambia los dos recorridos, se verifican de
+forma automática en cada compilación de la aplicación
+(\texttt{scripts/verificarCaminos.ts}), de modo que una modificación del
+motor de reglas que alterase cualquiera de ellos detendría la
+publicación en lugar de pasar inadvertida.
+
 % -------------------------------------------------------
 \subsection*{Notación}
 
@@ -1888,7 +2017,7 @@ conjunto de estados distintos visitados y $E(W)$ para el de aristas
 distintas recorridas.
 
 Se distinguen dos distancias que la formulación anterior designaba
-con un mismo símbolo. La \textbf{ruta óptima global} del ejercicio
+con un mismo símbolo. La \textbf{longitud mínima global} del ejercicio
 de $n$ fichas por equipo es
 
 \begin{equation}
@@ -1897,11 +2026,16 @@ de $n$ fichas por equipo es
 \end{equation}
 
 y vale $35$ movimientos para $n=5$, la versión utilizada en esta
-investigación \cite{LievanoMolina2022, PaezGonzalez2022}. La
-\textbf{distancia local} $d(s)$ es el número mínimo de movimientos
-que restan desde el estado $s$ hasta la meta, calculado sobre el
-grafo mediante el algoritmo de Dijkstra \cite{Dijkstra1959}. Nótese
-que $D^{*}(n) = d(s_0)$.
+investigación \cite{LievanoMolina2022, PaezGonzalez2022}; como se
+mostró arriba, esa longitud la realizan dos recorridos distintos. La
+\textbf{distancia local} $d(s)$ es el número mínimo de movimientos que
+restan desde el estado $s$ hasta la meta. Se calcula con un recorrido
+en anchura sobre el grafo —el caso del algoritmo de Dijkstra
+\cite{Dijkstra1959} para aristas de peso unitario, que es lo que son
+aquí los movimientos—, y no sobre los vértices sino sobre los pares
+(estado anterior, estado actual): la Regla 2 hace que lo que se puede
+jugar dependa de la jugada previa, de modo que la distancia es una
+propiedad del arco y no del estado. Nótese que $D^{*}(n) = d(s_0)$.
 
 % -------------------------------------------------------
 \subsection*{Grados de libertad y puntos de decisión}
@@ -2002,9 +2136,13 @@ posición—, y la \textbf{distancia} al estado meta, que define el
 numerador —cuánto costó la elección—. La ramificación no es, por
 tanto, un índice nuevo: es la forma normalizada de leer, sobre el
 paseo del aprendiz, las dos magnitudes que el modelo ya ofrece.
-Que la distancia pueda usarse así en esta familia de grafos es
-consecuencia de sus propiedades métricas, establecidas en
-\cite{HinzKlavzar2005}.
+Y que el índice se construya con distancias, en lugar de contrastar el
+recorrido del aprendiz contra una ruta óptima de referencia, tampoco es
+una comodidad de cálculo: es lo que impone la no unicidad de la solución
+mínima establecida más arriba. Una jugada que se aparta de uno de los
+dos recorridos mínimos puede estar siguiendo el otro, y ningún
+indicador defendible puede contarla como error por ese solo hecho; en
+cambio $d(s_k)$ es la misma magnitud se tome el camino que se tome.
 
 Esta lectura explica también por qué el índice se promedia por
 intento y se compara \textit{entre} intentos sucesivos del mismo
@@ -2188,15 +2326,15 @@ La Tabla~\ref{tab:resumen_metricas} resume el conjunto.
 \hline
 \textbf{Magnitud} & \textbf{Ecuación} & \textbf{Rango} & \textbf{Interpretación} \\
 \hline
-Ruta óptima &
+Longitud mínima &
 $D^{*}(n) = n^2 + 2n$ &
 --- &
-Referencia de la planificación perfecta \\
+Referencia de la planificación perfecta; la realizan dos recorridos distintos \\
 \hline
 Circuidad &
 $Q_i = L_i / D^{*}(n)$ &
 $\geq 1$ &
-Cuánto se desvía la ruta real de la mínima \\
+Cuánto se alarga el recorrido real frente a la longitud mínima \\
 \hline
 Calidad del movimiento &
 $C_k = \dfrac{d(s_k) - d_{k,\min}}{d_{k,\max} - d_{k,\min}}$ &
@@ -2237,14 +2375,15 @@ Bucles esencialmente distintos explorados \\
 \end{table}
 
 Las ecuaciones anteriores se verificaron sobre el grafo del tablero
-de cinco pares aplicándolas a cuatro trayectorias de referencia. La
-ruta óptima produce los valores extremos esperados —circuidad igual
-a uno, ramificación nula y acierto del cien por ciento en los
-veinticuatro puntos de decisión que atraviesa, sin ningún retorno— y
+de cinco pares aplicándolas a cuatro trayectorias de referencia. Una
+de las dos rutas mínimas produce los valores extremos esperados
+—circuidad igual a uno, ramificación nula y acierto del cien por
+ciento en los treinta y dos puntos de decisión que atraviesa, sin
+ningún retorno— y
 los indicadores se separan de forma monótona a medida que aumenta la
 exploración. La verificación mostró además que circuidad y
 buclicidad son dimensiones independientes: una trayectoria puede
-alejarse considerablemente de la ruta óptima sin repetir jamás un
+alejarse considerablemente de la longitud mínima sin repetir jamás un
 estado, lo que justifica mantener ambas familias de indicadores en
 lugar de un índice agregado único.
 
