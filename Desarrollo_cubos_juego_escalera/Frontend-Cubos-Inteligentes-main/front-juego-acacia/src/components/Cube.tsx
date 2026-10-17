@@ -56,7 +56,8 @@ function Cube({
   const meta    = action ? ACTION_META[action] : null
 
   const bgColor    = visual.hex
-  const textColor  = meta ? meta.textColor : '#fff'
+  // Sobre blanco (fuera de lugar / pide reordenar) el número va oscuro.
+  const textColor  = meta ? meta.textColor : visual.hex.toLowerCase() === '#ffffff' ? '#161616' : '#fff'
 
   // selection ring: white on action color, accent blue on default,
   // verde-agua sobre casillas vacías que son un movimiento válido ahora

@@ -13,6 +13,13 @@ export type EventoCuboTipo =
   | 'victoria' | 'derrota' | 'cubo_no_detectado'
   // Control de partida ("intentos"): agrupados por intentoId, ver App.tsx.
   | 'intento_iniciado' | 'intento_finalizado' | 'reinicio_manual' | 'tablero_reordenado'
+  // Sincronización con la base al cargar/reconectar, ronda de
+  // identificación por IP, y pausa automática hasta corregir una jugada
+  // inválida (2026-10-15).
+  | 'tablero_sincronizado' | 'identificacion_cubos' | 'pausa_automatica' | 'correccion_completada'
+  // Telemetría de los cubos (2026-10-16): batería por debajo del umbral y
+  // reinicios de un cubo (con su motivo, p. ej. caída de tensión).
+  | 'bateria_baja' | 'reinicio_cubo'
 
 export type EventoCubo = {
   timestamp: string

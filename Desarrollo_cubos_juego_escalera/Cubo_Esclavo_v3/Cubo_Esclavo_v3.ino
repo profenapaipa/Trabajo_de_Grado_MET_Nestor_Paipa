@@ -91,9 +91,20 @@
 //  setColorSolid siempre apagan cualquier efecto en curso antes de
 //  aplicar el nuevo). Si se agrega un EF= nuevo o cambia el criterio de
 //  prioridad, actualizar ese documento primero.
+//
+//  ================================================================
+//  2026-10-15: color de equipo al arrancar + identificación por IP
+//  ================================================================
+//   - Al conectar el WiFi se asienta directo en su color de equipo (se
+//     retira el naranja de "esperando confirmación").
+//   - Comando nuevo "ID=0": baja el pin de presencia (Pfcaja) 250 ms y lo
+//     restaura solo; el maestro mira qué casilla pasó a 0 para saber dónde
+//     está este cubo. "ID=1" lo restaura de inmediato. Ver
+//     ESTADO_VISUAL_CUBOS.md, "Identificación por IP".
 // ============================================================
 
 #include <WiFi.h>
+#include "esp_system.h"
 
 
 //configuración de pines - LED, Motor y pinfisico
@@ -143,14 +154,40 @@ int colorEquipoR = 0, colorEquipoG = 0, colorEquipoB = 255;
 // Decisión del autor, 2026-09-18.
 const int COLOR_DESC_R = 255, COLOR_DESC_G = 0, COLOR_DESC_B = 255;
 
-// --- color de "conectado al maestro, esperando confirmación": naranja ---
-// Mismo naranja que EFECTO_3_INVALIDO (255,140,0) — sin conflicto real: este
-// solo se ve una vez, al arrancar, antes de que llegue la primera
-// confirmación; el de movimiento inválido solo aparece después, ya en
-// juego. Decisión del autor, 2026-09-18: por defecto el cubo debe verse
-// naranja hasta que el sistema completo (maestro+backend+frontend) lo
-// confirme y le mande su color de equipo — no autoasignárselo solo.
-const int COLOR_ESPERA_R = 255, COLOR_ESPERA_G = 140, COLOR_ESPERA_B = 0;
+// --- identificación por el canal de posición (2026-10-15) ---
+// La base solo lee presencia (1/0) en cada casilla, no QUÉ cubo está ahí.
+// Para identificarlo, el maestro le manda "ID=0" a un cubo concreto (por su
+// IP); el cubo baja su pin de presencia (Pfcaja) un instante y el maestro
+// mira qué casilla pasó a 0: esa es la casilla de ese cubo. Se restaura
+// solo a HIGH pasado IDENT_PULSO_MS, aunque el "ID=1" se pierda — un cubo
+// nunca puede quedarse "invisible" para la base por un mensaje perdido.
+const unsigned long IDENT_PULSO_MS = 250;
+bool identPulsoActivo = false;
+unsigned long identPulsoInicio = 0;
+
+// --- Telemetría hacia el maestro (2026-10-16) ---
+// Cada TELEMETRIA_MS el cubo manda por el mismo socket una línea
+// "EST=<bateria_mV>,<rssi_dBm>,<motivo_reinicio>,<segundos_encendido>".
+//  - Batería: el ESP32-C3 SuperMini NO puede medirla solo. Requiere un
+//    divisor de dos resistencias iguales (100 kΩ + 100 kΩ) desde el
+//    positivo de la batería a GND, con el punto medio en BATERIA_PIN.
+//    Sin el divisor el pin queda al aire y la lectura salta: se detecta por
+//    su dispersión y se informa -2 ("sin medición"), nunca un valor falso.
+//    BATERIA_PIN = -1 desactiva la medición (se informa -1).
+//  - Motivo del último reinicio (esp_reset_reason): 9 = ESP_RST_BROWNOUT,
+//    caída de voltaje — la señal más clara de batería agotada, sin hardware.
+//  - Señal WiFi (RSSI): un cubo lejos del maestro o con poca batería pierde
+//    señal antes de desconectarse.
+// DESACTIVADA (2026-10-16, decisión del autor): los cubos no se modifican en
+// esta versión. Para una próxima versión: soldar el divisor y poner aquí 1
+// (ADC1_CH1 del ESP32-C3, libre en este cubo); Control mostrará la batería
+// sola, sin más cambios.
+const int   BATERIA_PIN       = -1;
+const float BATERIA_DIVISOR   = 2.0;    // 100 kΩ / 100 kΩ
+const int   BATERIA_DISPERSION_MAX_MV = 250;
+const unsigned long TELEMETRIA_MS = 5000;
+unsigned long ultimaTelemetria = 0;
+int motivoReinicio = 0;
 
 // --- motor de efectos no bloqueante (EF=<n>): secuencias de color y
 // vibración de varios pasos que corren enteramente en el cubo, sin
@@ -318,8 +355,53 @@ String extraerValor(const String &data, const String &clave) {
   return data.substring(start, end);
 }
 
+int leerBateriaMv() {
+  if (BATERIA_PIN < 0) return -1;
+  int minimo = 100000, maximo = 0;
+  long suma = 0;
+  for (int i = 0; i < 8; i++) {
+    int mv = analogReadMilliVolts(BATERIA_PIN);
+    suma += mv;
+    if (mv < minimo) minimo = mv;
+    if (mv > maximo) maximo = mv;
+  }
+  if (maximo - minimo > BATERIA_DISPERSION_MAX_MV) return -2; // pin al aire: sin divisor
+  return (int)((suma / 8) * BATERIA_DIVISOR);
+}
+
+void enviarTelemetria() {
+  if (!cliente.connected()) return;
+  if (ultimaTelemetria != 0 && millis() - ultimaTelemetria < TELEMETRIA_MS) return;
+  ultimaTelemetria = millis();
+  char linea[64];
+  snprintf(linea, sizeof(linea), "EST=%d,%d,%d,%lu\n", leerBateriaMv(), (int)WiFi.RSSI(), motivoReinicio, millis() / 1000);
+  cliente.print(linea);
+}
+
+void iniciarPulsoIdentificacion() {
+  digitalWrite(Pfcaja, LOW);
+  identPulsoActivo = true;
+  identPulsoInicio = millis();
+}
+
+void actualizarPulsoIdentificacion() {
+  if (identPulsoActivo && millis() - identPulsoInicio >= IDENT_PULSO_MS) {
+    digitalWrite(Pfcaja, HIGH);
+    identPulsoActivo = false;
+  }
+}
+
 void procesarLinea(const String &cadena) {
   Serial.println("Linea recibida: [" + cadena + "]");
+  if (cadena == "ID=0") {
+    iniciarPulsoIdentificacion();
+    return;
+  }
+  if (cadena == "ID=1") {
+    digitalWrite(Pfcaja, HIGH);
+    identPulsoActivo = false;
+    return;
+  }
   if (cadena.startsWith("EF=")) {
     iniciarEfecto(cadena.substring(3).toInt());
     return;
@@ -388,6 +470,9 @@ void setup() {
   Serial.begin(115200);
   delay(200);
   Serial.println("\n--- Cubo esclavo arrancando ---");
+  motivoReinicio = (int)esp_reset_reason();
+  Serial.printf("Motivo del reinicio: %d%s\n", motivoReinicio, motivoReinicio == ESP_RST_BROWNOUT ? " (caida de voltaje: bateria baja)" : "");
+  if (BATERIA_PIN >= 0) analogSetPinAttenuation(BATERIA_PIN, ADC_11db); // hasta ~3,1 V en el pin (4,2 V / 2 = 2,1 V)
 
   // Color de equipo derivado del último octeto de local_IP (192.168.4.2
   // al .11 = cubos 1 al 10; equipo A/azul si id<=5, igual que
@@ -419,6 +504,8 @@ void loop() {
   }
 
   procesarRed();
+  enviarTelemetria();
+  actualizarPulsoIdentificacion();
   actualizarEfecto();
   actualizarParpadeo();
 }
@@ -434,15 +521,13 @@ void conectarWifi() {
     delay(500);
   }
 
-  // NO se asienta en su color de equipo todavía: se queda en naranja (color
-  // de "esperando confirmación") hasta que el frontend lo vea conectado de
-  // verdad (backend + frontend, no solo el WiFi al maestro) y le mande el
-  // color de equipo explícito — decisión del autor, 2026-09-18. Antes se
-  // autoasignaba aquí mismo para no depender de que nadie se lo confirmara;
-  // ahora se pide justo lo contrario: que el naranja sea la señal visible
-  // de "conectado al maestro pero todavía no confirmado por el sistema
-  // completo". El primer comando M=.../EF=... que llegue (cualquiera)
-  // reemplaza este naranja igual que reemplazaría cualquier otro estado.
-  setColorSolid(COLOR_ESPERA_R, COLOR_ESPERA_G, COLOR_ESPERA_B);
+  // Se asienta directo en su color de equipo (cubos 1-5 azul, 6-10 rojo,
+  // calculado en setup() desde local_IP). Requisito del autor (2026-10-15):
+  // el color de equipo debe verse siempre, sin depender de que el frontend
+  // esté abierto o de que una confirmación llegue — el naranja de "esperando
+  // confirmación" (2026-09-18) dejaba cubos sin color de equipo cada vez que
+  // esa confirmación se perdía. El frontend igual le reafirma el color
+  // vigente cuando lo ve conectado (pausa, bloqueo, etc.).
+  setColorSolid(colorEquipoR, colorEquipoG, colorEquipoB);
   conex = true;
 }

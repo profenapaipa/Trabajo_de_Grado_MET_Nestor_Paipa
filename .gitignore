@@ -25,6 +25,8 @@ build/
 .cache/
 .npm/
 *.tsbuildinfo
+# Bitácoras de sesión que el backend guarda en disco: datos de participantes.
+Desarrollo_cubos_juego_escalera/Backend-Cubos-Inteligentes-main/bitacoras/
 
 # =========================
 # Python

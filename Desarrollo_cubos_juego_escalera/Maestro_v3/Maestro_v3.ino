@@ -107,6 +107,19 @@
 //      socket se cierra y el comando se reintenta en cuanto reconecte.
 // ============================================================
 
+//  ================================================================
+//  2026-10-15: estado real del tablero e identificación por IP
+//  ================================================================
+//   - Mensaje "reportarPosiciones": publica el tablero que lleva el maestro
+//     (lo pide el frontend al cargar, para no suponer el orden inicial).
+//   - Mensaje "identificar": ronda en la que cada cubo conectado baja su
+//     pin de presencia ("ID=0") y se anota su casilla real; si queda
+//     completa, reemplaza al tablero inferido (identificarCubos()).
+//   - /api/posiciones lleva ahora "origen" (evento/reporte/identificacion)
+//     para que el frontend no evalúe un reporte como si fuera una jugada.
+//  Ver ESTADO_VISUAL_CUBOS.md, "Identificación por IP".
+// ============================================================
+
 // Maestro - ESP32 como Access Point y TCP Server
 
 #include <WiFi.h>
@@ -155,6 +168,18 @@ int siguienteAIntentar = 0;
 String comandoPendiente[NUM_ESCLAVOS];
 unsigned long comandoPendienteTs[NUM_ESCLAVOS] = {0};
 
+// --- Telemetría de cada cubo (2026-10-16) ---
+// Línea "EST=<bateria_mV>,<rssi>,<motivo_reinicio>,<segundos>" que el cubo
+// manda por su socket cada 5 s; se reenvía al backend con la lista de
+// esclavos conectados.
+struct TelemetriaCubo { int mv; int rssi; int rst; unsigned long up; unsigned long recibida; };
+TelemetriaCubo telemetria[NUM_ESCLAVOS];
+String entradaEsclavo[NUM_ESCLAVOS];
+
+// Duración del último POST de posiciones (≈ ida y vuelta maestro↔backend),
+// para que el frontend estime la latencia completa de cada evento.
+unsigned long ultimoPostMs = 0;
+
 std::set<std::string> cubosModificados;
 
 // UDP para descubrimiento del backend
@@ -163,7 +188,9 @@ WiFiUDP udp;
 // --- Estado de los pines físicos (solo tocado desde loop(), core de Arduino) ---
 int estado[NUM_POSICIONES]     = {1,2,3,4,5,0,6,7,8,9,10};
 int baseAnterior[NUM_POSICIONES]= {1,1,1,1,1,0,1,1,1,1,1};
-int baseActual[NUM_POSICIONES];
+// volatile: lo escribe loop() (core 1) y lo lee la ronda de identificación
+// en taskRed (core 0).
+volatile int baseActual[NUM_POSICIONES];
 int estadoaux[NUM_POSICIONES]  = {1,2,3,4,5,0,6,7,8,9,10};
 int lecturaCruda[NUM_POSICIONES];
 unsigned long ultimoCambioPin[NUM_POSICIONES] = {0};
@@ -173,9 +200,53 @@ bool eventoPendiente  = false;
 int  posicionLevantada = -1;
 int  valorLevantado   = 0;
 
+// --- Sincronización e identificación (2026-10-15) ---
+// La base solo lee presencia por casilla; qué cubo hay en cada una se
+// infiere siguiendo cada levantar/apoyar desde el orden inicial supuesto.
+// Dos mecanismos nuevos:
+//  - "reportarPosiciones": el frontend pide el estado que el maestro ya
+//    lleva (al recargar la página, el frontend ya no asume el orden).
+//  - "identificar": ronda real por IP — a cada cubo conectado se le pide
+//    "ID=0" (baja su pin de presencia un instante) y se mira qué casilla
+//    pasó a 0. Si TODAS las casillas ocupadas quedan identificadas, ese
+//    resultado reemplaza el estado inferido; si no, solo se informa.
+// Banderas entre tareas: taskRed las levanta, loop() las atiende (loop es
+// el único que escribe estado[]).
+volatile bool solicitudReporte      = false;
+volatile bool pedirIdentificacion   = false;
+volatile bool identificando         = false;
+volatile bool aplicarIdentificacion = false;
+volatile bool identificacionCompleta = false;
+int resultadoIdentificacion[NUM_POSICIONES];
+// El cubo baja su pin 250 ms: 450 ms alcanzan para verlo (antirrebote 25 ms
+// + red). Si los 3 primeros cubos no bajan ninguna casilla, el canal de
+// presencia no responde a "ID=0" y la ronda se aborta en ~1,5 s en vez de
+// bloquear la red del maestro ~7 s (lo que hacía lentos los comandos PPA).
+const unsigned long IDENT_ESPERA_BAJADA_MS = 450;
+const unsigned long IDENT_ESPERA_SUBIDA_MS = 800;
+const int IDENT_ABORTAR_TRAS = 3;
+
+// --- Seguimiento de identidades (2026-10-16) ---
+// Cubos levantados que aún no se apoyan (el último arriba): permite varios
+// cubos en la mano a la vez. Antes solo se admitía uno, y un segundo cubo
+// levantado antes de apoyar el primero desordenaba todo el seguimiento.
+int enMano[NUM_POSICIONES];
+int numEnMano = 0;
+// Última presencia publicada, para informar también lo que la base VE
+// (no solo lo que se infiere) y poder diagnosticar el canal de posición.
+int presenciaPublicada[NUM_POSICIONES];
+unsigned long ultimaPublicacionPresencia = 0;
+const unsigned long PRESENCIA_MIN_MS = 60;
+
 // --- Comunicación entre tareas ---
+enum OrigenPosiciones { ORIGEN_EVENTO = 0, ORIGEN_REPORTE = 1, ORIGEN_IDENTIFICACION = 2, ORIGEN_PRESENCIA = 3 };
 struct VectorPosiciones {
+  unsigned long t;  // millis() de la detección, para medir cuánto tarda en salir
   int v[NUM_POSICIONES];
+  int presencia[NUM_POSICIONES]; // lectura de la base (1 = algo apoyado en la casilla)
+  int origen;
+  int ident[NUM_POSICIONES];  // solo ORIGEN_IDENTIFICACION: id por casilla, 0 vacía, -1 ocupada sin identificar
+  bool completa;
 };
 QueueHandle_t colaPosiciones;
 
@@ -207,9 +278,16 @@ void setup() {
   // Descubrir IP del backend via UDP broadcast
   descubrirBackend();
 
-  // Inicializar pines como entrada
+  // Inicializar pines como entrada. Cada casilla lee ALTO cuando hay un cubo
+  // (el cubo pone su pin Pfcaja en ALTO a través del contacto). Sin cubo,
+  // el pin solo queda en BAJO si algo lo lleva a tierra: se activa la
+  // resistencia interna de pulldown (~45 kΩ) donde el ESP32 la tiene, para
+  // que una casilla vacía no "flote" y dé lecturas fantasma. Los GPIO 34,
+  // 35 y 39 son solo-entrada y NO tienen resistencia interna: esas tres
+  // casillas (1, 2 y 3) dependen de una resistencia en la base. Con una
+  // externa ya presente, la interna no estorba (quedan en paralelo).
   for (int i = 0; i < NUM_POSICIONES; i++) {
-    pinMode(pinesBase[i], INPUT);
+    pinMode(pinesBase[i], pinesBase[i] >= 34 ? INPUT : INPUT_PULLDOWN);
     lecturaCruda[i] = digitalRead(pinesBase[i]);
   }
 
@@ -234,38 +312,75 @@ void loop() {
 
   actualizarLecturaDebounced();
 
-  // Detectar cubo levantado
-  if (!eventoPendiente) {
-    for (int i = 0; i < NUM_POSICIONES; i++) {
-      if (baseAnterior[i] == 1 && baseActual[i] == 0 && estado[i] != 0) {
-        posicionLevantada = i;
-        valorLevantado    = estado[i];
-        estado[i]         = 0;
-        estadoaux[i]      = 0;
-        publicarEstado(estadoaux);
-        eventoPendiente   = true;
-        break;
+  // Resultado de una ronda de identificación: si fue completa, la identidad
+  // real reemplaza a la inferida; en cualquier caso se publica.
+  if (aplicarIdentificacion) {
+    if (identificacionCompleta) {
+      for (int i = 0; i < NUM_POSICIONES; i++) {
+        estado[i]    = resultadoIdentificacion[i];
+        estadoaux[i] = resultadoIdentificacion[i];
       }
+      eventoPendiente   = false;
+      posicionLevantada = -1;
+      valorLevantado    = 0;
+      numEnMano         = 0;
     }
-  }
-  // Detectar cubo devuelto a la base
-  else {
-    for (int i = 0; i < NUM_POSICIONES; i++) {
-      if (baseAnterior[i] == 0 && baseActual[i] == 1) {
-        estado[i]      = valorLevantado;
-        estadoaux[i]   = valorLevantado;
-        publicarEstado(estado);
-        eventoPendiente   = false;
-        posicionLevantada = -1;
-        valorLevantado    = 0;
-        break;
-      }
-    }
+    for (int i = 0; i < NUM_POSICIONES; i++) baseAnterior[i] = baseActual[i];
+    publicarEstadoOrigen(estado, ORIGEN_IDENTIFICACION, resultadoIdentificacion, identificacionCompleta);
+    aplicarIdentificacion = false;
+    identificando = false;
+    delay(5);
+    return;
   }
 
-  // Actualizar estado anterior
+  // Durante la ronda los cubos bajan su pin a propósito: no son jugadas.
+  if (identificando) {
+    for (int i = 0; i < NUM_POSICIONES; i++) baseAnterior[i] = baseActual[i];
+    delay(5);
+    return;
+  }
+
+  if (solicitudReporte) {
+    solicitudReporte = false;
+    publicarEstadoOrigen(estado, ORIGEN_REPORTE, nullptr, false);
+  }
+
+  // Seguimiento por cambios de presencia (2026-10-16). Reemplaza a la
+  // máquina de "un solo cubo levantado" (eventoPendiente), que perdía el
+  // hilo si se levantaba un segundo cubo antes de apoyar el primero.
+  //  1) Casilla que se vacía: su cubo pasa a la mano.
+  //  2) Casilla vacía que se ocupa: recibe el último cubo levantado.
+  //     Si no hay ninguno en la mano (un cubo que reconecta en su propia
+  //     casilla, o uno puesto sin haberlo visto salir), la identidad no
+  //     cambia y solo se informa la presencia.
+  bool cambioEstado = false;
+  for (int i = 0; i < NUM_POSICIONES; i++) {
+    if (baseAnterior[i] == 1 && baseActual[i] == 0 && estado[i] != 0) {
+      if (numEnMano < NUM_POSICIONES) enMano[numEnMano++] = estado[i];
+      estado[i] = 0;
+      cambioEstado = true;
+    }
+  }
+  for (int i = 0; i < NUM_POSICIONES; i++) {
+    if (baseAnterior[i] == 0 && baseActual[i] == 1 && estado[i] == 0 && numEnMano > 0) {
+      estado[i] = enMano[--numEnMano];
+      cambioEstado = true;
+    }
+  }
   for (int i = 0; i < NUM_POSICIONES; i++) {
     baseAnterior[i] = baseActual[i];
+    estadoaux[i]    = estado[i];
+  }
+
+  if (cambioEstado) {
+    publicarEstado(estado);
+  } else if (millis() - ultimaPublicacionPresencia >= PRESENCIA_MIN_MS) {
+    for (int i = 0; i < NUM_POSICIONES; i++) {
+      if (presenciaPublicada[i] != baseActual[i]) {
+        publicarEstadoOrigen(estado, ORIGEN_PRESENCIA, nullptr, false);
+        break;
+      }
+    }
   }
 
   delay(5);
@@ -315,11 +430,26 @@ void imprimirVector(const char* nombre, int vec[]) {
 }
 
 // Publica el vector de posiciones a taskRed sin bloquear jamás loop().
-void publicarEstado(int vec[]) {
-  imprimirVector("Estado", vec);
+void publicarEstadoOrigen(int vec[], int origen, const int ident[], bool completa) {
   VectorPosiciones msg;
-  for (int i = 0; i < NUM_POSICIONES; i++) msg.v[i] = vec[i];
+  msg.t = millis();
+  for (int i = 0; i < NUM_POSICIONES; i++) {
+    msg.v[i] = vec[i];
+    msg.presencia[i] = baseActual[i];
+    presenciaPublicada[i] = baseActual[i];
+    msg.ident[i] = ident ? ident[i] : 0;
+  }
+  ultimaPublicacionPresencia = millis();
+  // Monitor Serial: identidad inferida y lo que la base ve, lado a lado.
+  imprimirVector("Estado   ", vec);
+  imprimirVector("Presencia", msg.presencia);
+  msg.origen = origen;
+  msg.completa = completa;
   xQueueSend(colaPosiciones, &msg, 0); // no bloquear; si la cola está llena se descarta
+}
+
+void publicarEstado(int vec[]) {
+  publicarEstadoOrigen(vec, ORIGEN_EVENTO, nullptr, false);
 }
 
 // ============================================================
@@ -390,7 +520,7 @@ void taskRed(void* parametro) {
     // 1) Publicar cambios de posición pendientes (no bloqueante)
     VectorPosiciones msg;
     while (xQueueReceive(colaPosiciones, &msg, 0) == pdTRUE) {
-      enviarEstadoServidor(msg.v);
+      enviarEstadoServidor(msg);
     }
 
     // 2) Heartbeat + comando del backend (timeout acotado). Acotado a
@@ -404,10 +534,20 @@ void taskRed(void* parametro) {
       ultimoPollComando = millis();
     }
 
+    // 2b) Ronda de identificación pedida por el frontend (fuera del
+    // parseo HTTP, para no anidar llamadas de red).
+    if (pedirIdentificacion) {
+      pedirIdentificacion = false;
+      identificarCubos();
+    }
+
     // 3) Mantener vivas las conexiones a los esclavos: como máximo un
     //    intento de reconexión por vuelta, acotado a CONNECT_TIMEOUT_MS.
     intentarReconexion(siguienteAIntentar);
     siguienteAIntentar = (siguienteAIntentar + 1) % NUM_ESCLAVOS;
+
+    // 3b) Telemetría que mandan los cubos (batería, señal, reinicios).
+    leerEsclavos();
 
     // 4) Reportar esclavos activos (solo lee banderas .connected(), no
     //    abre conexiones nuevas -> costo ~0 ms)
@@ -610,20 +750,118 @@ void verificarComandoDesdeServidor() {
     if (!item.is<JsonObject>()) continue;
     JsonObject obj = item.as<JsonObject>();
 
-    if (obj.containsKey("mensaje") && String((const char*)obj["mensaje"]) == "restaurar") {
-      restaurarcubo();
+    if (obj.containsKey("mensaje")) {
+      String mensaje = String((const char*)obj["mensaje"]);
+      if (mensaje == "restaurar") restaurarcubo();
+      else if (mensaje == "reportarPosiciones") solicitudReporte = true;
+      else if (mensaje == "identificar") pedirIdentificacion = true;
       continue;
     }
     aplicarComandoRecibido(obj);
   }
 }
 
-void enviarEstadoServidor(int vec[]) {
+// GET mínimo al backend para que no marque la base como desconectada
+// (BASE_TIMEOUT_MS = 5 s) mientras dura la ronda de identificación.
+void latidoBackend() {
+  if (WiFi.status() != WL_CONNECTED || backendIP == "") return;
+  HTTPClient http;
+  http.begin("http://" + backendIP + ":" + BACKEND_PORT + "/");
+  http.setConnectTimeout(HTTP_TIMEOUT_MS);
+  http.setTimeout(HTTP_TIMEOUT_MS);
+  http.GET();
+  http.end();
+}
+
+// Ronda de identificación: un cubo conectado a la vez baja su pin de
+// presencia ("ID=0", se restaura solo en el cubo) y se anota la casilla
+// que pasa de 1 a 0. Cubos sin conexión se saltan: su casilla queda como
+// "ocupada sin identificar" (-1) si la base la ve ocupada.
+void identificarCubos() {
+  Serial.println("Identificacion: inicio");
+  identificando = true;
+  delay(60); // que loop() vea la bandera antes del primer pulso
+
+  for (int i = 0; i < NUM_POSICIONES; i++) resultadoIdentificacion[i] = baseActual[i] ? -1 : 0;
+  unsigned long ultimoLatido = millis();
+  int intentados = 0, identificados = 0;
+
+  for (int idx = 0; idx < NUM_ESCLAVOS; idx++) {
+    if (millis() - ultimoLatido > 1000) { latidoBackend(); ultimoLatido = millis(); }
+    if (!esclavoConexion[idx].connected()) continue;
+
+    int antes[NUM_POSICIONES];
+    for (int i = 0; i < NUM_POSICIONES; i++) antes[i] = baseActual[i];
+
+    if (esclavoConexion[idx].print("ID=0\n") == 0) continue;
+    intentados++;
+
+    int casilla = -1;
+    unsigned long t0 = millis();
+    while (casilla < 0 && millis() - t0 < IDENT_ESPERA_BAJADA_MS) {
+      for (int i = 0; i < NUM_POSICIONES; i++) {
+        if (antes[i] == 1 && baseActual[i] == 0) { casilla = i; break; }
+      }
+      delay(5);
+    }
+
+    if (casilla >= 0) {
+      // Solo cuenta si la casilla vuelve a ocuparse sola (el cubo
+      // restaura su pin): si se queda vacía, fue una mano levantando un
+      // cubo justo en ese momento, no la señal de identificación.
+      t0 = millis();
+      while (baseActual[casilla] == 0 && millis() - t0 < IDENT_ESPERA_SUBIDA_MS) delay(5);
+      if (baseActual[casilla] == 1 && resultadoIdentificacion[casilla] == -1) {
+        resultadoIdentificacion[casilla] = idx + 1;
+        identificados++;
+        Serial.printf("Identificacion: cubo %d en casilla %d\n", idx + 1, casilla + 1);
+      } else {
+        Serial.printf("Identificacion: cubo %d - casilla %d no volvio a ocuparse, se descarta\n", idx + 1, casilla + 1);
+      }
+    } else {
+      Serial.printf("Identificacion: cubo %d no bajo ninguna casilla\n", idx + 1);
+    }
+
+    if (identificados == 0 && intentados >= IDENT_ABORTAR_TRAS) {
+      Serial.println("Identificacion: ninguna casilla responde a ID=0 - el pin de presencia del cubo no es el que lee la base; se aborta");
+      break;
+    }
+    delay(20);
+  }
+
+  bool completa = true;
+  for (int i = 0; i < NUM_POSICIONES; i++) if (resultadoIdentificacion[i] == -1) completa = false;
+  identificacionCompleta = completa;
+  Serial.printf("Identificacion: fin (%s)\n", completa ? "completa" : "incompleta");
+  aplicarIdentificacion = true; // loop() aplica, publica y baja `identificando`
+}
+
+const char* nombreOrigen(int origen) {
+  if (origen == ORIGEN_REPORTE) return "reporte";
+  if (origen == ORIGEN_IDENTIFICACION) return "identificacion";
+  if (origen == ORIGEN_PRESENCIA) return "presencia";
+  return "evento";
+}
+
+void enviarEstadoServidor(const VectorPosiciones& msg) {
   if (WiFi.status() != WL_CONNECTED || backendIP == "") return;
 
-  DynamicJsonDocument doc(256);
+  DynamicJsonDocument doc(768);
   JsonArray posiciones = doc.createNestedArray("posiciones");
-  for (int i = 0; i < NUM_POSICIONES; i++) posiciones.add(vec[i]);
+  for (int i = 0; i < NUM_POSICIONES; i++) posiciones.add(msg.v[i]);
+  JsonArray presencia = doc.createNestedArray("presencia");
+  for (int i = 0; i < NUM_POSICIONES; i++) presencia.add(msg.presencia[i]);
+  doc["origen"] = nombreOrigen(msg.origen);
+  if (msg.origen == ORIGEN_IDENTIFICACION) {
+    JsonObject ident = doc.createNestedObject("identificacion");
+    ident["completa"] = msg.completa;
+    JsonArray casillas = ident.createNestedArray("casillas");
+    for (int i = 0; i < NUM_POSICIONES; i++) casillas.add(msg.ident[i]);
+  }
+  // Latencia: cuánto lleva esperando este evento en el maestro desde que se
+  // detectó, y cuánto tardó el POST anterior (≈ ida y vuelta al backend).
+  doc["edadMs"] = (long)(millis() - msg.t);
+  doc["rttMs"]  = (long)ultimoPostMs;
   String jsonData;
   serializeJson(doc, jsonData);
 
@@ -632,7 +870,9 @@ void enviarEstadoServidor(int vec[]) {
   http.setConnectTimeout(HTTP_TIMEOUT_MS);
   http.setTimeout(HTTP_TIMEOUT_MS);
   http.addHeader("Content-Type", "application/json");
+  unsigned long inicioPost = millis();
   int httpCode = http.POST(jsonData);
+  ultimoPostMs = millis() - inicioPost;
   if (httpCode == HTTP_CODE_OK) {
     Serial.println("Posiciones enviadas: " + jsonData);
   } else {
@@ -641,13 +881,51 @@ void enviarEstadoServidor(int vec[]) {
   http.end();
 }
 
+// Lee lo que mandan los cubos por su socket (hoy, solo telemetría "EST=").
+// No bloquea: consume lo que ya llegó y arma las líneas byte a byte.
+void leerEsclavos() {
+  for (int idx = 0; idx < NUM_ESCLAVOS; idx++) {
+    if (!esclavoConexion[idx].connected()) continue;
+    while (esclavoConexion[idx].available()) {
+      char c = esclavoConexion[idx].read();
+      if (c == '\n') {
+        String &linea = entradaEsclavo[idx];
+        if (linea.startsWith("EST=")) {
+          int mv = 0, rssi = 0, rst = 0;
+          unsigned long up = 0;
+          if (sscanf(linea.c_str() + 4, "%d,%d,%d,%lu", &mv, &rssi, &rst, &up) == 4) {
+            telemetria[idx] = { mv, rssi, rst, up, millis() };
+          }
+        }
+        linea = "";
+      } else if (c != '\r') {
+        entradaEsclavo[idx] += c;
+        if (entradaEsclavo[idx].length() > 64) entradaEsclavo[idx] = "";
+      }
+    }
+  }
+}
+
 void reportarEsclavosActivos() {
   if (WiFi.status() != WL_CONNECTED || backendIP == "") return;
 
-  DynamicJsonDocument doc(256);
+  DynamicJsonDocument doc(1536);
   JsonArray arr = doc.createNestedArray("esclavos");
   for (int i = 0; i < NUM_ESCLAVOS; i++) {
     if (esclavoActivo[i]) arr.add(i + 1);
+  }
+  // Telemetría reciente (menos de 15 s) de cada cubo conectado.
+  JsonArray tel = doc.createNestedArray("telemetria");
+  for (int i = 0; i < NUM_ESCLAVOS; i++) {
+    if (!esclavoActivo[i] || telemetria[i].recibida == 0) continue;
+    unsigned long edad = millis() - telemetria[i].recibida;
+    if (edad > 15000) continue;
+    JsonObject t = tel.createNestedObject();
+    t["id"]   = i + 1;
+    t["mv"]   = telemetria[i].mv;
+    t["rssi"] = telemetria[i].rssi;
+    t["rst"]  = telemetria[i].rst;
+    t["up"]   = telemetria[i].up;
   }
   String json;
   serializeJson(doc, json);

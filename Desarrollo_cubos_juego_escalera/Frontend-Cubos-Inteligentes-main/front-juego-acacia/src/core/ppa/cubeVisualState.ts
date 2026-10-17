@@ -11,9 +11,10 @@
 
 import { PPA_RGB, PPA_VIBRATION, PPA_HEX, EFECTOS, BLANCO_HEX, INVALIDO_HEX, type PPAPhase } from './ppaColors'
 
-// Mismos 6 valores que SessionState en App.tsx (no se importa el tipo para
-// no crear una dependencia circular; deben mantenerse en sincronía).
-export type SessionState = 'inactivo' | 'cuenta_regresiva' | 'jugando' | 'pausado' | 'bloqueado' | 'victoria'
+// Estados de la partida en Control. 'correccion' (2026-10-15): pausa
+// automática tras una jugada inválida, hasta que el tablero vuelva a la
+// posición anterior — se ve igual que la pausa manual (todos en Pausar).
+export type SessionState = 'inactivo' | 'cuenta_regresiva' | 'jugando' | 'pausado' | 'correccion' | 'bloqueado' | 'victoria'
 
 // Nivel SESIÓN: igual para los 10 cubos a la vez, prioridad absoluta sobre
 // cualquier estado individual del cubo. 'normal' agrupa inactivo/cuenta_
@@ -25,7 +26,7 @@ export type SessionVisualTier = 'bloqueado' | 'victoria' | 'pausado' | 'normal'
 export function sessionVisualTier(sessionState: SessionState): SessionVisualTier {
   if (sessionState === 'bloqueado') return 'bloqueado'
   if (sessionState === 'victoria') return 'victoria'
-  if (sessionState === 'pausado') return 'pausado'
+  if (sessionState === 'pausado' || sessionState === 'correccion') return 'pausado'
   return 'normal'
 }
 
@@ -38,6 +39,7 @@ export type SustainedCubeVisual =
   | { tier: 'bloqueo' }
   | { tier: 'victoria' }
   | { tier: 'pausado' }
+  | { tier: 'fuera_de_lugar' }
   | { tier: 'ppa_manual'; accion: PPAPhase }
   | { tier: 'equipo_reposo' }
 
@@ -51,12 +53,15 @@ export type SustainedCubeVisual =
 //   5. Movimiento inválido (pulso transitorio, 1 cubo — no sostenido) —
 //      interrumpe una señal PPA manual 1s y luego la restaura si su propio
 //      temporizador de 5s no había expirado.
+//   5b. Fuera de lugar    (1 cubo — solo antes de iniciar: está en una
+//      casilla que no es la suya; blanco fijo hasta que se reubique)
 //   6. Señal PPA manual   (1 cubo, la seleccionada por el operador)
 //   7. Color de equipo en reposo (cualquier cubo sin lo anterior)
-export function resolveSustainedVisual(sessionTier: SessionVisualTier, accionCubo?: PPAPhase): SustainedCubeVisual {
+export function resolveSustainedVisual(sessionTier: SessionVisualTier, accionCubo?: PPAPhase, fueraDeLugar = false): SustainedCubeVisual {
   if (sessionTier === 'bloqueado') return { tier: 'bloqueo' }
   if (sessionTier === 'victoria') return { tier: 'victoria' }
   if (sessionTier === 'pausado') return { tier: 'pausado' }
+  if (fueraDeLugar) return { tier: 'fuera_de_lugar' }
   if (accionCubo) return { tier: 'ppa_manual', accion: accionCubo }
   return { tier: 'equipo_reposo' }
 }
@@ -81,6 +86,8 @@ export function sustainedVisualToCommand(v: SustainedCubeVisual, teamRgb: [numbe
       return { efecto: EFECTOS.VICTORIA }
     case 'pausado':
       return { color: PPA_RGB.pausar, vibrationIntensity: PPA_VIBRATION.pausar, iluminationFrequency: 0.50 }
+    case 'fuera_de_lugar':
+      return { color: [255, 255, 255], vibrationIntensity: 0, iluminationFrequency: 0 }
     case 'ppa_manual':
       return { color: PPA_RGB[v.accion], vibrationIntensity: PPA_VIBRATION[v.accion], iluminationFrequency: frecuenciaPpa(v.accion) }
     case 'equipo_reposo':
@@ -101,6 +108,7 @@ export function resolveCubeDisplay(
   isFlashingInvalid: boolean,
   accionCubo: PPAPhase | undefined,
   teamHex: string,
+  fueraDeLugar = false,
 ): { hex: string; accion?: PPAPhase; pulso?: true } {
   // `pulso` marca los dos estados transitorios de mayor prioridad (antes
   // "flashColor" en Cube.tsx) para que la interfaz les dé el mismo anillo
@@ -108,6 +116,7 @@ export function resolveCubeDisplay(
   if (sessionTier === 'bloqueado' || sessionTier === 'victoria') return { hex: BLANCO_HEX, pulso: true }
   if (sessionTier === 'pausado') return { hex: PPA_HEX.pausar, accion: 'pausar' }
   if (isFlashingInvalid) return { hex: INVALIDO_HEX, pulso: true }
+  if (fueraDeLugar) return { hex: BLANCO_HEX, pulso: true }
   if (accionCubo) return { hex: PPA_HEX[accionCubo], accion: accionCubo }
   return { hex: teamHex }
 }

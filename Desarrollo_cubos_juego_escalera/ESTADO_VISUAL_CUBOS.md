@@ -45,11 +45,12 @@ el control al nivel que estuviera vigente antes.
 | 1 | Bloqueo (sin movimientos válidos) | Sesión | Los 10 cubos | `EF=4` | ya existía |
 | 2 | Victoria | Sesión | Los 10 cubos | `EF=5` | ya existía |
 | 3 | Cuenta regresiva (tick 3,2,1 / ¡Inicia!) | Sesión (pulso) | Los 10 cubos | `EF=6` / `EF=7` | ya existía |
-| 4 | Sesión pausada (botón "Pausar", control de partida) | Sesión | Los 10 cubos | `M=` color Pausar | ya existía |
+| 4 | Sesión pausada (botón "Pausar") **o pausa automática por jugada inválida** (`correccion`, 2026-10-15) | Sesión | Los 10 cubos | `M=` color Pausar | ya existía |
 | 5 | Movimiento inválido | Cubo (pulso) | El cubo implicado | `EF=3` | ya existía |
+| 5b | Fuera de lugar (solo antes de iniciar, 2026-10-15) | Cubo | Cada cubo que no está en su casilla | `M=` blanco fijo | sin cambios (es un `M=`) |
 | 6 | Señal PPA manual (Pausar/Pensar/Actuar del operador) | Cubo | El cubo seleccionado | `M=` color de fase | ya existía |
 | 7 | Color de equipo en reposo | Cubo | Cualquier otro cubo | `M=` color de equipo | ya existía |
-| 8 | Conectado al maestro, sin confirmar (arranque) | Cubo | El cubo recién conectado | ninguno hasta la confirmación | **naranja** (nuevo, 2026-09-18) |
+| ~~8~~ | ~~Conectado al maestro, sin confirmar (arranque)~~ | — | — | — | **naranja retirado (2026-10-15)**: el cubo arranca directo en su color de equipo |
 | — | Sin WiFi / reconectando | Solo firmware | El cubo afectado | ninguno (lo decide el cubo solo) | **magenta** (antes rojo) |
 
 **Fila 8**: en la práctica no compite con las demás, porque solo existe
@@ -180,6 +181,147 @@ contra hardware):
   como reemplazo atómico y completo del estado anterior, que es exactamente
   el contrato que este diseño necesita de ellos. Se agregó solo un
   comentario en `Cubo_Esclavo_v3.ino` señalando esta tabla como referencia.
+
+## Identificación por IP, estado real al cargar y pausa automática (2026-10-15)
+
+Tres requisitos del autor tras probar con los cubos:
+
+1. **Color de equipo siempre visible** (1-5 azul, 6-10 rojo, por la IP de
+   cada cubo). Se retira el naranja de "esperando confirmación": dejaba
+   cubos sin color de equipo cada vez que la confirmación del frontend no
+   llegaba. Ahora el cubo se asienta solo en su color al conectar el WiFi, y
+   el frontend le reafirma el estado vigente cada vez que lo ve (re)conectar.
+2. **Jugada inválida = pausa automática** hasta volver a la posición
+   anterior: estado de sesión `correccion` (mismo aspecto que la pausa
+   manual, los 10 cubos en Pausar), cronómetro detenido, y en pantalla el
+   tablero al que hay que volver con la lista "cubo #X: está en la casilla a
+   → va en la casilla b". La jugada inválida no entra al recorrido del grafo
+   ni cambia la "posición anterior" de la Regla 2. Solo con un intento en
+   curso: sin intento (antes de iniciar, o reordenando tras un bloqueo/
+   victoria), mover cubos ya no se evalúa como jugada.
+3. **Recargar con los cubos en desorden ya no los da por ordenados.** Causa
+   real: el frontend arrancaba con `[1..5,0,6..10]` fijo y nunca le
+   preguntaba a nadie cómo estaba el tablero. Ahora (a) el backend guarda el
+   último tablero reportado y se lo entrega a cada pestaña que se conecta;
+   (b) el frontend pide `solicitarEstado` al montar y el maestro reporta el
+   tablero que lleva (`reportarPosiciones`); (c) antes de iniciar, si hay
+   cubos fuera de lugar, se ven en blanco en físico y en pantalla, con la
+   casilla a la que va cada uno.
+
+**Identificación por IP (canal de posición).** La base solo lee presencia
+(1/0) por casilla; qué cubo hay en cada una se infiere siguiendo cada
+levantar/apoyar desde un orden supuesto — si el maestro arranca con los
+cubos en desorden, esa inferencia nace equivocada. Para saberlo de verdad,
+el maestro le manda `ID=0` a un cubo concreto (por su IP), el cubo baja su
+pin de presencia (`Pfcaja`) 250 ms y el maestro anota qué casilla pasó a 0.
+Si todas las casillas ocupadas quedan identificadas, ese resultado
+reemplaza al inferido. Se hace sola al cargar Control y al pulsar "Iniciar
+intento" (la cuenta regresiva arranca solo si el orden es correcto), y a
+mano con "Identificar cubos". **Supuesto sin verificar**: que el pin de
+presencia que lee la base sea el mismo `Pfcaja` que el cubo pone en HIGH
+(así lo sugiere el firmware: el cubo lo activa al arrancar y la base lo lee
+como entrada). Si no fuera así, la ronda queda "incompleta", no reemplaza
+nada y se avisa en pantalla — el resto sigue funcionando con el orden que
+lleva el maestro.
+
+**Bug preexistente corregido de paso**: el socket del frontend se conecta
+al cargar la app, antes de que Control se monte (tras la pantalla de
+perfiles), así que el aviso "base conectada" del backend se perdía y
+Control mostraba "Desconectado" con la base activa. El backend ahora lo
+reenvía al recibir `solicitarEstado`. También: el cubo levantado y sus
+casillas válidas se calculaban sobre el tablero inicial (closure congelada
+en el listener del socket); ahora sobre el último tablero asentado.
+
+**Verificado sin hardware** con un maestro simulado (script que hace de
+ESP32 contra el backend real y el frontend compilado, manejado con
+Playwright): 18 comprobaciones de los tres requisitos, incluidos los
+comandos exactos que reciben los cubos. **Pendiente con hardware real**: la
+ronda de identificación (supuesto eléctrico de arriba) y todo lo demás
+contra los 10 cubos físicos.
+
+## Posiciones que no llegaban, animaciones y Vista del jugador (2026-10-16)
+
+Tras probar con los cubos (PPA, pausa global y cuenta regresiva sí llegan;
+las posiciones no aparecían ni en el backend ni en el frontend):
+
+1. **El maestro ahora informa lo que la base VE** (`presencia`, 1/0 por
+   casilla) en cada mensaje, y también cuando solo cambia la presencia
+   (`origen: "presencia"`). Antes solo informaba la identidad inferida: si la
+   base no detectaba un cubo no salía nada y era imposible saber si fallaba
+   el cableado, la lectura o el seguimiento. Control muestra una barra bajo
+   cada casilla (azul = la base detecta un cubo) y avisa cuando la lectura
+   no cuadra con el seguimiento. En el Monitor Serial del maestro salen las
+   dos líneas, `Estado` y `Presencia`, lado a lado.
+2. **Seguimiento con varios cubos en la mano**: se reemplazó la máquina de
+   "un solo cubo levantado" (`eventoPendiente`), que perdía el hilo si se
+   levantaba un segundo cubo antes de apoyar el primero.
+3. **Identificación sin bloquear**: si los 3 primeros cubos no bajan ninguna
+   casilla con `ID=0`, la ronda se aborta (~1,5 s en vez de ~7 s bloqueando
+   la red del maestro — causa probable del "PPA algo lento").
+4. **Conexión del frontend** (`client-socket/sockets.ts`, `App.tsx`), tres
+   fallas reales: (a) tras 5 reintentos fallidos el socket se rendía para
+   siempre (ahora reintenta sin límite en local, a los 300 ms); (b) el
+   arranque por long-polling HTTP daba 400 al pasar a websocket (ahora solo
+   websocket); (c) `socket.connect()` en cada render mandaba un segundo
+   "connect" y el servidor cerraba la conexión (cierre limpio 1005 a los
+   ~120 ms, visto al recargar). Las tres hacían perder posiciones en silencio.
+5. **Animaciones** (`components/control/TableroFisico.tsx`): el cubo
+   levantado sube y flota sobre su casilla; al apoyarlo se desliza a la
+   casilla nueva (~250 ms, Web Animations API, sin retrasar el estado real).
+6. **Vista del jugador** (`components/jugador/VistaJugador.tsx`): pestaña y
+   ventana aparte (`?vista=jugador`, para un segundo monitor), solo con
+   cubos, tiempo (opcional, lo decide el operador), conexión y qué hacer
+   tras una jugada inválida. Sin señales PPA, medidores, bitácoras, grafo
+   ni casillas válidas resaltadas: en un Mago de Oz el participante no debe
+   ver la consola del operador. Recibe el estado de Control por
+   `BroadcastChannel`, sin otra conexión al backend.
+
+**Reglas**: auditado — Control, Tutorial, Simulación libre y Control
+simulado usan el mismo motor (`laEscaleraRules`, `classifyAttempt`).
+
+**Verificado sin hardware** con maestro simulado + Playwright: 26
+comprobaciones, 4 corridas seguidas sin fallas ni caídas de conexión.
+
+## Batería, latencia, EEG y bitácora en disco (2026-10-16, 2ª parte)
+
+Lo que faltaba para una sesión real (detalle operativo en
+`GUIA_ENSAYO_SESION.md`):
+
+1. **Telemetría de cada cubo** (`Cubo_Esclavo_v3.ino`): cada 5 s manda
+   `EST=mv,rssi,reinicio,segundos` por su socket. El maestro la lee sin
+   bloquear (`leerEsclavos`) y la agrega a su reporte de esclavos; el
+   backend la reenvía. Control muestra un panel "Cubos · conexión y señal"
+   (`components/control/PanelCubos.tsx`) y anota en la bitácora
+   `reinicio_cubo` (con el motivo: una caída de tensión apunta a la
+   batería). **La medición de batería quedó desactivada en esta versión**
+   (`BATERIA_PIN = -1`, decisión del autor: no modificar los cubos). Todo lo
+   demás ya la soporta — pila bajo cada cubo, aviso < 20 %, `bateria_baja` —
+   y aparece sola al soldar un divisor 100k/100k a GPIO1 y poner
+   `BATERIA_PIN = 1` (próxima versión, ver `GUIA_ENSAYO_SESION.md` §2). No
+   se muestra en la vista del jugador.
+2. **Latencia medida**: el maestro sella cada evento (`edadMs`: lo que
+   esperó en el maestro; `rttMs`: lo que tardó el POST anterior), el backend
+   pone la hora de llegada (`tsBackend`) y Control calcula cubo → pantalla
+   (antirrebote incluido): última, mediana y p95 en el panel lateral.
+3. **Marcadores EEG** (`core/control/marcadoresEeg.ts`): inicio, "¡YA!",
+   cubo levantado, jugada válida/inválida, pausas, señales PPA, fin. Las
+   jugadas llevan la hora física estimada, no la de llegada. Se descargan
+   en CSV y se alinean con el archivo del OpenBCI GUI con
+   `herramientas/sincronizar_eeg.py` (salida importable en EEGLAB).
+4. **Bitácora continua en disco**: cada evento, decisión y marcador se
+   agrega al instante a `Backend-Cubos-Inteligentes-main/bitacoras/<sesión>.jsonl`
+   (en `.gitignore`: datos de participantes).
+5. **Ventana minimizada**: los temporizadores de la sesión (cuenta
+   regresiva, apagado automático PPA, pulso de inválido, identificación,
+   cronómetro) corren en un Web Worker y no se frenan en segundo plano;
+   Control y la vista del jugador piden mantener la pantalla encendida.
+6. **Base**: pulldown interno en las 8 casillas que lo permiten; las
+   casillas 1-3 (GPIO 39/34/35) no lo tienen y dependen de la base. Botón
+   **Probar base** en Control: levantar y apoyar cada casilla hasta 11/11.
+
+**Verificado sin hardware** (maestro simulado + Playwright): 34
+comprobaciones, 2 corridas seguidas sin fallas. El script de
+sincronización se probó con `Sesión 1.txt` real (125,09 Hz medidos).
 
 ## Estado de verificación
 

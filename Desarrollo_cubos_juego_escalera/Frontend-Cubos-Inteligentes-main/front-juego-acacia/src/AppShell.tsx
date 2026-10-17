@@ -11,12 +11,14 @@ import TutorialTab from './components/TutorialTab'
 import SimulacionLibreTab from './components/SimulacionLibreTab'
 import ObservadorTab from './components/ObservadorTab'
 import InformesTab from './components/InformesTab'
+import VistaJugador from './components/jugador/VistaJugador'
 import { StepMark, WIDE_MAX } from './ui/brand'
 
-type Tab = 'control' | 'tutorial' | 'libre' | 'observador' | 'informes'
+type Tab = 'control' | 'jugador' | 'tutorial' | 'libre' | 'observador' | 'informes'
 
 const TABS: { id: Tab; label: string; mode: string; modeColor: string }[] = [
   { id: 'control', label: '1 · Control Mago de Oz', mode: 'Hardware real', modeColor: 'var(--color-online)' },
+  { id: 'jugador', label: 'Vista del jugador', mode: 'Pantalla del participante', modeColor: 'var(--color-online)' },
   { id: 'tutorial', label: '2 · Tutorial guiado', mode: 'Sin hardware — aprendizaje', modeColor: 'var(--color-blue)' },
   { id: 'libre', label: '3 · Simulación libre', mode: 'Sin hardware — práctica', modeColor: 'var(--color-blue)' },
   { id: 'observador', label: '4 · Vista de observador', mode: 'Solo lectura', modeColor: 'var(--color-paper-dim)' },
@@ -107,6 +109,9 @@ function Shell() {
         <App
           operatorId={operatorId} setOperatorId={noop}
           onSnapshot={setSnapshot} />
+      </div>
+      <div style={{ display: tab === 'jugador' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        <VistaJugador />
       </div>
       <div style={{ display: tab === 'tutorial' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0 }}>
         <TutorialTab operatorId={operatorId} participante={participante} setParticipante={noop}
