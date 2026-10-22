@@ -152,7 +152,7 @@ Este archivo contiene **únicamente decisiones ya tomadas** por el autor y confi
 ---
 ## De la ecuación a la figura (2026-10-22)
 
-Auditoría del paso de las fórmulas a los gráficos, que era lo único del capítulo 3 sin estandarizar. Siete reglas, documentadas en §3.3 junto a la Tabla 3.4 que ata cada ecuación con su figura:
+Auditoría del paso de las fórmulas a los gráficos, que era lo único del capítulo 3 sin estandarizar. Siete reglas, documentadas en §3.3 junto a la Tabla 3.3 que ata cada ecuación con su figura:
 
 1. **Un eje, una escala comparable.** Solo comparten eje las magnitudes acotadas en [0,1]. Q no tiene cota superior: en las figuras va E = 1/Q.
 2. **La figura y la cifra son la misma cosa.** Si el informe titula con la agregación ponderada, la curva traza la ponderada.
@@ -176,3 +176,9 @@ Hallazgos de la auditoría, corregidos en la misma sesión:
 - Las limitaciones (p. ej. la integración pendiente del buzzer) deben aparecer de forma puntual y metodológicamente justificada, no repetirse constantemente con expresiones como "estado actual", "brecha" o "no implementado" en cada figura y cada tabla.
 - Ninguna figura, tabla, caption o nota al pie del documento debe citar sesiones de trabajo, auditorías, ni herramientas de IA. La trazabilidad hacia el código/firmware se mantiene en el proceso de verificación (estos archivos de control y el historial de commits), nunca en el texto de la tesis.
 - No se modifica la plantilla institucional (portada, márgenes, tipografía, numeración) salvo autorización explícita del autor.
+
+
+### 2026-10-22 · Persistencia de sesiones e informes
+Decisión: la fuente de verdad pasa de localStorage a IndexedDB (sin la cuota de ~5 MB); localStorage se conserva como copia secundaria y se recorta solo a sí mismo. Se añaden carpeta opcional del equipo, «Guardar informe» (HTML + JSON; descarga si no hay carpeta) y respaldo JSON completo. Motivo: se perdieron sesiones al cerrar el backend o recargar. Límites conocidos: la carpeta solo funciona en navegadores Chromium y requiere reconceder el permiso tras recargar; las bitácoras `.jsonl` del backend aún no son importables.
+Decisión: los informes (pantalla y archivo exportado) usan una sola fuente de cifras (`resumenes.ts`, `metricasDeSesion`) para que no puedan divergir.
+Decisión: la animación de buclicidad de la guía se audita contra la fórmula (`audit_anim`); exige lecturas no nulas para evitar auditorías vacías.

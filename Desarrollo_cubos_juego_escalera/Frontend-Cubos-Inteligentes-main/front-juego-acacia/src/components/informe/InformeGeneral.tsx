@@ -18,7 +18,9 @@ import { BarraResultados, BarrasConReferencia, BarrasHorizontales, Evolucion, Fi
 import {
   balanceDe, n2, n3, nivelLabel, pct, plural, reloj, sintesisSesion, leerTendencia, tendencia,
 } from './interpretar'
-import { csvDeIntentos, descargarCsv, descargarHtml, descargarJson, nombreArchivo, type DocInforme } from './exportar'
+import { capturarFiguras, construirHtml, csvDeIntentos, descargarCsv, descargarHtml, descargarJson, nombreArchivo, type DocInforme } from './exportar'
+import { cifrasTitulares, comoDatosDoc, seccionMediacion } from './resumenes'
+import GuardarInforme from './GuardarInforme'
 
 // Informe GENERAL de la sesión: reúne en un solo documento lo trabajado en
 // las cuatro pestañas y en todos los niveles — tiempos, movimientos frente al
@@ -32,7 +34,7 @@ import { csvDeIntentos, descargarCsv, descargarHtml, descargarJson, nombreArchiv
 // archivada (pestaña Informes): por eso recibe los datos como parámetro en
 // vez de leerlos del contexto. Solo la sesión en curso ofrece cerrarla.
 
-const COLS_INTENTO = ['Sección', 'Intento', 'Pares', 'Resultado', 'Movimientos', 'Mínimo', 'Eficiencia Q',
+const COLS_INTENTO = ['Sección', 'Intento', 'Pares', 'Resultado', 'Movimientos', 'Mínimo', 'Eficiencia E',
   'Decisiones R', 'Acierto α', 'Retornos ν', 'Bucles μ', 'Faltas', 'Tiempo']
 
 function filaIntento(i: IntentoSesion): (string | number)[] {
@@ -40,7 +42,7 @@ function filaIntento(i: IntentoSesion): (string | number)[] {
     NOMBRE_SECCION[i.seccion], `#${i.numero}`, i.pares,
     i.resultado === 'victoria' ? 'Victoria' : i.resultado === 'bloqueo' ? 'Bloqueo' : 'Reiniciado',
     i.metricas.movimientos || '—', i.metricas.optimo,
-    i.resultado === 'victoria' ? n2(i.metricas.circuidad) : '—',
+    i.resultado === 'victoria' ? n2(i.metricas.eficiencia) : '—',
     i.metricas.puntosDecision ? n3(i.metricas.ramificacion) : '—',
     i.metricas.puntosDecision ? pct(i.metricas.tasaAcierto) : '—',
     i.metricas.movimientos ? i.metricas.retornos : '—',
@@ -99,6 +101,7 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
       forzada: media(intentos.map(i => i.metricas.latenciaForzada)),
     }
   }, [intentos])
+  const cifras = cifrasTitulares(global, { conDecisiones, tiempos, incluirAcierto: true })
   const reiniciados = intentos.filter(i => i.resultado === 'reiniciado').length
   const frases = sintesisSesion(intentos, faltas, seccionesTrabajadas, duracionSeg)
   const balance = balanceDe(intentos, faltas)
@@ -200,6 +203,7 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
       ],
       balance,
       sintesis: frases,
+      figuras: capturarFiguras(),
       secciones: [
         {
           titulo: 'Resumen de la sesión',
@@ -208,15 +212,13 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
             { etiqueta: 'Ganados', valor: `${global.victorias}` },
             { etiqueta: 'Bloqueos', valor: `${global.bloqueos}` },
             { etiqueta: 'Movimientos', valor: `${global.movimientosTotales}` },
-            { etiqueta: 'Circuidad media', valor: global.victorias ? n2(global.circuidadMedia) : '—' },
-            { etiqueta: 'Ramificación media', valor: conDecisiones ? n3(global.ramificacionMedia) : '—' },
-            { etiqueta: 'Buclicidad media', valor: n3(global.buclicidadMedia) },
-            { etiqueta: 'Acierto medio', valor: conDecisiones ? pct(global.tasaAciertoMedia) : '—' },
+            ...comoDatosDoc(cifras),
             { etiqueta: 'Retornos', valor: `${global.retornosTotales}` },
             { etiqueta: 'Faltas', valor: `${totalFaltas}` },
             { etiqueta: 'Tiempo jugado', valor: reloj(global.segundosTotales) },
           ],
         },
+        seccionMediacion(mediacion),
         {
           titulo: 'Faltas a cada regla',
           parrafos: totalFaltas === 0 ? ['No hubo ninguna jugada rechazada en toda la sesión.'] : [],
@@ -235,7 +237,7 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
             cols: COLS_INTENTO,
             alineacion: ['izq', 'izq', 'der', 'izq', 'der', 'der', 'der', 'der', 'der', 'der', 'der', 'der', 'der'] as ('izq' | 'der')[],
             filas: intentos.map(filaIntento),
-            nota: 'Q = circuidad (movimientos / mínimo, solo en intentos ganados) · R = ramificación (0 = siempre la mejor jugada) · α = tasa de acierto · ν = retornos · μ = bucles independientes.',
+            nota: 'E = eficiencia (mínimo / movimientos, solo en intentos ganados; 1 = ruta mínima) · R = ramificación (0 = siempre la mejor jugada) · α = tasa de acierto · ν = retornos · μ = bucles independientes.',
           }],
         },
         ...porSeccion,
@@ -295,6 +297,9 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
       <button onClick={() => descargarHtml(base, documento())} style={btnDocPrincipal}>
         <Download size={13} /> Descargar informe
       </button>
+      <GuardarInforme tipo="sesion" titulo={`Informe de la sesión de ${perfil.participante}`} base={base} sesion={perfil}
+        html={() => construirHtml(documento())} json={datosJson}
+        csv={() => csvDeIntentos(intentos.map(filaIntento), COLS_INTENTO)} />
       <button onClick={() => descargarCsv(base, csvDeIntentos(intentos.map(filaIntento), COLS_INTENTO))} style={btnDoc}>CSV</button>
       <button onClick={() => descargarJson(base, datosJson())} style={btnDoc}>JSON</button>
     </>
@@ -317,14 +322,9 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
       <Datos>
         <Dato etiqueta="Intentos" valor={`${global.intentos}`} nota={`${global.victorias} ganados · ${global.bloqueos} bloqueos`} />
         <Dato etiqueta="Movimientos" valor={`${global.movimientosTotales}`} nota="en toda la sesión" />
-        <Dato etiqueta="Eficiencia media (E)" valor={global.victorias ? n2(global.eficienciaMedia) : '—'} nota={global.victorias ? `1 = ruta mínima · Q = ${n2(global.circuidadMedia)}` : 'sin intentos ganados'} />
-        <Dato etiqueta="Ramificación (R)" valor={conDecisiones ? n3(global.ramificacionPonderada) : '—'} nota={conDecisiones ? `ponderada · media por intento ${n3(global.ramificacionMedia)}` : 'sin decisiones reales'} />
-        <Dato etiqueta="Buclicidad (β)" valor={n3(global.buclicidadAgregada)} nota={`agregada · media por intento ${n3(global.buclicidadMedia)}`} />
-        <Dato etiqueta="Acierto (α)" valor={conDecisiones ? pct(global.tasaAciertoPonderada) : '—'} nota={conDecisiones ? `en ${global.puntosDecisionTotales} decisiones reales` : 'en puntos de decisión'} />
+        {cifras.map(c => <Dato key={c.etiqueta} etiqueta={c.etiqueta} valor={c.valor} nota={c.nota} />)}
         <Dato etiqueta="Faltas" valor={`${totalFaltas}`} nota="jugadas rechazadas" color={totalFaltas ? 'var(--color-offline)' : 'var(--color-online)'} />
         <Dato etiqueta="Tiempo jugado" valor={reloj(global.segundosTotales)} nota={`de ${reloj(duracionSeg)} de sesión`} />
-        <Dato etiqueta="Antes de decidir" valor={tiempos.decision === null ? '—' : `${(tiempos.decision / 1000).toFixed(1)} s`}
-          nota={tiempos.forzada === null ? 'sin tiempos en la bitácora' : `frente a ${(tiempos.forzada / 1000).toFixed(1)} s en jugadas forzadas`} />
       </Datos>
 
       {figResultados > 0 && (
@@ -379,7 +379,7 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
               valor: i.metricas.movimientos,
               referencia: i.metricas.optimo,
               color: colorResultado(i.resultado),
-              nota: i.resultado === 'victoria' ? `Q ${n2(i.metricas.circuidad)}` : i.resultado === 'bloqueo' ? 'bloqueo' : 'reiniciado',
+              nota: i.resultado === 'victoria' ? `E ${n2(i.metricas.eficiencia)}` : i.resultado === 'bloqueo' ? 'bloqueo' : 'reiniciado',
             }))} />
         </Figura>
       )}
@@ -454,7 +454,7 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
                     <ThM izq titulo="Intento" /><ThM titulo="Pares" ayuda="Cuántos pares de fichas tenía el nivel." />
                     <ThM izq titulo="Resultado" ayuda={AYUDA.resultado} />
                     <ThM titulo="Movimientos" ayuda={AYUDA.mov} /><ThM titulo="Mínimo" ayuda={AYUDA.minimo} />
-                    <ThM titulo="Eficiencia" simbolo="Q" ayuda={AYUDA.q} /><ThM titulo="Decisiones" simbolo="R" ayuda={AYUDA.r} />
+                    <ThM titulo="Eficiencia" simbolo="E" ayuda={AYUDA.e} /><ThM titulo="Decisiones" simbolo="R" ayuda={AYUDA.r} />
                     <ThM titulo="Acierto" simbolo="α" ayuda={AYUDA.acierto} /><ThM titulo="Retornos" simbolo="ν" ayuda={AYUDA.retornos} />
                     <ThM titulo="Bucles" simbolo="μ" ayuda={AYUDA.bucles} /><ThM titulo="Faltas" ayuda={AYUDA.faltas} />
                     <ThM titulo="Tiempo" ayuda={AYUDA.tiempo} />
@@ -469,7 +469,7 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
                         </td>
                         <td style={td}>{i.metricas.movimientos || '—'}</td>
                         <td style={td}>{i.metricas.optimo}</td>
-                        <td style={td}>{i.resultado === 'victoria' ? n2(i.metricas.circuidad) : '—'}</td>
+                        <td style={td}>{i.resultado === 'victoria' ? n2(i.metricas.eficiencia) : '—'}</td>
                         <td style={td}>{i.metricas.puntosDecision ? n3(i.metricas.ramificacion) : '—'}</td>
                         <td style={td}>{i.metricas.puntosDecision ? pct(i.metricas.tasaAcierto) : '—'}</td>
                         <td style={td}>{i.metricas.movimientos ? i.metricas.retornos : '—'}</td>

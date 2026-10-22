@@ -9,6 +9,7 @@ import {
 import { importarBitacoras, leerBitacora, type BitacoraImportada } from '../core/session/importar'
 import { NOMBRE_SECCION, faltasPorRegla, useSesion, type Seccion } from '../core/session/sesion'
 import { metricasDeSesion } from '../core/simulation/metricas'
+import PanelRespaldo from './PanelRespaldo'
 import { InformeSesion } from './informe/InformeGeneral'
 import InformeMacro from './informe/InformeMacro'
 import { descargarCsv } from './informe/exportar'
@@ -51,12 +52,12 @@ const COLUMNAS: { titulo: string; simbolo?: string; ayuda: string; der?: boolean
   { titulo: 'Ganados', ayuda: 'En cuántas completó el intercambio de las fichas.', der: true },
   { titulo: 'Movimientos', ayuda: 'Jugadas válidas sumando todos los intentos.', der: true },
   {
-    titulo: 'Eficiencia', simbolo: 'Q', der: true,
-    ayuda: 'Circuidad: cuántas veces el mínimo necesario usó para ganar. 1,00 es el camino más corto posible; 1,50 son un 50 % de movimientos de más. Solo cuenta los intentos ganados.',
+    titulo: 'Eficiencia', simbolo: 'E', der: true,
+    ayuda: 'Eficiencia: el mínimo necesario dividido por los movimientos que usó. 1,00 es el camino más corto posible y 0,50 es el doble de lo necesario. Solo cuenta los intentos ganados.',
   },
   {
     titulo: 'Decisiones', simbolo: 'R', der: true,
-    ayuda: 'Ramificación: qué tan buenas fueron las elecciones donde había más de una jugada posible. 0 es elegir siempre lo mejor; cuanto más alto, más se alejó de la mejor opción.',
+    ayuda: 'Ramificación ponderada: qué tan buenas fueron las elecciones donde había más de una jugada posible, contando todas las decisiones de la sesión por igual. 0 es elegir siempre lo mejor; cuanto más alto, más se alejó de la mejor opción.',
   },
   { titulo: 'Faltas', ayuda: 'Jugadas prohibidas que se intentaron. La aplicación las rechaza y las cuenta.', der: true },
   { titulo: '', ayuda: '' },
@@ -267,6 +268,9 @@ export default function InformesTab({ activo }: { activo: boolean }) {
           <div style={{ fontSize: '11.5px', color: 'var(--color-online)', marginTop: '10px', lineHeight: 1.5 }}>{resultado}</div>
         )}
       </Panel>
+
+      {/* Dónde está guardado todo, y cómo sacarlo a un archivo o a una carpeta. */}
+      <PanelRespaldo alCambiar={() => setSello(x => x + 1)} />
     </>
   )
 
@@ -349,11 +353,11 @@ export default function InformesTab({ activo }: { activo: boolean }) {
                         <td style={td}>{m.intentos}</td>
                         <td style={{ ...td, color: m.victorias ? 'var(--color-online)' : 'var(--color-paper-faint)', fontWeight: 700 }}>{m.victorias}</td>
                         <td style={td}>{m.movimientosTotales}</td>
-                        <td style={td} title={m.victorias ? `${n2(m.circuidadMedia)} veces el mínimo necesario` : 'sin intentos ganados'}>
-                          {m.victorias ? n2(m.circuidadMedia) : '—'}
+                        <td style={td} title={m.victorias ? `equivale a usar ${n2(1 / m.eficienciaMedia)} veces el mínimo necesario` : 'sin intentos ganados'}>
+                          {m.victorias ? n2(m.eficienciaMedia) : '—'}
                         </td>
                         <td style={td} title={hayDec ? '0 sería elegir siempre la mejor jugada' : 'no hubo decisiones reales que medir'}>
-                          {hayDec ? n3(m.ramificacionMedia) : '—'}
+                          {hayDec ? n3(m.ramificacionPonderada) : '—'}
                         </td>
                         <td style={{ ...td, color: faltas ? 'var(--color-offline)' : 'var(--color-paper-faint)' }}>{faltas}</td>
                         <td style={{ ...td, textAlign: 'right' }}>
@@ -376,9 +380,10 @@ export default function InformesTab({ activo }: { activo: boolean }) {
               fontSize: '11.5px', color: 'var(--color-paper-dim)', lineHeight: 1.6,
             }}>
               <b style={{ color: 'var(--color-paper)' }}>Cómo leer esta tabla: </b>
-              <b>Eficiencia (Q)</b> es cuántas veces el mínimo necesario usó para ganar — 1,00 es el camino más corto
-              posible, y solo se calcula con los intentos ganados. <b>Decisiones (R)</b> resume si eligió bien cuando
-              tenía varias jugadas posibles — 0 es elegir siempre lo mejor y, cuanto más alto, más se alejó.
+              <b>Eficiencia (E)</b> es qué fracción de sus movimientos fue realmente necesaria — 1,00 es el camino más
+              corto posible, 0,50 es el doble de lo necesario, y solo se calcula con los intentos ganados.
+              <b> Decisiones (R)</b> resume si eligió bien cuando tenía varias jugadas posibles, contando cada decisión
+              por igual — 0 es elegir siempre lo mejor y, cuanto más alto, más se alejó.
               Un <b>—</b> significa que esa sesión no tiene con qué calcularlo, no que el valor sea cero.
               Al pasar el cursor por cualquier encabezado se explica qué es, y justo debajo de esta tabla está la
               explicación de todas las métricas, sin fórmulas.

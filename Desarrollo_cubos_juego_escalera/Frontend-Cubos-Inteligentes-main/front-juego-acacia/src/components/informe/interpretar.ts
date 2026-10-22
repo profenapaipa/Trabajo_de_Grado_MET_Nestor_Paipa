@@ -1,4 +1,4 @@
-import type { MetricasIntento } from '../../core/simulation/metricas'
+import { metricasDeSesion, type MetricasIntento } from '../../core/simulation/metricas'
 import { NOMBRE_SECCION, REGLA_DE_ERROR, type IntentoSesion, type Seccion } from '../../core/session/sesion'
 
 // Lectura en lenguaje llano de las métricas del informe.
@@ -76,6 +76,34 @@ export function leerFaltas(total: number, porRegla: Record<string, number>): str
 
 export type FilaMetrica = { metrica: string; simbolo: string; valor: string; significado: string }
 
+// Los tres tiempos de planificación (ec. 3.17). Solo aparecen si la bitácora
+// guardó el instante de cada jugada: si no, no se inventan.
+function filasTiempos(m: MetricasIntento): FilaMetrica[] {
+  if (m.latenciaInicial === null) return []
+  const seg = (ms: number | null) => (ms === null ? '—' : `${(ms / 1000).toFixed(1).replace('.', ',')} s`)
+  const razon = m.latenciaDecision !== null && m.latenciaForzada !== null && m.latenciaForzada > 0
+    ? m.latenciaDecision / m.latenciaForzada : null
+  return [
+    {
+      metrica: 'Tiempo hasta la primera jugada', simbolo: 't ini',
+      valor: seg(m.latenciaInicial),
+      significado: 'Desde que el tablero quedó disponible hasta el primer movimiento: es el tiempo de planificación inicial.',
+    },
+    {
+      metrica: 'Tiempo antes de decidir', simbolo: 't dec',
+      valor: seg(m.latenciaDecision),
+      significado: razon === null
+        ? 'Tiempo medio antes de las jugadas en que había algo que elegir. En este intento no hubo ninguna.'
+        : `Tiempo medio antes de las jugadas en que había algo que elegir: ${razon >= 1.15 ? 'más que' : razon <= 0.87 ? 'menos que' : 'parecido a'} el de las jugadas forzadas (${seg(m.latenciaForzada)}).`,
+    },
+    {
+      metrica: 'Tiempo antes de ejecutar', simbolo: 't for',
+      valor: seg(m.latenciaForzada),
+      significado: 'Tiempo medio antes de las jugadas con una sola opción: lo que tarda en ejecutar cuando no hay nada que decidir.',
+    },
+  ]
+}
+
 export function filasMetricas(m: MetricasIntento, resultado: IntentoSesion['resultado']): FilaMetrica[] {
   const gano = resultado === 'victoria'
   return [
@@ -83,6 +111,13 @@ export function filasMetricas(m: MetricasIntento, resultado: IntentoSesion['resu
       metrica: 'Movimientos', simbolo: 'L',
       valor: `${m.movimientos}`,
       significado: `Mínimo posible para ${nivelLabel(m.pares)}: ${m.optimo} movimientos (D* = n² + 2n).`,
+    },
+    {
+      metrica: 'Eficiencia', simbolo: 'E',
+      valor: gano ? n2(m.eficiencia) : '—',
+      significado: gano
+        ? `El mínimo dividido entre lo que usó: ${n2(m.eficiencia)} significa que ${m.eficiencia >= 0.999 ? 'ganó por la ruta más corta posible' : `fue necesario el ${Math.round(m.eficiencia * 100)} % de sus movimientos`}.`
+        : 'Solo se calcula en intentos ganados.',
     },
     {
       metrica: 'Circuidad', simbolo: 'Q',
@@ -124,6 +159,7 @@ export function filasMetricas(m: MetricasIntento, resultado: IntentoSesion['resu
       valor: `${m.estadosDistintos}`,
       significado: 'Cuántos estados diferentes del grafo visitó durante el intento.',
     },
+    ...filasTiempos(m),
   ]
 }
 
@@ -194,7 +230,8 @@ export function sintesisNivel(intentos: IntentoSesion[], seccion: Seccion, pares
 
   const conDecisiones = intentos.filter(i => i.metricas.puntosDecision > 0)
   if (conDecisiones.length > 0) {
-    const r = conDecisiones.reduce((a, i) => a + i.metricas.ramificacion, 0) / conDecisiones.length
+    // La ponderada, la misma que encabeza el informe (ec. 3.15).
+    const r = metricasDeSesion(intentos).ramificacionPonderada
     const retornos = intentos.reduce((a, i) => a + i.metricas.retornos, 0)
     out.push(
       `${leerRamificacion(r, conDecisiones.reduce((a, i) => a + i.metricas.puntosDecision, 0))} `
@@ -230,8 +267,9 @@ export function sintesisSesion(intentos: IntentoSesion[], faltas: Record<string,
   const conDecisiones = intentos.filter(i => i.metricas.puntosDecision > 0)
   if (conDecisiones.length > 0) {
     const tR = tendencia(intentos.map(i => (i.metricas.puntosDecision ? i.metricas.ramificacion : null)), 'menor')
-    const r = conDecisiones.reduce((a, i) => a + i.metricas.ramificacion, 0) / conDecisiones.length
-    out.push(`Calidad de las decisiones: R media ${n3(r)} — ${leerTendencia(tR)}.`)
+    // Ponderada por decisiones, igual que el titular del informe (ec. 3.15).
+    const r = metricasDeSesion(intentos).ramificacionPonderada
+    out.push(`Calidad de las decisiones: R ${n3(r)} (ponderada) — ${leerTendencia(tR)}.`)
   }
 
   const tB = tendencia(intentos.map(i => (i.metricas.movimientos ? i.metricas.buclicidad : null)), 'menor')
@@ -278,9 +316,7 @@ export function balanceDe(intentos: IntentoSesion[], faltas: Record<string, numb
   const n = intentos.length
   const victorias = intentos.filter(i => i.resultado === 'victoria')
   const conDecisiones = intentos.filter(i => i.metricas.puntosDecision > 0)
-  const jugados = intentos.filter(i => i.metricas.movimientos > 0)
   const totalFaltas = Object.values(faltas).reduce((a, b) => a + b, 0)
-  const prom = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0)
 
   if (n === 0) {
     return {
@@ -289,10 +325,16 @@ export function balanceDe(intentos: IntentoSesion[], faltas: Record<string, numb
     }
   }
 
-  const q = prom(victorias.map(i => i.metricas.circuidad))
-  const r = prom(conDecisiones.map(i => i.metricas.ramificacion))
-  const b = prom(jugados.map(i => i.metricas.buclicidad))
-  const retornos = jugados.reduce((a, i) => a + i.metricas.retornos, 0)
+  // Las mismas cifras que encabezan el informe. Antes este balance calculaba
+  // sus propias medias sin ponderar, y como el semáforo se decide con ellas, el
+  // color con que se describía al aprendiz podía no ser el que correspondía:
+  // en una de las sesiones piloto la ramificación de 0,249 caía en «regular» y
+  // la ponderada, de 0,133, en «bien».
+  const m = metricasDeSesion(intentos)
+  const e = m.eficienciaMedia
+  const r = m.ramificacionPonderada
+  const b = m.buclicidadAgregada
+  const retornos = m.retornosTotales
   const faltasPorIntento = totalFaltas / n
 
   const indicadores: Indicador[] = [
@@ -306,17 +348,18 @@ export function balanceDe(intentos: IntentoSesion[], faltas: Record<string, numb
     },
     {
       nombre: 'Eficiencia de la ruta',
-      valor: victorias.length ? `${n2(q)}×` : '—',
-      nivel: victorias.length === 0 ? 'nd' : q <= 1.2 ? 'bien' : q <= 2 ? 'medio' : 'bajo',
+      valor: victorias.length ? n2(e) : '—',
+      // 0,83 y 0,50 son los umbrales de antes (circuidad 1,2 y 2) dichos como eficiencia.
+      nivel: victorias.length === 0 ? 'nd' : e >= 0.83 ? 'bien' : e >= 0.5 ? 'medio' : 'bajo',
       lectura: victorias.length === 0
         ? 'Se mide solo en los intentos que llegaron a la meta.'
-        : q <= 1.01
+        : e >= 0.99
           ? 'Ganó por el camino más corto posible.'
-          : `Usó ${n2(q)} veces los movimientos mínimos necesarios (${pct(q - 1)} de más).`,
+          : `En promedio fue necesario el ${pct(e)} de sus movimientos: usó ${n2(1 / e)} veces el mínimo.`,
     },
     {
       nombre: 'Calidad de las decisiones',
-      valor: conDecisiones.length ? n2(r) : '—',
+      valor: conDecisiones.length ? n3(r) : '—',
       nivel: conDecisiones.length === 0 ? 'nd' : r <= 0.15 ? 'bien' : r <= 0.35 ? 'medio' : 'bajo',
       lectura: conDecisiones.length === 0
         ? 'En estos intentos no hubo jugadas donde hubiera algo que elegir.'

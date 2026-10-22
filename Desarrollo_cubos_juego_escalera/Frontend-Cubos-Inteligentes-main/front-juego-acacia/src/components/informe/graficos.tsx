@@ -36,7 +36,7 @@ export function Figura({ numero, titulo, identificacion, derecha, comoLeer, chil
   children: ReactNode
 }) {
   return (
-    <figure style={{ margin: 0, border: '1px solid var(--color-line)', borderRadius: 'var(--radius)', padding: '12px 14px', background: 'var(--color-bg)' }}>
+    <figure data-figura={numero} style={{ margin: 0, border: '1px solid var(--color-line)', borderRadius: 'var(--radius)', padding: '12px 14px', background: 'var(--color-bg)' }}>
       <figcaption style={{ marginBottom: '10px', display: 'flex', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
         <span style={{ minWidth: 0 }}>
           <span style={{ ...sectionLabel, color: 'var(--color-blue)' }}>Figura {numero}</span>
@@ -288,6 +288,8 @@ export type Serie = { nombre: string; color: string; puntos: (number | null)[] }
 // como si fueran comparables entre sí, que es justo lo que no son.
 export type GrupoEje = { nombre: string; desde: number; hasta: number }
 
+// El <svg> lleva viewBox para poder reescalarse: en pantalla mide lo que el panel y en el
+// archivo descargado, cuya página es más estrecha, se ajusta en vez de salirse.
 export function Evolucion({ etiquetas, series, alto = 132, etiquetaEjeX = 'intentos, en el orden en que ocurrieron', grupos, pie }: {
   etiquetas: string[]
   series: Serie[]
@@ -347,7 +349,7 @@ export function Evolucion({ etiquetas, series, alto = 132, etiquetaEjeX = 'inten
           )}
           <div ref={ref} style={{ width: '100%' }}>
             {ancho > 0 && (
-              <svg width={ancho} height={alto} role="img" aria-label="Evolución de las métricas a lo largo de los intentos">
+              <svg width={ancho} height={alto} viewBox={`0 0 ${ancho} ${alto}`} role="img" aria-label="Evolución de las métricas a lo largo de los intentos">
                 {/* Franjas de los tramos, bajo todo lo demás. */}
                 {conGrupos && grupos!.map((g, i) => (
                   <g key={`g${i}`}>

@@ -20,7 +20,9 @@ import { BarrasConReferencia, BarrasHorizontales, Evolucion, Figura, Leyenda, ty
 import {
   balanceDe, leerTendencia, n2, n3, nivelLabel, plural, reloj, tendencia,
 } from './interpretar'
-import { csvDeIntentos, descargarCsv, descargarHtml, descargarJson, nombreArchivo, type DocInforme } from './exportar'
+import { capturarFiguras, construirHtml, csvDeIntentos, descargarCsv, descargarHtml, descargarJson, nombreArchivo, type DocInforme } from './exportar'
+import GuardarInforme from './GuardarInforme'
+import { cifrasTitulares, comoDatosDoc, seccionMediacion } from './resumenes'
 
 // Informe MACRO: todas las sesiones guardadas, de un perfil o de todos.
 //
@@ -40,7 +42,7 @@ const duracionDe = (s: SesionArchivada) =>
   Math.max(0, Math.round((new Date(s.fin).getTime() - new Date(s.inicio).getTime()) / 1000))
 
 const COLS_SESION = ['Sesión', 'Fecha', 'Duración', 'Pestañas', 'Niveles', 'Intentos', 'Ganados', 'Movimientos',
-  'Eficiencia Q', 'Decisiones R', 'Bucles β', 'Faltas']
+  'Eficiencia E', 'Decisiones R', 'Bucles β', 'Faltas']
 
 function seccionesDe(s: SesionArchivada): Seccion[] {
   const v = new Set<Seccion>()
@@ -61,9 +63,11 @@ function filaSesion(s: SesionArchivada, i: number, perfiles: Map<string, string>
     seccionesDe(s).map(x => NOMBRE_SECCION[x]).join(', ') || '—',
     niveles.length ? niveles.join(', ') : '—',
     m.intentos, m.victorias, m.movimientosTotales,
-    m.victorias ? n2(m.circuidadMedia) : '—',
-    conDecisiones ? n3(m.ramificacionMedia) : '—',
-    n3(m.buclicidadMedia),
+    // Las mismas cifras que el titular y la curva de evolución: eficiencia,
+    // ramificación ponderada y buclicidad agregada (ec. 3.6 y 3.15).
+    m.victorias ? n2(m.eficienciaMedia) : '—',
+    conDecisiones ? n3(m.ramificacionPonderada) : '—',
+    n3(m.buclicidadAgregada),
     faltas,
   ]
 }
@@ -95,6 +99,7 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
 
   const global = metricasDeSesion(intentos)
   const conDecisiones = intentos.some(i => i.metricas.puntosDecision > 0)
+  const cifras = cifrasTitulares(global, { conDecisiones, incluirAcierto: false })
   const balance = balanceDe(intentos, faltas)
   const niveles = useMemo(() => [...new Set(intentos.map(i => i.pares))].sort((a, b) => a - b), [intentos])
   const segundosTotales = sesiones.reduce((a, s) => a + duracionDe(s), 0)
@@ -233,6 +238,7 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
       ],
       balance,
       sintesis: frases,
+      figuras: capturarFiguras(),
       secciones: [
         {
           titulo: 'Acumulado',
@@ -242,9 +248,7 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
             { etiqueta: 'Intentos', valor: `${intentos.length}` },
             { etiqueta: 'Ganados', valor: `${global.victorias}` },
             { etiqueta: 'Movimientos', valor: `${global.movimientosTotales}` },
-            { etiqueta: 'Circuidad media', valor: global.victorias ? n2(global.circuidadMedia) : '—' },
-            { etiqueta: 'Ramificación media', valor: conDecisiones ? n3(global.ramificacionMedia) : '—' },
-            { etiqueta: 'Buclicidad media', valor: n3(global.buclicidadMedia) },
+            ...comoDatosDoc(cifras),
             { etiqueta: 'Faltas', valor: `${totalFaltas}` },
           ],
         },
@@ -254,22 +258,27 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
             cols: COLS_SESION,
             alineacion: ['izq', 'izq', 'der', 'izq', 'izq', 'der', 'der', 'der', 'der', 'der', 'der', 'der'],
             filas: sesiones.map((s, i) => filaSesion(s, i, perfilesPorId, !perfilId)),
-            nota: 'Q = circuidad media de los intentos ganados · R = ramificación media · β = buclicidad media.',
+            nota: 'E = eficiencia media de los intentos ganados (1 = ruta mínima) · R = ramificación ponderada por decisiones · β = buclicidad agregada (retornos entre movimientos).',
           }],
         },
         {
           titulo: 'Nivel por nivel, acumulado',
           tablas: [{
-            cols: ['Nivel', 'Mínimo', 'Sesiones', 'Intentos', 'Ganados', 'Mejor marca', 'R media', 'β media'],
-            alineacion: ['izq', 'der', 'der', 'der', 'der', 'der', 'der', 'der'],
+            cols: ['Nivel', 'Mínimo', 'Sesiones', 'Intentos', 'Ganados', 'Mejor marca', 'Eficiencia E',
+              'Decisiones R', 'Bucles β', 'Tendencia de R'],
+            alineacion: ['izq', 'der', 'der', 'der', 'der', 'der', 'der', 'der', 'der', 'der'],
             filas: porNivel.map(n => [
               nivelLabel(n.pares), n.optimo, n.sesionesConEseNivel, n.intentos, n.ganados,
               n.ganados ? `${n.mejor} mov.` : '—',
-              n.conDecisiones ? n3(n.resumen.ramificacionMedia) : '—',
-              n3(n.resumen.buclicidadMedia),
+              n.ganados ? n2(n.eficienciaMejor) : '—',
+              n.conDecisiones ? n3(n.resumen.ramificacionPonderada) : '—',
+              n3(n.resumen.buclicidadAgregada),
+              n.pendienteR === null ? '—' : (n.pendienteR < 0 ? '↓ ' : n.pendienteR > 0 ? '↑ ' : '') + n3(Math.abs(n.pendienteR)),
             ]),
+            nota: 'E de la mejor marca del nivel. R y β ponderadas: se juntan todas las decisiones (o todos los movimientos) del nivel y se divide una sola vez. Tendencia: pendiente de la recta de mínimos cuadrados de R dentro del nivel; ↓ significa que mejora. Hacen falta al menos tres intentos.',
           }],
         },
+        seccionMediacion(mediacion),
         {
           titulo: 'Faltas a cada regla, acumuladas',
           parrafos: totalFaltas === 0
@@ -291,11 +300,33 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
     }
   }
 
+  // Las filas del CSV, comunes al botón de descarga y al de guardar.
+  function csvMacro(): string {
+    return perfilId
+      ? historialCsv(perfilId)
+      : csvDeIntentos(
+        sesiones.flatMap((s, i) => s.intentos.map(x => [
+          perfilesPorId.get(s.perfilId) ?? s.perfilId, `S${i + 1}`, s.inicio, NOMBRE_SECCION[x.seccion], x.numero, x.pares,
+          x.resultado, x.segundos, x.metricas.movimientos, x.metricas.optimo,
+          x.resultado === 'victoria' ? x.metricas.circuidad.toFixed(4) : '',
+          x.resultado === 'victoria' ? x.metricas.eficiencia.toFixed(4) : '',
+          x.metricas.puntosDecision ? x.metricas.ramificacion.toFixed(4) : '',
+          x.metricas.retornos, x.metricas.buclicidad.toFixed(4), x.errores, x.recorrido.join(' '),
+        ])),
+        ['perfil', 'sesion', 'inicio', 'seccion', 'intento', 'pares', 'resultado', 'segundos', 'movimientos',
+          'optimo', 'circuidad', 'eficiencia', 'ramificacion', 'retornos', 'buclicidad', 'errores', 'recorrido'])
+  }
+
   const acciones = (
     <>
       <button onClick={() => descargarHtml(base, documento())} style={btnDocPrincipal}>
         <Download size={13} /> Descargar informe
       </button>
+      <GuardarInforme tipo="macro" titulo={`Informe macro · ${quien}`} base={base}
+        sesion={{ sesionId: `macro-${perfilId ?? 'todos'}`, perfilId: perfilId ?? 'todos', inicio: new Date().toISOString(), participante: quien }}
+        html={() => construirHtml(documento())}
+        json={() => ({ informe: 'macro', perfil: quien, generado: new Date().toISOString(), sesiones })}
+        csv={csvMacro} />
       <button
         onClick={() => descargarCsv(base, perfilId
           ? historialCsv(perfilId)
@@ -345,9 +376,7 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
             <Dato etiqueta="Intentos" valor={`${intentos.length}`} nota={`${global.victorias} ganados · ${global.bloqueos} bloqueos`} />
             <Dato etiqueta="Movimientos" valor={`${global.movimientosTotales}`} nota="en todas las sesiones" />
             <Dato etiqueta="Niveles" valor={`${niveles.length}`} nota={niveles.map(nivelLabel).join(', ')} />
-            <Dato etiqueta="Eficiencia media (E)" valor={global.victorias ? n2(global.eficienciaMedia) : '—'} nota={global.victorias ? `1 = ruta mínima · Q = ${n2(global.circuidadMedia)}` : 'sin intentos ganados'} />
-            <Dato etiqueta="Ramificación (R)" valor={conDecisiones ? n3(global.ramificacionPonderada) : '—'} nota={conDecisiones ? `ponderada sobre ${global.puntosDecisionTotales} decisiones · media por intento ${n3(global.ramificacionMedia)}` : 'sin decisiones reales'} />
-            <Dato etiqueta="Buclicidad (β)" valor={n3(global.buclicidadAgregada)} nota={`agregada · media por intento ${n3(global.buclicidadMedia)}`} />
+            {cifras.map(c => <Dato key={c.etiqueta} etiqueta={c.etiqueta} valor={c.valor} nota={c.nota} />)}
             <Dato etiqueta="Faltas" valor={`${totalFaltas}`} nota="jugadas rechazadas"
               color={totalFaltas ? 'var(--color-offline)' : 'var(--color-online)'} />
           </Datos>
@@ -398,7 +427,7 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
 
           <Bloque titulo="Sesión por sesión"
             derecha={<span style={{ fontSize: '11px', color: 'var(--color-paper-faint)' }}>{plural(sesiones.length, 'sesión', 'sesiones')}</span>}>
-            <Tabla nota="Q = circuidad media de los intentos ganados · R = ramificación media · β = buclicidad media.">
+            <Tabla nota="E = eficiencia media de los intentos ganados (1 = ruta mínima) · R = ramificación ponderada por decisiones · β = buclicidad agregada (retornos entre movimientos).">
               <thead><tr>
                 <ThM izq titulo="Sesión" /><ThM izq titulo="Fecha" />
                 <ThM titulo="Duración" ayuda="Cuánto duró la sesión de principio a fin." />
@@ -407,8 +436,8 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
                 <ThM titulo="Intentos" ayuda="Partidas terminadas en esa sesión." />
                 <ThM titulo="Ganados" ayuda="Cuántas completaron el intercambio." />
                 <ThM titulo="Movimientos" ayuda={AYUDA.mov} />
-                <ThM titulo="Eficiencia" simbolo="Q" ayuda={AYUDA.q} /><ThM titulo="Decisiones" simbolo="R" ayuda={AYUDA.r} />
-                <ThM titulo="Bucles" simbolo="β" ayuda="Buclicidad media: qué proporción de las jugadas terminó en una posición ya visitada." />
+                <ThM titulo="Eficiencia" simbolo="E" ayuda={AYUDA.e} /><ThM titulo="Decisiones" simbolo="R" ayuda={AYUDA.r} />
+                <ThM titulo="Bucles" simbolo="β" ayuda={AYUDA.bucles_agregada} />
                 <ThM titulo="Faltas" ayuda={AYUDA.faltas} />
               </tr></thead>
               <tbody>

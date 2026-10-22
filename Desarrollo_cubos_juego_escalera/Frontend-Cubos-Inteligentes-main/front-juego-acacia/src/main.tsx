@@ -13,7 +13,14 @@ if (new URLSearchParams(location.search).get('vista') === 'jugador') {
     root.render(<StrictMode><VistaJugador enVentana /></StrictMode>)
   })
 } else {
-  import('./AppShell.tsx').then(({ default: AppShell }) => {
-    root.render(<StrictMode><AppShell /></StrictMode>)
-  })
+  // Antes de pintar se hidrata el almacenamiento: perfiles, sesiones y la
+  // sesión en curso se leen de IndexedDB una sola vez y desde entonces se
+  // consultan de memoria (ver core/session/almacen.ts). Si IndexedDB no
+  // responde, la aplicación arranca igual con lo que haya en localStorage.
+  Promise.all([import('./core/session/almacen'), import('./core/session/perfiles'), import('./core/session/carpeta')])
+    .then(async ([almacen, perfiles, carpeta]) => {
+      try { await almacen.hidratar(); perfiles.hidratarArchivo(); await carpeta.cargarCarpeta() } catch { /* se sigue con localStorage */ }
+      const { default: AppShell } = await import('./AppShell.tsx')
+      root.render(<StrictMode><AppShell /></StrictMode>)
+    })
 }

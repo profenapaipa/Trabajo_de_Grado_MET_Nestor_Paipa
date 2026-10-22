@@ -1,4 +1,5 @@
 import type { EventoSesion, IntentoSesion, Seccion } from './sesion'
+import { archivoDeIdb, avisarLocal, escribirLocal, leerLocal, poner } from './almacen'
 
 // Perfiles y archivo de sesiones.
 //
@@ -9,10 +10,10 @@ import type { EventoSesion, IntentoSesion, Seccion } from './sesion'
 // comparar lo de hoy con lo anterior — que es la evidencia de aprendizaje
 // que busca la tesis: la tendencia, no un valor aislado.
 //
-// Vive en el navegador (localStorage), igual que la sesión en curso: es una
-// comodidad de trazabilidad local, no un repositorio de datos del proyecto.
-// Si el almacenamiento no está disponible, la aplicación sigue funcionando y
-// el historial dura lo que dure la pestaña.
+// Vive en el navegador, con IndexedDB como fuente de verdad y localStorage
+// como segundo respaldo (ver almacen.ts). Se lee de una copia en memoria que se
+// hidrata al arrancar. Si ninguno de los dos está disponible, la aplicación
+// sigue funcionando y el historial dura lo que dure la pestaña.
 
 export type RolPerfil = 'admin' | 'participante'
 
@@ -56,45 +57,101 @@ export function idDeNombre(nombre: string): string {
   return base || 'sin-nombre'
 }
 
-function vacio(): Archivo { return { perfiles: [PERFIL_ADMIN], sesiones: [] } }
-
-export function cargarArchivo(): Archivo {
+function leerLocalArchivo(): Archivo | null {
   try {
-    const crudo = localStorage.getItem(CLAVE)
-    if (!crudo) return vacio()
+    const crudo = leerLocal(CLAVE)
+    if (!crudo) return null
     const a = JSON.parse(crudo) as Archivo
-    const lista = Array.isArray(a.perfiles) ? a.perfiles : []
-    const sesiones = Array.isArray(a.sesiones) ? a.sesiones : []
-    // El perfil por defecto no se puede perder ni duplicar.
     return {
-      perfiles: lista.some(p => p.id === ID_ADMIN) ? lista : [PERFIL_ADMIN, ...lista],
-      sesiones,
+      perfiles: Array.isArray(a.perfiles) ? a.perfiles : [],
+      sesiones: Array.isArray(a.sesiones) ? a.sesiones : [],
     }
-  } catch { return vacio() }
+  } catch { return null }
 }
 
-// Guarda recortando si el navegador se queda sin espacio: primero los
-// eventos de las sesiones más antiguas (van en orden: la 0 es la más vieja) y
-// solo si aún no cabe, sesiones completas desde la más antigua.
-function guardar(archivo: Archivo): void {
-  let a = archivo
-  for (let i = 0; i < 24; i++) {
-    try {
-      localStorage.setItem(CLAVE, JSON.stringify(a))
-      return
-    } catch { /* sin espacio, o sin almacenamiento disponible */ }
-    const conEventos = a.sesiones.findIndex(s => s.eventos.length > 0)
-    if (conEventos >= 0) {
-      a = {
-        ...a,
-        sesiones: a.sesiones.map((s, k) => (k === conEventos ? { ...s, eventos: [], eventosRecortados: true } : s)),
-      }
-    } else if (a.sesiones.length > 0) {
-      a = { ...a, sesiones: a.sesiones.slice(1) }
-    } else {
-      return // no era falta de espacio: el almacenamiento no está disponible
-    }
+// Normaliza: el perfil por defecto no se puede perder ni duplicar.
+function normalizar(a: Archivo | null | undefined): Archivo {
+  const lista = Array.isArray(a?.perfiles) ? a!.perfiles : []
+  const sesiones = Array.isArray(a?.sesiones) ? a!.sesiones : []
+  return {
+    perfiles: lista.some(p => p.id === ID_ADMIN) ? lista : [PERFIL_ADMIN, ...lista],
+    sesiones,
   }
+}
+
+// De dos copias de la misma sesión se queda con la más completa: la que tiene
+// más eventos e intentos, o, a igualdad, la que terminó más tarde. Así una copia
+// recortada por falta de espacio nunca pisa a la completa.
+const peso = (x: SesionArchivada) => x.eventos.length + x.intentos.length * 1000
+function mejor(x: SesionArchivada, y: SesionArchivada): SesionArchivada {
+  if (peso(x) !== peso(y)) return peso(x) > peso(y) ? x : y
+  return x.fin >= y.fin ? x : y
+}
+
+// Une dos archivos sin perder nada de ninguno: perfiles por id, sesiones por
+// sesionId. Es lo que permite restaurar una copia de seguridad encima de lo
+// que ya hay, o abrir la aplicación por otra dirección sin vaciar el historial.
+export function fusionarArchivos(a: Archivo, b: Archivo): Archivo {
+  const perfilesPorId = new Map<string, PerfilGuardado>()
+  for (const p of [...a.perfiles, ...b.perfiles]) if (!perfilesPorId.has(p.id)) perfilesPorId.set(p.id, p)
+  const sesionesPorId = new Map<string, SesionArchivada>()
+  for (const s of [...a.sesiones, ...b.sesiones]) {
+    const previa = sesionesPorId.get(s.sesionId)
+    sesionesPorId.set(s.sesionId, previa ? mejor(previa, s) : s)
+  }
+  return normalizar({
+    perfiles: [...perfilesPorId.values()],
+    sesiones: [...sesionesPorId.values()].sort((x, y) => x.inicio.localeCompare(y.inicio)),
+  })
+}
+
+// Copia en memoria: todos los componentes leen de aquí, de forma síncrona.
+let cache: Archivo | null = null
+
+// Se llama una vez al arrancar, después de almacen.hidratar(): reúne lo que
+// haya en IndexedDB y en localStorage. Si una de las dos copias tenía menos
+// (porque se recortó), la fusión la completa con la otra.
+export function hidratarArchivo(): void {
+  const idb = archivoDeIdb<Archivo>()
+  const local = leerLocalArchivo()
+  cache = fusionarArchivos(normalizar(idb), normalizar(local))
+  // Si IndexedDB iba por detrás de lo fusionado, se pone al día.
+  void poner('archivo', 'archivo', cache)
+}
+
+// Sustituye el archivo completo y lo guarda en todas las vías. Lo usa la
+// restauración de una copia de seguridad, que ya viene fusionada.
+export function reemplazarArchivo(a: Archivo): void { guardar(normalizar(a)) }
+
+export function cargarArchivo(): Archivo {
+  if (cache) return cache
+  cache = normalizar(leerLocalArchivo())
+  return cache
+}
+
+// localStorage solo admite unos 5 M de caracteres, y la aplicación ya no
+// depende de él: aquí se guarda una copia secundaria, reducida si hace falta.
+// Lo que se recorta es esa copia; la de memoria y la de IndexedDB no se tocan.
+function guardarLocal(a: Archivo): void {
+  let copia = a
+  for (let i = 0; i < 24; i++) {
+    if (escribirLocal(CLAVE, JSON.stringify(copia))) { avisarLocal(true); return }
+    const conEventos = copia.sesiones.findIndex(x => x.eventos.length > 0)
+    if (conEventos >= 0) {
+      copia = { ...copia, sesiones: copia.sesiones.map((x, k) => (k === conEventos ? { ...x, eventos: [], eventosRecortados: true } : x)) }
+    } else if (copia.sesiones.length > 0) {
+      copia = { ...copia, sesiones: copia.sesiones.slice(1) }
+    } else break
+  }
+  avisarLocal(false)
+}
+
+// Guarda en las dos partes. La copia en memoria es la completa y la que lee la
+// aplicación; IndexedDB la hace duradera; localStorage es el respaldo reducido.
+function guardar(archivo: Archivo): void {
+  cache = archivo
+  void poner('archivo', 'archivo', archivo)
+  guardarLocal(archivo)
 }
 
 function ultimaActividad(a: Archivo, perfilId: string): string | undefined {

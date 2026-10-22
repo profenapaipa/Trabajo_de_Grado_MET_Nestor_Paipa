@@ -285,3 +285,7 @@ Efecto medido sobre las bitácoras piloto: la ramificación de Jerónimo pasa de
 ### 9.4 Pendiente metodológico
 
 Construir iso-problemas reales en La Escalera exigiría **definir tareas nuevas sobre el mismo grafo** (pares inicio–meta distintos del que fija el juego). La simetría verificada —invertir el tablero y cambiar de equipo— generaría clases de equivalencia de tamaño 2, frente a las de tamaño 6 de Hanói y la Torre de Londres. Es una decisión metodológica del director, no técnica.
+
+
+## Actualización 2026-10-22
+El informe exportado y el de pantalla comparten cifras (E, R y β ponderadas, mediación). Animaciones de la guía auditadas: buclicidad ν = 1, μ = 1 al cerrar la primera vuelta (L = 6) y ν = 10, μ = 1 en L = 15.

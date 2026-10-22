@@ -155,3 +155,9 @@ Registrado el 2026-09-02. El algoritmo de dos pasos (validar contra las reglas d
 | Cambios sin `commit` | — | ✅ **Resuelto** (2026-10-08): `rediseno-ui` fusionada en `main` y publicada; desde entonces se trabaja y se publica solo desde `main` | — | — | — |
 | 3 advertencias de lint antiguas en `App.tsx` (líneas ≈586, 598, 642) | ⚪ BAJO | Preexistentes, no tocadas | Ninguna | — | Limpiar cuando convenga |
 
+
+
+## 2026-10-22 · Pendientes tras el respaldo de sesiones
+- [ ] Importar las bitácoras `.jsonl` del backend (`Backend-Cubos-Inteligentes-main/bitacoras/`) como sesiones.
+- [ ] Probar la carpeta de respaldo en el equipo real de la sesión (Chrome/Edge) y confirmar el aviso de permiso tras recargar.
+- [ ] Reemplazar las láminas con «valores de ejemplo» por figuras de sesiones reales cuando haya más de dos sesiones piloto.

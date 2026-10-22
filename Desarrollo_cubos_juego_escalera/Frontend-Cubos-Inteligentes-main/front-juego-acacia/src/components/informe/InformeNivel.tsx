@@ -16,7 +16,11 @@ import { BarrasConReferencia, BarrasHorizontales, Evolucion, Figura, Leyenda, Me
 import {
   balanceDe, filasMetricas, leerFaltas, n2, n3, nivelLabel, pct, plural, reloj, sintesisNivel,
 } from './interpretar'
-import { descargarCsv, descargarHtml, descargarJson, csvDeIntentos, nombreArchivo, type DocInforme } from './exportar'
+import { capturarFiguras, construirHtml, descargarCsv, descargarHtml, descargarJson, csvDeIntentos, nombreArchivo, type DocInforme } from './exportar'
+import GuardarInforme from './GuardarInforme'
+import BloqueMediacion from './BloqueMediacion'
+import { cifrasTitulares, comoDatosDoc, seccionMediacion } from './resumenes'
+import { efectoMediacion } from '../../core/session/mediacion'
 
 // Informe DEL NIVEL: lo que pasó en un nivel concreto (una cantidad de pares)
 // de una sección concreta. Es el informe corto, el que se mira al terminar un
@@ -27,7 +31,7 @@ import { descargarCsv, descargarHtml, descargarJson, csvDeIntentos, nombreArchiv
 // Se diferencia del informe general de la sesión (InformeGeneral.tsx), que
 // reúne las cuatro pestañas y todos los niveles jugados.
 
-const COLS_INTENTO = ['Intento', 'Resultado', 'Movimientos', 'Mínimo', 'Eficiencia Q', 'Decisiones R',
+const COLS_INTENTO = ['Intento', 'Resultado', 'Movimientos', 'Mínimo', 'Eficiencia E', 'Decisiones R',
   'Acierto α', 'Retornos ν', 'Bucles μ', 'Faltas', 'Tiempo']
 
 function filaIntento(i: IntentoSesion): (string | number)[] {
@@ -36,7 +40,7 @@ function filaIntento(i: IntentoSesion): (string | number)[] {
     i.resultado === 'victoria' ? 'Victoria' : i.resultado === 'bloqueo' ? 'Bloqueo' : 'Reiniciado',
     i.metricas.movimientos || '—',
     i.metricas.optimo,
-    i.resultado === 'victoria' ? n2(i.metricas.circuidad) : '—',
+    i.resultado === 'victoria' ? n2(i.metricas.eficiencia) : '—',
     i.metricas.puntosDecision ? n3(i.metricas.ramificacion) : '—',
     i.metricas.puntosDecision ? pct(i.metricas.tasaAcierto) : '—',
     i.metricas.movimientos ? i.metricas.retornos : '—',
@@ -70,6 +74,21 @@ export default function InformeNivel({ seccion, pares, onCerrar }: { seccion: Se
   const mejor = ganados.length ? ganados.reduce((a, b) => (a.metricas.movimientos <= b.metricas.movimientos ? a : b)) : null
   const optimo = pares * pares + 2 * pares
   const recorridos = delNivel.map(i => i.recorrido).filter(r => r.length > 1)
+  const conDecisiones = delNivel.some(i => i.metricas.puntosDecision > 0)
+  // Tiempos medios del nivel: los intentos que traen marcas de tiempo.
+  const tiempos = useMemo(() => {
+    const media = (xs: (number | null)[]) => {
+      const v = xs.filter((x): x is number => x !== null)
+      return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null
+    }
+    return {
+      decision: media(delNivel.map(i => i.metricas.latenciaDecision)),
+      forzada: media(delNivel.map(i => i.metricas.latenciaForzada)),
+    }
+  }, [delNivel])
+  const cifras = cifrasTitulares(resumen, { conDecisiones, tiempos, incluirAcierto: true })
+  // Efecto de la mediación dentro de este nivel y esta pestaña.
+  const mediacion = useMemo(() => efectoMediacion(eventosNivel), [eventosNivel])
   const frases = sintesisNivel(delNivel, seccion, pares, faltas)
   const balance = balanceDe(delNivel, faltas)
 
@@ -104,14 +123,16 @@ export default function InformeNivel({ seccion, pares, onCerrar }: { seccion: Se
       ],
       balance,
       sintesis: frases,
+      figuras: capturarFiguras(),
       secciones: [
+        { titulo: 'Resumen del nivel', datos: comoDatosDoc(cifras) },
         {
           titulo: 'Intentos del nivel',
           tablas: [{
             cols: COLS_INTENTO,
             alineacion: ['izq', 'izq', 'der', 'der', 'der', 'der', 'der', 'der', 'der', 'der', 'der'],
             filas: delNivel.map(filaIntento),
-            nota: 'Q = circuidad (movimientos / mínimo, solo en intentos ganados) · R = ramificación (0 = siempre la mejor jugada) · ν = retornos · μ = bucles independientes.',
+            nota: 'E = eficiencia (mínimo / movimientos, solo en intentos ganados; 1 = ruta mínima) · R = ramificación (0 = siempre la mejor jugada) · ν = retornos · μ = bucles independientes.',
           }],
         },
         ...(ultimo ? [{
@@ -122,6 +143,7 @@ export default function InformeNivel({ seccion, pares, onCerrar }: { seccion: Se
             filas: filasMetricas(ultimo.metricas, ultimo.resultado).map(f => [f.metrica, f.simbolo, f.valor, f.significado]),
           }],
         }] : []),
+        seccionMediacion(mediacion),
         {
           titulo: 'Faltas a las reglas en este nivel',
           parrafos: [leerFaltas(totalFaltas, faltas)],
@@ -162,6 +184,11 @@ export default function InformeNivel({ seccion, pares, onCerrar }: { seccion: Se
       <button onClick={() => descargarHtml(base, documento())} style={btnDocPrincipal}>
         <Download size={13} /> Descargar informe
       </button>
+      {perfil && (
+        <GuardarInforme tipo="nivel" titulo={`Informe del nivel de ${nivelLabel(pares)} · ${NOMBRE_SECCION[seccion]} · ${perfil.participante}`}
+          base={base} sesion={perfil} html={() => construirHtml(documento())} json={datosJson}
+          csv={() => csvDeIntentos(delNivel.map(filaIntento), COLS_INTENTO)} />
+      )}
       <button onClick={() => descargarCsv(base, csvDeIntentos(delNivel.map(filaIntento), COLS_INTENTO))} style={btnDoc}>CSV</button>
       <button onClick={() => descargarJson(base, datosJson())} style={btnDoc}>JSON</button>
     </>
@@ -185,8 +212,9 @@ export default function InformeNivel({ seccion, pares, onCerrar }: { seccion: Se
           nota={ultimo ? `movimientos · mínimo ${optimo}` : 'sin intentos'}
           color={ultimo && ultimo.resultado === 'victoria' ? 'var(--color-online)' : undefined} />
         <Dato etiqueta="Mejor ganado" valor={mejor ? `${mejor.metricas.movimientos}` : '—'}
-          nota={mejor ? `intento #${mejor.numero} · Q ${n2(mejor.metricas.circuidad)}` : 'ninguno todavía'} />
+          nota={mejor ? `intento #${mejor.numero} · E ${n2(mejor.metricas.eficiencia)}` : 'ninguno todavía'} />
         <Dato etiqueta="Tiempo jugado" valor={reloj(resumen.segundosTotales)} nota="suma de los intentos" />
+        {cifras.map(c => <Dato key={c.etiqueta} etiqueta={c.etiqueta} valor={c.valor} nota={c.nota} />)}
         <Dato etiqueta="Retornos" valor={`${resumen.retornosTotales}`} nota="posiciones repetidas"
           color={resumen.retornosTotales ? 'var(--color-caution)' : 'var(--color-online)'} />
         <Dato etiqueta="Faltas" valor={`${totalFaltas}`} nota="jugadas rechazadas"
@@ -208,7 +236,7 @@ export default function InformeNivel({ seccion, pares, onCerrar }: { seccion: Se
               valor: i.metricas.movimientos,
               referencia: i.metricas.optimo,
               color: colorResultado(i.resultado),
-              nota: i.resultado === 'victoria' ? `Q ${n2(i.metricas.circuidad)}` : i.resultado === 'bloqueo' ? 'bloqueo' : 'reiniciado',
+              nota: i.resultado === 'victoria' ? `E ${n2(i.metricas.eficiencia)}` : i.resultado === 'bloqueo' ? 'bloqueo' : 'reiniciado',
             }))} />
         </Figura>
       )}
@@ -290,11 +318,11 @@ export default function InformeNivel({ seccion, pares, onCerrar }: { seccion: Se
             Todavía no se ha terminado ningún intento en este nivel. El grafo de abajo muestra el mapa completo del nivel.
           </div>
         ) : (
-          <Tabla nota="Q = circuidad (solo en intentos ganados) · R = ramificación · ν = retornos · μ = bucles independientes.">
+          <Tabla nota="E = eficiencia (solo en intentos ganados; 1 = ruta mínima) · R = ramificación · ν = retornos · μ = bucles independientes.">
             <thead><tr>
               <ThM izq titulo="Intento" /><ThM izq titulo="Resultado" ayuda={AYUDA.resultado} />
               <ThM titulo="Movimientos" ayuda={AYUDA.mov} /><ThM titulo="Mínimo" ayuda={AYUDA.minimo} />
-              <ThM titulo="Eficiencia" simbolo="Q" ayuda={AYUDA.q} /><ThM titulo="Decisiones" simbolo="R" ayuda={AYUDA.r} />
+              <ThM titulo="Eficiencia" simbolo="E" ayuda={AYUDA.e} /><ThM titulo="Decisiones" simbolo="R" ayuda={AYUDA.r} />
               <ThM titulo="Acierto" simbolo="α" ayuda={AYUDA.acierto} /><ThM titulo="Retornos" simbolo="ν" ayuda={AYUDA.retornos} />
               <ThM titulo="Bucles" simbolo="μ" ayuda={AYUDA.bucles} /><ThM titulo="Faltas" ayuda={AYUDA.faltas} />
               <ThM titulo="Tiempo" ayuda={AYUDA.tiempo} />
@@ -308,7 +336,7 @@ export default function InformeNivel({ seccion, pares, onCerrar }: { seccion: Se
                   </td>
                   <td style={td}>{i.metricas.movimientos || '—'}</td>
                   <td style={td}>{i.metricas.optimo}</td>
-                  <td style={td}>{i.resultado === 'victoria' ? n2(i.metricas.circuidad) : '—'}</td>
+                  <td style={td}>{i.resultado === 'victoria' ? n2(i.metricas.eficiencia) : '—'}</td>
                   <td style={td}>{i.metricas.puntosDecision ? n3(i.metricas.ramificacion) : '—'}</td>
                   <td style={td}>{i.metricas.puntosDecision ? pct(i.metricas.tasaAcierto) : '—'}</td>
                   <td style={td}>{i.metricas.movimientos ? i.metricas.retornos : '—'}</td>
@@ -365,6 +393,8 @@ export default function InformeNivel({ seccion, pares, onCerrar }: { seccion: Se
           actual={recorridos.length ? recorridos[recorridos.length - 1] : []}
           height={420} seguimiento={false} modo="informe" onCy={cy => { cyRef.current = cy }} />
       </Figura>
+
+      <BloqueMediacion efecto={mediacion} />
 
       <BloqueFuentes />
     </ModalInforme>

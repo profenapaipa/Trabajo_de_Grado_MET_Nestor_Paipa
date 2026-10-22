@@ -3600,6 +3600,12 @@ Cada informe se descarga como página HTML autocontenida —viaja sola, con
 sus gráficos y sus referencias dentro—, y los datos en CSV y JSON para el
 análisis posterior.
 
+\subsubsection{Conservación de las sesiones y de los informes}
+
+Durante las primeras sesiones piloto se perdieron sesiones al cerrar el servidor o recargar la página. La causa fue el almacenamiento del navegador: la aplicación guardaba todo en \textit{localStorage}, cuya cuota ronda los 5~MB por origen, y una sesión de Control con su copia de trabajo ocupaba más de un tercio; al llenarse, el sistema descartaba en silencio lo más antiguo. La solución tiene cuatro capas. La fuente de verdad es ahora \textit{IndexedDB}, sin esa cuota; \textit{localStorage} se conserva solo como copia secundaria. De forma opcional, el investigador elige una carpeta del equipo (API de acceso al sistema de archivos, disponible únicamente en navegadores basados en Chromium, que pide permiso de nuevo tras recargar) donde se escribe una subcarpeta por perfil y sesión. Al generar un informe, el botón «Guardar informe» lo conserva en el navegador y lo escribe como archivo HTML autónomo y JSON de datos, o lo descarga si no hay carpeta. Por último, un respaldo completo en JSON permite exportar e importar todos los perfiles.
+
+El informe exportado y el de pantalla se construyen con las mismas funciones de cifras (eficiencia, $R$ y $\beta$ ponderadas, mediación), de modo que no pueden divergir, y el archivo incluye las figuras. Limitación: las bitácoras del servidor (\texttt{.jsonl}) aún no se importan como sesiones.
+
 \subsubsection{Perfiles y trazabilidad}
 
 Cada participante tiene un perfil, y cada sesión terminada se archiva en

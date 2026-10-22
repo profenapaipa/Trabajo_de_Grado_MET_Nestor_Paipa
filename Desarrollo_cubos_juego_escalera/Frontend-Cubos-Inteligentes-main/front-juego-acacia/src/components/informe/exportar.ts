@@ -25,7 +25,7 @@ export type SeccionDoc = {
   parrafos?: string[]
   tablas?: TablaDoc[]
   // Pares etiqueta/valor, para los resúmenes de cifras.
-  datos?: { etiqueta: string; valor: string }[]
+  datos?: { etiqueta: string; valor: string; nota?: string }[]
 }
 
 export type GraficoDoc = { titulo: string; dataUrl: string | null; nota?: string }
@@ -40,6 +40,9 @@ export type DocInforme = {
   sintesis: string[]
   secciones: SeccionDoc[]
   graficos: GraficoDoc[]
+  // Las gráficas (barras, medidores, evolución), tal como se ven en pantalla,
+  // como HTML ya armado. Ver `capturarFiguras`.
+  figuras?: string[]
 }
 
 function esc(v: unknown): string {
@@ -49,7 +52,18 @@ function esc(v: unknown): string {
 }
 
 const ESTILO = `
-:root { color-scheme: light; }
+:root {
+  color-scheme: light;
+  /* Las mismas variables del tema claro de la aplicación (.doc en index.css):
+     las figuras capturadas de la pantalla se pintan con ellas. */
+  --color-bg: #ffffff; --color-panel: #f2f5f6; --color-line: #dbe1e3; --color-line-strong: #aeb9bc;
+  --color-paper: #0c1315; --color-paper-dim: #455457; --color-paper-faint: #6a787b;
+  --color-blue: #0f62fe; --color-red: #da1e28; --color-online: #198038; --color-offline: #da1e28;
+  --color-caution: #8e6a00;
+  --font-sans: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --radius: 3px;
+}
 * { box-sizing: border-box; }
 body {
   margin: 0; padding: 28px 30px 60px; background: #ffffff; color: #0c1315;
@@ -75,6 +89,7 @@ h3 { font-size: 13px; margin: 18px 0 6px; }
 .datos { display: flex; flex-wrap: wrap; gap: 18px 26px; margin: 10px 0 4px; }
 .datos div { min-width: 110px; }
 .datos .k { font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase; color: #6a787b; }
+.datos .n { font-size: 11px; color: #6a787b; line-height: 1.35; margin-top: 2px; max-width: 200px; }
 .datos .v { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 18px; font-weight: 700; }
 table { width: 100%; border-collapse: collapse; margin: 8px 0 4px; font-size: 12px; }
 /* Sin versalitas: en mayúsculas, la ν de retornos se vuelve N y la μ de
@@ -85,6 +100,12 @@ td { text-align: right; padding: 6px 7px; border-top: 1px solid #dbe1e3;
      font-family: 'IBM Plex Mono', ui-monospace, monospace; }
 th.izq, td.izq { text-align: left; font-family: inherit; }
 .nota { font-size: 11px; color: #6a787b; margin: 6px 0 0; }
+.fig { margin: 14px 0 0; page-break-inside: avoid; }
+/* Las figuras capturadas de la pantalla traen sus propios estilos en línea; solo hay que
+   impedir que las reglas generales de <figure> y <figcaption> las pisen. */
+.fig figure { margin: 0; }
+.fig figcaption { font-size: inherit; color: inherit; margin-top: 0; }
+.fig svg { max-width: 100%; height: auto; }
 figure { margin: 14px 0 0; page-break-inside: avoid; }
 figure img { width: 100%; height: auto; border: 1px solid #dbe1e3; border-radius: 3px; background: #fff; }
 figcaption { font-size: 11px; color: #6a787b; margin-top: 5px; }
@@ -114,12 +135,18 @@ export function construirHtml(doc: DocInforme): string {
     const partes: string[] = [`<h2>${esc(s.titulo)}</h2>`]
     if (s.datos?.length) {
       partes.push('<div class="datos">' + s.datos.map(d =>
-        `<div><div class="k">${esc(d.etiqueta)}</div><div class="v">${esc(d.valor)}</div></div>`).join('') + '</div>')
+        `<div><div class="k">${esc(d.etiqueta)}</div><div class="v">${esc(d.valor)}</div>${d.nota ? `<div class="n">${esc(d.nota)}</div>` : ''}</div>`).join('') + '</div>')
     }
     for (const p of s.parrafos ?? []) partes.push(`<p>${esc(p)}</p>`)
     for (const t of s.tablas ?? []) partes.push(tablaHtml(t))
     return partes.join('\n')
   }).join('\n')
+
+  // Gráficas capturadas de la pantalla. Van antes de los grafos de estados,
+  // en el mismo orden que el informe en pantalla.
+  const figuras = doc.figuras?.length
+    ? '<h2>Figuras</h2>\n' + doc.figuras.map(f => `<div class="fig">${f}</div>`).join('\n')
+    : ''
 
   const graficos = doc.graficos.length === 0 ? '' : `<h2>Grafos de estados</h2>\n` + doc.graficos.map(g => (
     g.dataUrl
@@ -169,6 +196,7 @@ ${doc.balance.indicadores.length ? tablaHtml({
 <h2>Síntesis</h2>
 <div class="sintesis">${doc.sintesis.map(f => `<p>${esc(f)}</p>`).join('')}</div>
 ${secciones}
+${figuras}
 ${graficos}
 <h2>Cómo leer las métricas</h2>
 ${comoLeer}
@@ -182,6 +210,24 @@ Generado por la aplicación Escalera Inteligente el ${esc(generado)}. Este archi
 </main>
 </body>
 </html>`
+}
+
+// Recoge las gráficas de la ventana del informe, tal como se ven. Cada figura
+// lleva `data-figura`; se descartan las que contienen un <canvas> (los grafos
+// de estados, que ya entran como imagen por otro camino, porque un canvas no
+// sobrevive a una copia de HTML) y se quitan los botones, que en un archivo
+// estático no hacen nada.
+export function capturarFiguras(): string[] {
+  const raiz = document.querySelector('[role="dialog"]')
+  if (!raiz) return []
+  const salida: string[] = []
+  raiz.querySelectorAll<HTMLElement>('[data-figura]').forEach(el => {
+    if (el.querySelector('canvas')) return
+    const copia = el.cloneNode(true) as HTMLElement
+    copia.querySelectorAll('button, input').forEach(n => n.remove())
+    salida.push(copia.outerHTML)
+  })
+  return salida
 }
 
 export function nombreArchivo(base: string, participante: string): string {

@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { metricasDeIntento, type MetricasIntento } from '../simulation/metricas'
 import { archivarSesion, idDeNombre, registrarPerfil, type RolPerfil } from './perfiles'
+import { avisarLocal, escribirLocal, leerLocal, poner, quitar, quitarLocal, vivoDeIdb } from './almacen'
+import { volcarSesion } from './respaldo'
 
 // Sesión de trabajo: un participante, un operador y todo lo que ocurre en las
 // cuatro pestañas, en un único lugar.
@@ -92,18 +94,35 @@ const CLAVE = 'escalera.sesion.v1'
 const SesionCtx = createContext<Ctx | null>(null)
 
 function cargar(): Estado {
+  // Primero localStorage; si no está —porque no cupo, o porque se abrió por
+  // otra dirección—, la copia de IndexedDB. Quien guarda se asegura de que
+  // localStorage nunca conserve una versión más vieja que la de IndexedDB.
+  let e: Estado | null = null
   try {
-    const crudo = localStorage.getItem(CLAVE)
-    if (crudo) {
-      const e = JSON.parse(crudo) as Estado
-      // Sesión guardada por una versión anterior, sin perfil asociado.
-      if (e.perfil && !e.perfil.perfilId) {
-        e.perfil = { ...e.perfil, perfilId: idDeNombre(e.perfil.participante), rol: 'participante' }
-      }
-      return e
-    }
-  } catch { /* sin almacenamiento: la sesión dura lo que dure la pestaña */ }
-  return { perfil: null, eventos: [], intentos: [] }
+    const crudo = leerLocal(CLAVE)
+    if (crudo) e = JSON.parse(crudo) as Estado
+  } catch { /* copia ilegible: se prueba con la otra */ }
+  if (!e) e = vivoDeIdb<Estado>() ?? null
+  if (!e) return { perfil: null, eventos: [], intentos: [] }
+  // Sesión guardada por una versión anterior, sin perfil asociado.
+  if (e.perfil && !e.perfil.perfilId) {
+    e = { ...e, perfil: { ...e.perfil, perfilId: idDeNombre(e.perfil.participante), rol: 'participante' } }
+  }
+  return e
+}
+
+// Guarda la sesión en curso en las dos partes. Si en localStorage no cabe, se
+// borra su copia en vez de dejar una vieja que, al recargar, ganaría a la nueva.
+function guardarVivo(e: Estado) {
+  if (!e.perfil && e.eventos.length === 0 && e.intentos.length === 0) {
+    quitarLocal(CLAVE)
+    void quitar('vivo', 'vivo')
+    return
+  }
+  const ok = escribirLocal(CLAVE, JSON.stringify(e))
+  if (!ok) quitarLocal(CLAVE)
+  avisarLocal(ok)
+  void poner('vivo', 'vivo', e)
 }
 
 export function SesionProvider({ children }: { children: ReactNode }) {
@@ -112,13 +131,31 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   // disco en cada uno sería costoso, así que se vuelca con un respiro.
   const pendiente = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const ultimo = useRef(estado)
+  ultimo.current = estado
+
   useEffect(() => {
     if (pendiente.current) clearTimeout(pendiente.current)
-    pendiente.current = setTimeout(() => {
-      try { localStorage.setItem(CLAVE, JSON.stringify(estado)) } catch { /* sin almacenamiento */ }
-    }, 400)
+    pendiente.current = setTimeout(() => guardarVivo(estado), 400)
     return () => { if (pendiente.current) clearTimeout(pendiente.current) }
   }, [estado])
+
+  // El respiro de 400 ms es un riesgo si la página se recarga o se cierra justo
+  // después de una jugada: lo último quedaría sin guardar. Al ocultarse o
+  // cerrarse la página se vuelca de inmediato, sin esperar al temporizador.
+  useEffect(() => {
+    const volcar = () => {
+      if (pendiente.current) clearTimeout(pendiente.current)
+      guardarVivo(ultimo.current)
+    }
+    const alOcultar = () => { if (document.visibilityState === 'hidden') volcar() }
+    window.addEventListener('pagehide', volcar)
+    document.addEventListener('visibilitychange', alOcultar)
+    return () => {
+      window.removeEventListener('pagehide', volcar)
+      document.removeEventListener('visibilitychange', alOcultar)
+    }
+  }, [])
 
   // La sesión se archiva en el perfil cada vez que se cierra un intento, no
   // solo al pulsar «Terminar sesión»: si el navegador se cierra a mitad de
@@ -126,13 +163,33 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const p = estado.perfil
     if (!p || estado.intentos.length === 0) return
-    archivarSesion({
+    const sesion = {
       sesionId: p.sesionId, perfilId: p.perfilId, participante: p.participante, operador: p.operador,
       inicio: p.inicio, fin: new Date().toISOString(),
       intentos: estado.intentos, eventos: estado.eventos,
-    })
+    }
+    archivarSesion(sesion)
+    // Y a la carpeta del disco, si hay una elegida y con permiso.
+    void volcarSesion(sesion)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estado.intentos.length])
+
+  // Entre un intento y otro pueden pasar minutos de eventos (jugadas, señales,
+  // telemetría). Se copian a la carpeta con un respiro largo, para que una
+  // caída del navegador a mitad de un intento no los pierda.
+  const aCarpeta = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    const p = estado.perfil
+    if (!p || (estado.eventos.length === 0 && estado.intentos.length === 0)) return
+    if (aCarpeta.current) clearTimeout(aCarpeta.current)
+    aCarpeta.current = setTimeout(() => {
+      void volcarSesion({
+        sesionId: p.sesionId, perfilId: p.perfilId, participante: p.participante, operador: p.operador,
+        inicio: p.inicio, fin: new Date().toISOString(), intentos: estado.intentos, eventos: estado.eventos,
+      })
+    }, 8000)
+    return () => { if (aCarpeta.current) clearTimeout(aCarpeta.current) }
+  }, [estado.eventos.length, estado.intentos.length, estado.perfil])
 
   const abrirSesion = useCallback((participante: string, operador: string, rol: RolPerfil = 'participante') => {
     const guardado = registrarPerfil(participante, rol)
@@ -154,16 +211,19 @@ export function SesionProvider({ children }: { children: ReactNode }) {
       // Se archiva antes de limpiar: cerrar la sesión no borra lo trabajado,
       // lo guarda en el historial del perfil.
       if (s.perfil) {
-        archivarSesion({
+        const sesion = {
           sesionId: s.perfil.sesionId, perfilId: s.perfil.perfilId,
           participante: s.perfil.participante, operador: s.perfil.operador,
           inicio: s.perfil.inicio, fin: new Date().toISOString(),
           intentos: s.intentos, eventos: s.eventos,
-        })
+        }
+        archivarSesion(sesion)
+        void volcarSesion(sesion)
       }
       return { perfil: null, eventos: [], intentos: [] }
     })
-    try { localStorage.removeItem(CLAVE) } catch { /* sin almacenamiento */ }
+    quitarLocal(CLAVE)
+    void quitar('vivo', 'vivo')
   }, [])
 
   const registrarEvento = useCallback((e: Omit<EventoSesion, 'ts'> & { ts?: string }) => {
