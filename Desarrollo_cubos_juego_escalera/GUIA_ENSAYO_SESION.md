@@ -23,14 +23,17 @@ aquí lo que se encuentre.
 - Cada casilla lee **ALTO = hay un cubo**. El cubo pone ese nivel con su
   pin `Pfcaja` a través del contacto de la casilla.
 - **Casillas 1, 2 y 3** (GPIO 39, 34, 35) son pines solo-entrada del ESP32
-  y no tienen resistencia interna. **Confirmado con la sesión del
-  2026-10-22** (1,9 h, 1748 reportes de posición): la casilla 1 no cambió
-  ni una vez, la 2 solo dos veces y la 3, 49; las demás entre 31 y 871. Las
-  fotos de la base no muestran resistencias externas. Al levantar el cubo,
-  el pin queda al aire y conserva el nivel ALTO: la base nunca ve que la
-  casilla se vació, y el seguimiento de identidades se descuadra (por eso la
-  pantalla pedía reordenar cubos que ya estaban en orden). Dos arreglos,
-  elegir UNO (ver `CASILLAS_1_A_3_EN_PINES_NUEVOS` en `Maestro_v3.ino`):
+  y no tienen resistencia interna. **Lo medido** (sesión del 2026-10-22,
+  1,9 h): la casilla 1 no cambió ni una vez, la 2 solo dos veces y la 3, 49;
+  las demás entre 31 y 871; la identificación por pulso sí vio siempre el
+  cubo 1 en la casilla 1 (contacto y cable conducen). **Causa sin confirmar**:
+  los cubos 1 y 2 funcionaban antes con el mismo modo de lectura, así que
+  puede ser (A) el pin al aire sin resistencia, o (B) un cable o contacto de
+  esas casillas alterado al abrir la base. **Prueba sin herramientas:**
+  intercambiar de casilla dos cubos (p. ej. el 1 con el 7); si la falla se
+  queda en la casilla, es la base; si acompaña al cubo, es el cubo. Si es la
+  A, dos arreglos, elegir UNO (ver `CASILLAS_1_A_3_EN_PINES_NUEVOS` en
+  `Maestro_v3.ino`):
   **A)** resistencia de 10 kΩ de cada pin 39, 34 y 35 a GND (no requiere
   cambiar el programa); **B)** mover esos tres cables a los pines 32, 33 y
   25 y poner la constante en 1. Mientras tanto, Control avisa con

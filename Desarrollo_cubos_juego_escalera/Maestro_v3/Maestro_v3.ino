@@ -175,13 +175,18 @@ const int NUM_POSICIONES = 11;
 // Cada casilla lee ALTO si hay un cubo apoyado (el cubo pone su pin de
 // presencia en ALTO a través del conector magnético).
 //
-// PROBLEMA ENCONTRADO EN LA SESIÓN DEL 2026-10-22: los GPIO 39, 34 y 35
-// (casillas 1, 2 y 3) son pines SOLO-ENTRADA del ESP32 y NO tienen
-// resistencia interna de pull-down. Sin una resistencia externa, al levantar
-// el cubo el pin queda al aire, conserva el nivel ALTO y la base nunca ve que
-// la casilla se vació: en toda la sesión la casilla 1 no cambió ni una vez y
-// la 2 solo dos veces (las demás, entre 31 y 871). En las fotos de la base no
-// hay resistencias externas. Hay DOS arreglos; elegir UNO:
+// HALLAZGO DE LA SESIÓN DEL 2026-10-22 (causa SIN CONFIRMAR): en toda la
+// sesión la casilla 1 no cambió ni una vez y la 2 solo dos veces (las demás,
+// entre 31 y 871). Los cubos 1 y 2 funcionaban antes con este mismo modo de
+// lectura (INPUT simple, como en la entrega ACACIA), y la identificación por
+// pulso sí vio siempre el cubo 1 en la casilla 1: contacto y cable conducen;
+// falla ver que el cubo SALE. Hipótesis A: los GPIO 39, 34 y 35 son pines
+// SOLO-ENTRADA sin resistencia interna y, sin una externa, quedan al aire y
+// retienen el nivel ALTO (no hay resistencias externas en las fotos). Hipótesis
+// B: el cable o el contacto de esas casillas se alteró al abrir la base.
+// Para separarlas: intercambiar de casilla dos cubos (si la falla se queda en
+// la casilla es la base; si acompaña al cubo, es el cubo) y mirar la línea
+// "Presencia" del monitor serie. Si es la A, hay DOS arreglos; elegir UNO:
 //
 //   A) (recomendado, sin tocar este archivo) soldar/conectar una resistencia
 //      de 10 kΩ entre cada uno de los pines 39, 34 y 35 del ESP32 y GND.
@@ -345,7 +350,7 @@ void setup() {
 
   for (int i = 0; i < NUM_POSICIONES; i++) {
     if (PIN_SOLO_ENTRADA(pinesBase[i])) {
-      Serial.printf("AVISO: casilla %d en GPIO %d (solo-entrada, sin pulldown interno): necesita una resistencia de 10 kohm a GND o no vera cuando se levante el cubo. Ver CASILLAS_1_A_3_EN_PINES_NUEVOS.\n", i + 1, pinesBase[i]);
+      Serial.printf("AVISO: casilla %d en GPIO %d (solo-entrada, sin pulldown interno): podria necesitar una resistencia de 10 kohm a GND si no ve cuando se levanta el cubo. Ver CASILLAS_1_A_3_EN_PINES_NUEVOS.\n", i + 1, pinesBase[i]);
     }
   }
 

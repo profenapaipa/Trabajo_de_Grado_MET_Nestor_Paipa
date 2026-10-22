@@ -60,9 +60,9 @@ export default function PruebaBase({ presencia, onCerrar }: { presencia: number[
       {probadas === 11 && <div style={{ marginTop: '8px', color: 'var(--color-online)', textAlign: 'center' }}>Las 11 casillas responden.</div>}
       {probadas >= 4 && probadas < 11 && estado.slice(0, 3).some(s => s !== 'ok') && (
         <div style={{ marginTop: '8px', fontSize: '11px', lineHeight: 1.5, color: '#f1c21b' }}>
-          Si las casillas 1, 2 o 3 no llegan a ✓ aunque levantes y apoyes el cubo, es el cableado de la base, no el programa:
-          esas tres casillas usan pines del maestro sin resistencia interna (GPIO 39, 34 y 35) y necesitan una resistencia de
-          10 kΩ a GND (o mover sus cables a otros pines). Ver GUIA_ENSAYO_SESION.md, sección 1.
+          Si las casillas 1, 2 o 3 no llegan a ✓ aunque levantes y apoyes el cubo, probablemente es la base y no el programa
+          (pin, cable o contacto de esa casilla; los pines 39, 34 y 35 no tienen resistencia interna). Intercambia de casilla dos cubos
+          para saber si la falla se queda en la casilla o acompaña al cubo. Ver GUIA_ENSAYO_SESION.md, sección 1.
         </div>
       )}
     </div>

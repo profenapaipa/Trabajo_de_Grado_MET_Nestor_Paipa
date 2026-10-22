@@ -627,10 +627,10 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
   // con el seguimiento de identidades (solo con un tablero asentado).
   const avisosBase: string[] = []
   if (casillasCiegas.length > 0 && casillasCiegas.length < 6) {
-    avisosBase.push(`Casilla${casillasCiegas.length > 1 ? 's' : ''} ${casillasCiegas.join(', ')}: no ha${casillasCiegas.length > 1 ? 'n' : ''} cambiado ni una vez mientras las demás sí — la base no ve cuando se levanta el cubo de ahí (cableado de la base: pin sin resistencia a tierra). Mientras tanto, pulsa «Reidentificar cubos (IP)» tras mover cubos de esas casillas. Ver GUIA_ENSAYO_SESION.md, sección 1.`)
+    avisosBase.push(`Casilla${casillasCiegas.length > 1 ? 's' : ''} ${casillasCiegas.join(', ')}: no ha${casillasCiegas.length > 1 ? 'n' : ''} cambiado ni una vez mientras las demás sí — la base no ve cuando se levanta el cubo de ahí (posible falla del pin, del cable o del contacto de esa casilla). Para saber si es la base o el cubo, intercambia de casilla dos cubos. Mientras tanto, pulsa «Reidentificar cubos (IP)» tras mover cubos de esas casillas. Ver GUIA_ENSAYO_SESION.md, sección 1.`)
   }
   if (presencia && presencia.filter(x => x === 1).length > 10) {
-    avisosBase.push('La base detecta más de 10 cubos: una casilla se quedó «ocupada» aunque el cubo ya no está (cableado de la base).')
+    avisosBase.push('La base detecta más de 10 cubos: una casilla se quedó «ocupada» aunque el cubo ya no está (posible falla de esa casilla).')
   }
   if (presencia && gameState.cubesPositions.filter(x => x === 0).length === 1) {
     gameState.cubesPositions.forEach((id, i) => {

@@ -147,7 +147,7 @@ Este archivo contiene **únicamente decisiones ya tomadas** por el autor y confi
 - **El número del cubo es lo único que se edita al cargar el firmware** (`NUMERO_CUBO`); la IP y el color de equipo salen de él.
 - **La batería de los cubos sigue sin medirse** (decisión del 2026-10-16: no modificar los cubos); la señal, el ping y la MAC no requieren hardware.
 - **Maestro y cubos se cargan siempre juntos**: el ping y el cierre por silencio dependen uno del otro.
-- **Hallazgo de hardware por resolver (autor):** casillas 1-3 sin pulldown. Dos arreglos equivalentes; con la resistencia no hay que tocar el firmware.
+- **Casillas 1 y 2 sin detectar la salida del cubo: causa sin confirmar** (pin sin resistencia o cable/contacto alterado). Se resuelve primero con el intercambio de cubos entre casillas; la resistencia es el arreglo solo si resulta ser el pin.
 
 ---
 ## De la ecuación a la figura (2026-10-22)
