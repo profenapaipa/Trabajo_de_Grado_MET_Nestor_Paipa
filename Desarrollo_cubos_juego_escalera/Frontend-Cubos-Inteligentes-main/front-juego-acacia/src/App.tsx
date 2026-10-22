@@ -18,6 +18,7 @@ import { type MarcadorEeg, type TipoMarcador, crearMarcador, toCsvMarcadores } f
 import { type Temporizador, ponerTemporizador, ponerIntervalo, quitarTemporizador, useMantenerPantalla } from './core/utils/temporizadorFondo'
 import PanelCubos from './components/control/PanelCubos'
 import PruebaBase from './components/control/PruebaBase'
+import GuiaEncendido from './components/control/GuiaEncendido'
 import { playPpaFeedback, playError, playCountdownBeep } from './core/utils/ppaTones'
 import { PPA_RGB, PPA_HEX, PPA_TEXT, PPA_VIBRATION, PPA_SOUND_LABEL, PPA_LABEL, PPA_FRASE, ppaRgba, AUTO_OFF_MS, FALLAS_PARA_PAUSAR, type PPAPhase, EFECTOS } from './core/ppa/ppaColors'
 import { type Board, physicalLegalMoves, physicalOffset, physicalWindow, physicalWindowCanonico, computeWinBoard, boardsEqual, isStuck } from './core/simulation/laEscaleraRules'
@@ -199,6 +200,7 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
   const [latencias,      setLatencias]      = useState<number[]>([])
   const [marcadores,     setMarcadores]     = useState<MarcadorEeg[]>([])
   const [pruebaBase,     setPruebaBase]     = useState(false)
+  const [guiaAbierta,    setGuiaAbierta]    = useState(false)
   const telemetriaRef    = useRef<Record<number, TelemetriaCubo>>({})
   // Cambios de lo que lee cada casilla desde que se abrió Control: una casilla
   // que no cambia NUNCA mientras las demás sí es una casilla ciega (cableado).
@@ -1797,6 +1799,14 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
                 Mostrarle el cronómetro
               </label>
             </div>
+            {/* Material didáctico a mano: orden de encendido y conexiones. */}
+            <div>
+              <div style={{ ...sectionLabel, marginBottom: '8px' }}>Ayuda</div>
+              <button onClick={() => setGuiaAbierta(true)}
+                style={{ width: '100%', background: 'transparent', border: '1px solid var(--color-line-strong)', borderRadius: 'var(--radius)', padding: '8px', fontSize: '12px', color: 'var(--color-paper)', cursor: 'pointer' }}>
+                Guía de encendido y conexiones
+              </button>
+            </div>
           </div>
 
           <div style={panel}>
@@ -1835,6 +1845,8 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
           </div>
         </div>
         </div>
+
+        {guiaAbierta && <GuiaEncendido onCerrar={() => setGuiaAbierta(false)} />}
 
         {informeNivel && (
           <InformeNivel seccion="control" pares={pares} onCerrar={() => setInformeNivel(false)} />
