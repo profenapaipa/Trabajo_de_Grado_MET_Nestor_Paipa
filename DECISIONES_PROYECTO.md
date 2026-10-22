@@ -139,6 +139,17 @@ Este archivo contiene **únicamente decisiones ya tomadas** por el autor y confi
 - **Si los tiempos no cuadran con el recorrido, no se reportan.** Ocurre cuando el intento usó «deshacer»: el recorrido pierde un paso pero su evento queda. Unas latencias desplazadas serían peor que ninguna.
 
 ---
+## Cubos: decisiones tras la prueba de banco (2026-10-22)
+
+- **El blanco antes de iniciar el intento se conserva.** Un cubo fuera de su lugar se pone blanco, en pantalla y físicamente: es el código para ubicar los cubos. (Se había quitado por error y se restituyó.)
+- **Terminar guarda; Reiniciar descarta.** Terminar cierra el intento y lo registra como interrumpido (con recorrido y tiempos); Reiniciar lo descarta sin guardar. Ambos dejan los cubos en espera de reordenar.
+- **La identidad de cada cubo se ancla a la IP, no al seguimiento.** El seguimiento por levantadas se descuadra con un solo evento perdido; la ronda por IP es la medida. Un resultado parcial no se descarta: se completa con lo inferido y por eliminación solo si hay una única posibilidad.
+- **El número del cubo es lo único que se edita al cargar el firmware** (`NUMERO_CUBO`); la IP y el color de equipo salen de él.
+- **La batería de los cubos sigue sin medirse** (decisión del 2026-10-16: no modificar los cubos); la señal, el ping y la MAC no requieren hardware.
+- **Maestro y cubos se cargan siempre juntos**: el ping y el cierre por silencio dependen uno del otro.
+- **Hallazgo de hardware por resolver (autor):** casillas 1-3 sin pulldown. Dos arreglos equivalentes; con la resistencia no hay que tocar el firmware.
+
+---
 ## Regla editorial
 
 - La tesis debe presentarse como un documento académico consolidado de la propuesta y el desarrollo tecnológico, no como un diario de depuración.

@@ -75,6 +75,7 @@ function Cube({
   return (
     <div
       className={!isEmpty && action ? `cube-${action}` : undefined}
+      data-cubo={isEmpty ? undefined : id}
       onClick={() => { if (!isEmpty) onSelect(id) }}
       title={!isEmpty && action ? `Cubo #${id} — ${action.toUpperCase()}` : undefined}
       style={{

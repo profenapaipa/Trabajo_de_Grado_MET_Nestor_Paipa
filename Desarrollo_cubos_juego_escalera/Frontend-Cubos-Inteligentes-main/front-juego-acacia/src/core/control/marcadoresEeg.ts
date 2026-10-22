@@ -29,6 +29,7 @@ export const CODIGOS_MARCADOR = {
   victoria: 40,
   derrota: 41,
   reinicio_manual: 42,
+  terminar_operador: 44,  // «Terminar»: intento cerrado y guardado como interrumpido
   tablero_reordenado: 43,
 } as const
 

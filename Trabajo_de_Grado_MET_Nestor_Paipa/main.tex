@@ -2505,6 +2505,97 @@ una observación del caso. Esa prevención no es accesoria en un diseño
 de participante único, donde la tentación de leer un efecto en dos o
 tres observaciones es precisamente el riesgo que hay que evitar.
 
+
+% -------------------------------------------------------
+\subsection*{De la ecuación a la figura}
+
+Las ecuaciones anteriores producen números; el informe que lee el
+docente produce figuras. El paso de unos a otras no es neutro: una
+misma cantidad admite representaciones que inducen lecturas
+distintas, y una figura mal elegida puede sugerir una conclusión que
+los números no sostienen. Esta subsección fija qué figura corresponde
+a cada ecuación y bajo qué reglas, de modo que la representación sea
+auditable y no quede a criterio de cada informe.
+
+\begin{table}[H]
+\centering
+\caption{Correspondencia entre las ecuaciones y las figuras del informe.}
+\label{tab:ecuacion_figura}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{|p{3.5cm}|p{2.2cm}|p{8.6cm}|}
+\hline
+\textbf{Magnitud} & \textbf{Ecuación} & \textbf{Figura y por qué esa} \\
+\hline
+Longitud y mínimo & \ref{eq:optimo} & Barras horizontales con marca de referencia. La comparación es entre una cantidad y un umbral fijo, que es justo lo que una marca sobre la barra muestra sin cálculo mental. \\
+\hline
+Eficiencia $E$ & \ref{eq:eficiencia} & Serie temporal en el eje $[0,1]$. Se representa $E$ y no $Q$ porque $Q$ no está acotada por arriba y no puede compartir eje con las demás. \\
+\hline
+Calidad $C_k$ & \ref{eq:calidad_movimiento} & Perfil de decisiones: una marca por decisión, en el orden del intento. Un promedio escondería dónde se concentraron los errores. \\
+\hline
+Ramificación $R$, acierto $\alpha$, buclicidad $\beta$ & \ref{eq:ramif_intento}, \ref{eq:tasa_acierto}, \ref{eq:buclicidad_norm} & Medidor con zonas para el valor de un intento; serie temporal para su evolución. Las tres están acotadas en $[0,1]$ y comparten eje. \\
+\hline
+Agregados por sesión & \ref{eq:agregacion_ponderada} & Serie temporal entre sesiones. La figura traza la versión ponderada, la misma que encabeza el informe. \\
+\hline
+Tendencia & \ref{eq:pendiente} & Valor numérico junto a la serie, con su signo. La pendiente no se dibuja: se calcula y se escribe. \\
+\hline
+Tiempos & \ref{eq:tiempos} & Contraste de dos valores —decidir frente a ejecutar— y no una serie: lo que importa es la diferencia entre ambos, no su trayectoria. \\
+\hline
+Efecto de la mediación & --- & Dos medidores enfrentados, uno por grupo, con el número de decisiones que sostiene cada uno escrito en su etiqueta. \\
+\hline
+Paseo sobre el grafo & --- & El grafo de estados con el recorrido superpuesto y las dos rutas mínimas como referencia. Es la única figura que muestra el espacio del problema entero. \\
+\hline
+\end{tabular}
+\end{table}
+
+Siete reglas gobiernan esa correspondencia. No son preferencias de
+estilo: cada una responde a un modo concreto en que una figura puede
+inducir una lectura que los números no autorizan.
+
+\begin{enumerate}
+    \item \textbf{Un eje, una escala comparable.} Solo comparten eje las
+    magnitudes acotadas en $[0,1]$. La circuidad $Q$ crece sin cota
+    superior; dibujarla junto a $R$, $\alpha$ y $\beta$ obligaría a
+    reescalar y haría que una misma altura significara cosas distintas
+    según el intento. Por eso en las figuras aparece $E$.
+
+    \item \textbf{La figura y la cifra son la misma cosa.} Donde el
+    informe encabeza con la agregación ponderada, la figura traza la
+    ponderada. Trazar una y escribir la otra haría que el documento se
+    contradijera consigo mismo.
+
+    \item \textbf{La orientación va escrita.} Cada serie declara en su
+    nombre si el valor deseable es cero o uno. Sin esa marca, una curva
+    descendente puede leerse como mejora o como deterioro según la
+    métrica, y el lector no tiene cómo saberlo.
+
+    \item \textbf{El color indica dirección, no categoría, y nunca va
+    solo.} Lo que distingue a una serie de otra es su nombre; el color
+    acompaña. Una figura que solo se pueda leer por el color deja fuera
+    a quien no distingue esos tonos y se pierde al imprimirse.
+
+    \item \textbf{Toda figura declara cuántas observaciones la
+    sostienen.} Una diferencia entre dos medidores calculados sobre una
+    y sobre doscientas decisiones no es la misma diferencia, y la figura
+    debe decirlo en su propia etiqueta.
+
+    \item \textbf{Un hueco no se rellena con un cero.} Un intento sin
+    puntos de decisión no tiene ramificación; la serie salta ese punto
+    con trazo punteado. Sustituirlo por cero afirmaría que acertó
+    siempre, que es lo contrario de no tener dato.
+
+    \item \textbf{No se traza una línea continua entre tramos que no son
+    comparables.} Los intentos de pestañas o de niveles distintos se
+    separan en franjas rotuladas. La continuidad de una línea es una
+    afirmación de comparabilidad, y hacerla en el texto mientras la
+    figura sugiere lo contrario no basta.
+\end{enumerate}
+
+La regla segunda no es hipotética: antes de esta revisión el informe
+entre sesiones encabezaba con la ramificación ponderada y trazaba la
+curva con la media por intento. En las bitácoras piloto eso significaba
+escribir $0{,}133$ y dibujar $0{,}249$ en la misma página. La
+discrepancia se corrigió trazando en ambas la ecuación~\ref{eq:agregacion_ponderada}.
+
 \begin{table}[H]
 \centering
 \caption{Resumen de métricas para el análisis de trayectorias.}
@@ -2962,6 +3053,17 @@ recargable Li-Po de 3.7~V y 180~mAh,
 
 %%%%%% ******* %%%%%%% Expicar Código + Diagrama de código "Algorithm"
 
+\subsection{Versiones del prototipo}
+\label{sec:versiones}
+
+El prototipo pasó por tres versiones, cada una conservada en su propia carpeta del repositorio para poder contrastar su comportamiento con evidencia y no solo por descripción.
+
+\begin{description}
+    \item[Versión 1.] La entrega original del proyecto ACACIA descrita arriba. Se conserva sin modificaciones como línea base.
+    \item[Versión 2.] El firmware instalado en el maestro al comenzar esta investigación. Añade a la versión 1 el descubrimiento automático del backend por UDP, la reconexión del WiFi ante caídas y el reporte periódico de los cubos conectados.
+    \item[Versión 3.] Una reescritura orientada a la estabilidad y a la baja latencia, que es la que se emplea en las sesiones. Sus rasgos son: la separación del maestro en dos tareas del sistema operativo de tiempo real (una exclusiva para leer la base y otra para toda la red, de modo que un backend o un cubo lento nunca retrasa la detección de un movimiento); conexiones TCP persistentes con cada cubo, con reconexión acotada; un filtro antirrebote de 25 ms en la lectura de la base; una cola de comandos en el backend, que permite difundir una orden a los diez cubos en un solo mensaje; un motor de secuencias de color y vibración que se ejecuta dentro del propio cubo, de modo que señales de varios pasos (movimiento inválido, bloqueo, victoria, cuenta regresiva) salen de una única orden; el color de equipo derivado de la dirección IP de cada cubo; y la identificación de cada cubo por esa dirección para conocer su posición real (subsección~\ref{sec:identificacion-ip}).
+\end{description}
+
 \subsection{Funcionamiento electrónico de los cubos}
 
 El cubo inteligente integra, en un volumen reducido de madera, la
@@ -2984,6 +3086,8 @@ se fija a su posición en el tablero mediante una interfaz de
 acoplamiento magnético con la casilla correspondiente de la base, que
 además cierra un contacto empleado por la base para detectar la
 presencia del cubo en esa posición.
+
+Las fotografías del Anexo~\ref{anexo:conexionado} documentan esa construcción. Por su cara inferior, el cubo presenta un conector magnético de seis elementos: cuatro contactos metálicos centrales y un imán en cada extremo (Figura~\ref{fig:anx-cubo-conector}). Por dentro (Figuras~\ref{fig:anx-cubo-interior} y \ref{fig:anx-cubo-actuadores}) se distinguen el microcontrolador ESP32-C3 SuperMini, la batería Li-Po de 3.7~V y 180~mAh, un módulo de carga de la batería, un interruptor de encendido accesible con una punta a través de un orificio de la pared, el módulo LED RGB y el módulo del motor de vibración. De los cuatro contactos del conector, el firmware identifica uno: el de presencia, que corresponde al pin GPIO~6 del cubo y que se mantiene en nivel alto mientras el cubo está apoyado. La función de los otros tres no está documentada en la entrega original, y su verificación con un multímetro queda pendiente.
 
 \begin{figure}[H]
 \centering
@@ -3171,7 +3275,7 @@ Motor de vibración & Actuador háptico de intensidad configurable & Implementad
 \hline
 Buzzer & Componente físico presente en la placa del cubo, sin conexión eléctrica activa al microcontrolador ni uso en el firmware & No utilizado — el sonido del sistema lo emite en su lugar el computador del docente (navegador, Web Audio API) \\
 \hline
-Firmware del cubo & Lógica interna de interpretación de comandos en el propio cubo & [INFORMACIÓN FALTANTE] \\
+Firmware del cubo & Servidor TCP en el puerto 3333 que ejecuta los comandos de color y vibración, las secuencias de efectos y el pulso de identificación; contesta al ping y envía su telemetría (señal WiFi, motivo del último arranque, tiempo encendido, identificador del chip) & Implementado (versión 3) \\
 \hline
 \end{tabular}
 \end{table}
@@ -3192,14 +3296,38 @@ Backend & Maestro & HTTP & 3000 & Entrega de la instrucción pendiente y recepci
 \hline
 Maestro & Backend & UDP & 4210 & Descubrimiento automático de la dirección del backend en la red \\
 \hline
-Maestro & Cubos (ESP32-C3) & TCP & 3333 & Canal de actuación: transmisión de los parámetros de color y vibración a cada cubo \\
+Maestro & Cubos (ESP32-C3) & TCP & 3333 & Canal de actuación y de enlace: color y vibración, secuencias, identificación y ping hacia el cubo; telemetría y respuesta al ping de regreso \\
 \hline
 Maestro & Casillas de la base & Cableado interno & --- & Canal de posición: detección de la posición de cada cubo mediante su acoplamiento magnético \\
 \hline
 \end{tabular}
 \end{table}
 
-En conjunto, ambas tablas describen la base tecnológica sobre la cual
+\begin{table}[H]
+\centering
+\caption{Mensajes del canal maestro--cubo (texto plano, una línea terminada en salto de línea)}
+\label{tab:mensajes-cubo}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{3.7cm}|p{1.7cm}|p{5.0cm}|}
+\hline
+\textbf{Mensaje} & \textbf{Sentido} & \textbf{Efecto} \\
+\hline
+\texttt{M=v,LR=r,}\allowbreak\texttt{LG=g,LB=b,}\allowbreak\texttt{F=f} & maestro $\rightarrow$ cubo & Vibración $v\in[0,1]$, color RGB y frecuencia de parpadeo $f$ ($f=0$: color fijo). \\
+\hline
+\texttt{EF=n} & maestro $\rightarrow$ cubo & Secuencia enlatada $n\in\{1,\dots,7\}$ (conexión, movimiento inválido, bloqueo, victoria, cuenta regresiva); se ejecuta íntegra dentro del cubo. \\
+\hline
+\texttt{ID=0}, \texttt{ID=1} & maestro $\rightarrow$ cubo & Baja el pin de presencia durante 250~ms (se restaura solo) o lo restaura de inmediato. \\
+\hline
+\texttt{PG=n} / \texttt{PO=n} & maestro $\rightarrow$ cubo / cubo $\rightarrow$ maestro & Ping cada 2~s y su eco; la diferencia de tiempos es la latencia del enlace. \\
+\hline
+\texttt{EST=\dots} & cubo $\rightarrow$ maestro & Telemetría cada 5~s: batería (si está habilitada), señal, motivo del último arranque, segundos encendido y MAC. \\
+\hline
+\texttt{restaurar} & maestro $\rightarrow$ cubo & Vuelve al color de equipo del cubo. \\
+\hline
+\end{tabular}
+\end{table}
+
+En conjunto, las tablas describen la base tecnológica sobre la cual
 se apoyará el protocolo experimental descrito más adelante, y
 determinan cuáles de los estímulos multisensoriales previstos para las
 fases Pausar, Pensar y Actuar —activadas manualmente por el docente
@@ -3218,9 +3346,7 @@ roles de red: como punto de acceso WiFi propio, al que se conectan los
 cubos, y
 como estación conectada a la red WiFi del laboratorio, dentro de la cual
 se ejecuta el backend en el computador del docente. La
-base también incorpora el módulo de carga simultánea para todos los
-cubos mediante puertos USB individuales, con indicación visual del estado
-de carga de cada dispositivo.
+base se alimenta de un banco de energía portátil de 120~W conectado por USB al ESP32 maestro. Tres interruptores rotulados I, D y M, que por su rotulación corresponden al lado izquierdo, al lado derecho y al maestro (Figura~\ref{fig:anx-base-interruptores}), gobiernan su alimentación. Los once conectores magnéticos de las casillas se reúnen en un haz de cables que llega al maestro (Figuras~\ref{fig:anx-base-abierta} y \ref{fig:anx-base-powerbank}); cada casilla va a un pin propio del microcontrolador (Tabla~\ref{tab:pines-base}). Según el manual del proyecto ACACIA, los cubos se cargan mientras permanecen apoyados en la base.
 
 El hardware de la base emplea el módulo WiFi integrado del propio ESP32,
 configurado de forma simultánea como punto de acceso de una red local
@@ -3232,13 +3358,7 @@ complementadas con un mecanismo de descubrimiento automático que permite
 a la base localizar al backend dentro de la red sin necesidad de
 configurar manualmente direcciones IP en cada sesión. Esta arquitectura
 de red local evita dependencias de la conectividad del centro educativo y
-garantiza latencias de comunicación inferiores a [X] ms entre la
-instrucción del docente y la activación del cubo, lo que resulta
-fundamental para que la señal reguladora llegue al aprendiz en el
-momento exacto que el docente identifica como necesario. El circuito de
-la base incluye además un indicador luminoso de estado del sistema que
-permite al docente verificar de un vistazo que todos los cubos están
-conectados y operativos antes de iniciar una sesión.
+mantiene las latencias en el orden de décimas de segundo: en la prueba de banco de la versión 3 (subsección~\ref{sec:verificacion-prototipo}), el tiempo entre que un cubo se levanta o se apoya y su representación en la pantalla del docente tuvo una mediana de 103~ms y un percentil 95 de 218~ms ($n=208$ movimientos). Esa magnitud importa porque la señal reguladora debe llegar al aprendiz en el momento que el docente identifica como necesario. La latencia en el sentido inverso, de la orden del docente a la activación del cubo, se mide desde entonces con un mensaje de eco entre el maestro y cada cubo (Tabla~\ref{tab:mensajes-cubo}); no forma parte de la prueba descrita. El maestro lleva además un LED rojo que indica que está encendido; el estado de cada cubo se verifica en la pantalla del docente, que muestra para cada uno si está conectado, su latencia y la calidad de su señal.
  
 \subsection{Funcionamiento lógico de la base de los cubos}
  
@@ -3251,15 +3371,64 @@ docente desde la interfaz (que especifican el cubo destinatario, la fase
 del ciclo y el estado emocional seleccionado), los encapsula en paquetes
 con la estructura de protocolo definida para el sistema, y los transmite
 al cubo correspondiente por el canal inalámbrico.
-% [SUJETO A VERIFICACIÓN TÉCNICA]
-La base debería además mantener un registro de los eventos de activación
-(marca de tiempo, cubo activado, fase y estado emocional seleccionado), de
-manera que ese registro pueda correlacionarse con los movimientos del juego
-y con el archivo EEG. Este mecanismo de registro constituye un aporte
-técnico relevante para el análisis cualitativo de la mediación docente
-(identificar en qué puntos del espacio del problema el docente consideró
-necesario intervenir), pero está pendiente de implementación y de
-verificación en el prototipo.
+El registro de los eventos de activación (marca de tiempo, cubo activado, fase y operador) no reside en la base sino en la aplicación de Control, que lo guarda además, evento a evento, en un archivo del backend; así puede correlacionarse con los movimientos del juego y con el registro EEG (subsección~\ref{sec:aplicacion}). Ese registro permite identificar en qué puntos del espacio del problema el docente consideró necesario intervenir, que es la base del análisis cualitativo de la mediación.
+
+\subsubsection{Lectura de posiciones}
+
+Cada una de las once casillas se lee en un pin del maestro, con resistencia interna a tierra cuando el microcontrolador la ofrece, y un cambio solo se da por válido si se mantiene 25~ms. Un cubo apoyado pone ese pin en nivel alto; al levantarlo, vuelve a nivel bajo. La base lee, pues, \emph{presencia} (uno o cero por casilla), no \emph{identidad}: no sabe qué cubo hay en cada casilla. La identidad se infiere siguiendo cada levantada y cada apoyada desde el orden inicial: la casilla que se vacía entrega su cubo a «la mano», y la casilla vacía que se ocupa recibe el último cubo levantado. El seguimiento admite varios cubos en la mano a la vez. Cada mensaje que el maestro envía al backend lleva el vector de identidades, el vector de presencia, el tiempo que el evento esperó en el maestro y la duración del envío anterior, con lo que la aplicación estima la latencia y la hora física del movimiento (ecuación~\eqref{eq:tiempos}, origen de tiempos).
+
+\subsubsection{Identificación de cada cubo por su dirección IP}
+\label{sec:identificacion-ip}
+
+La inferencia por seguimiento tiene un defecto estructural: basta con que la base pierda un solo evento para que desde ese momento todas las identidades posteriores queden desplazadas, sin que nada lo delate. Para anclar la identidad a una medición se aprovecha que cada cubo tiene una dirección IP fija. En cada cubo se configura un único número, el de su etiqueta (del 1 al 10, constante \texttt{NUMERO\_CUBO}), y de él salen su dirección (\texttt{192.168.4.}$(n+1)$) y su color de equipo; al arrancar, el cubo parpadea en blanco $n$ veces para comprobar la carga. La ronda de identificación recorre los cubos conectados uno a uno: el maestro le pide al cubo $n$, por su dirección, que baje durante 250~ms su pin de presencia, y anota la casilla que pasó de ocupada a vacía y volvió a ocuparse por sí sola; esa casilla es la del cubo $n$. Los cubos que no responden se reintentan una vez.
+
+Un resultado parcial no se descarta. Lo medido manda; la casilla que no pudo medirse conserva su identidad inferida si ningún cubo medido la reclama en otra parte, y si queda exactamente una casilla y un cubo sin asignar, se deducen por eliminación. Con dos o más no se adivina: la ronda se declara incompleta y no se aplica. Dos invariantes del juego sirven de control: hay diez cubos para once casillas, de modo que una lectura de más de diez casillas ocupadas es imposible y delata una casilla ciega; y una casilla que no cambia nunca mientras las demás sí lo hacen es sospechosa por la misma razón. La aplicación repite la ronda al cargar, antes de cada intento, cuando cree que el tablero no está en orden y la base lleva unos segundos quieta, y a demanda del operador mediante un botón.
+
+\subsubsection{Estabilidad del enlace}
+
+El maestro mantiene una conexión TCP persistente con cada cubo, sin el retardo de agregación de paquetes y con el ahorro de energía del WiFi desactivado, que de otro modo añade entre 100 y 300~ms a cada mensaje. Cada 2~s envía un ping a cada cubo; una conexión de la que no llega ningún dato en 7~s se cierra y se reintenta, y el cubo hace lo propio a los 9~s de silencio. Además, una conexión nueva del maestro sustituye siempre a la anterior: sin esto, tras reiniciar el maestro la conexión vieja seguía «viva» para el cubo, la nueva no se atendía y era necesario reiniciar todo el sistema. El maestro crea su punto de acceso en el mismo canal que el router, porque el microcontrolador dispone de un único radio y, si los canales difieren, el punto de acceso salta de canal al conectarse al router y los cubos pierden la conexión. Por último, el arranque ya no espera sin límite al router: la lectura de la base y la red de los cubos funcionan desde el primer segundo, y la conexión al laboratorio se reintenta en segundo plano.
+
+\subsection{Verificación del prototipo (versión 3)}
+\label{sec:verificacion-prototipo}
+
+La versión 3 se sometió a una prueba de banco con los diez cubos reales, de 1,87~h de duración, con el backend registrando cada evento en un archivo. La Tabla~\ref{tab:prueba-banco} resume lo medido.
+
+\begin{table}[H]
+\centering
+\caption{Prueba de banco de la versión 3 (diez cubos, 1,87~h).}
+\label{tab:prueba-banco}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{4.8cm}|p{6.0cm}|}
+\hline
+\textbf{Medida} & \textbf{Valor} \\
+\hline
+Intentos iniciados & 12 \\
+\hline
+Reportes de posición distintos & 1433 (1748 registros; 315 repetidos por una segunda ventana de Control abierta) \\
+\hline
+Latencia cubo $\rightarrow$ pantalla ($n=208$) & mediana 103~ms; percentil 90, 181~ms; percentil 95, 218~ms; máximo 488~ms \\
+\hline
+Rondas de identificación por IP & 35; completas 20 (57~\%) con el criterio anterior, que descartaba el resultado parcial \\
+\hline
+Cambios de lectura por casilla & casilla 1: 0; casilla 2: 2; casilla 3: 49; casillas 4 a 11: entre 31 y 871 \\
+\hline
+Reinicios de cubos registrados & 11, de ellos 5 por caída de tensión (cubo 5: 3; cubo 8: 1; cubo 2: 1) \\
+\hline
+\end{tabular}
+\end{table}
+
+La prueba dejó seis hallazgos, cada uno con su corrección. Las correcciones se verificaron con un maestro simulado y una batería de comprobaciones automáticas de la aplicación; su verificación con el hardware es la siguiente etapa.
+
+\begin{enumerate}
+    \item \textbf{Casillas ciegas.} Las casillas 1 y 2 prácticamente no registraron cambios. Sus pines (GPIO~39 y 34) son solo de entrada y no tienen resistencia interna a tierra, y las fotografías de la base no muestran resistencias externas (Anexo~\ref{anexo:conexionado}): al levantar el cubo, el pin queda al aire y conserva el nivel alto, por lo que la base nunca ve que la casilla se vació. Corrección: una resistencia de 10~k$\Omega$ de cada uno de los pines 39, 34 y 35 a tierra, o bien mover esos cables a pines con resistencia interna (constante \texttt{CASILLAS\_1\_A\_3\_EN\_PINES\_NUEVOS}). Mientras se aplica, la aplicación detecta y avisa de las casillas que no cambian nunca.
+    \item \textbf{Identidades descuadradas.} Con casillas ciegas, el seguimiento perdía eventos y la pantalla mostraba cubos fuera de lugar que físicamente estaban en orden. El resultado parcial de la identificación se descartaba entero. Corrección: la fusión con deducción descrita en la subsección~\ref{sec:identificacion-ip}, la repetición automática de la ronda y el botón de reidentificación.
+    \item \textbf{Reinicios por caída de tensión.} Los picos de corriente del WiFi a plena potencia, sumados al motor, hunden la batería de 180~mAh. Corrección: potencia de transmisión de 11~dBm, suficiente a menos de un metro del maestro.
+    \item \textbf{Señales que no se apagaban.} Existía un único temporizador de apagado para todos los cubos, y enviar una señal a otro cubo cancelaba el apagado del anterior. Corrección: un temporizador por cubo.
+    \item \textbf{Vibración de Pausar imperceptible.} A la intensidad del 45~\% el motor de moneda no arrancaba estando quieto. Corrección: un arranque de 80~ms a plena potencia y un piso del 55~\% del ciclo de trabajo, que conservan las diferencias entre las tres fases pero siempre por encima del umbral de arranque.
+    \item \textbf{Intentos falsos tras reiniciar.} Al reordenar los cubos después de un reinicio, el tablero pasaba por posiciones de bloqueo que se registraban como intentos. Corrección: el fin de partida solo se evalúa con un intento en curso. Además, el botón «Terminar» cierra el intento y lo guarda como interrumpido, mientras que «Reiniciar» lo descarta.
+\end{enumerate}
+
+Un séptimo hallazgo es de método: las bitácoras de Control no registraban cada jugada como evento propio, de modo que los intentos del tablero físico salían sin las latencias de la ecuación~\eqref{eq:tiempos}. Ahora cada jugada aceptada se registra con la hora física estimada de su apoyo, y el origen de tiempos es el instante en que el tablero queda disponible, igual que en las demás vistas.
  
 \subsection{Manual de usuario: operación del sistema de cubos}
  
@@ -3273,12 +3442,23 @@ computadora o tableta del investigador dentro del rango de la red local
 del sistema.
  
 El procedimiento operativo de una sesión estándar sigue los siguientes
-pasos: antes de iniciar, el docente enciende la base y los cubos,
-verifica en la pantalla que todos los dispositivos están conectados (luz
-verde en el indicador de cada cubo), y posiciona los cubos en las
-ubicaciones del tablero previamente definidas en el protocolo. Al comenzar
-la sesión, el docente activa el modo de observación en la interfaz y sigue
-el desarrollo del juego del estudiante. Cuando, según su criterio pedagógico,
+pasos: antes de iniciar, el docente enciende la base y los cubos y
+verifica en la pantalla que todos están conectados (estado «Conectado» y
+latencia baja en el panel de enlace). Si los cubos no están en el orden
+inicial, la aplicación los marca: el cubo que está fuera de su lugar se
+pone blanco, tanto en la pantalla como físicamente, y el tablero indica
+adónde debe ir; al devolverlo a su casilla recupera su color de equipo
+(azul del uno al cinco, rojo del seis al diez). Si la pantalla no coincide
+con lo que hay sobre la base, el botón «Reidentificar cubos (IP)» vuelve a
+comprobar qué cubo hay en cada casilla. Con el tablero en orden, el
+docente pulsa «Iniciar intento»: se identifican los cubos, corre una
+cuenta regresiva de tres segundos con tonos y destellos en los cubos y el
+tablero queda disponible, instante que sirve de origen de tiempos. El
+participante puede seguir la partida en una pantalla aparte, que muestra
+solo los cubos, sin ningún control del operador. Durante el intento, el
+docente sigue el desarrollo del juego del estudiante; una jugada
+inválida pone los diez cubos en Pausar y detiene el cronómetro hasta que
+el tablero vuelve a la posición anterior. Cuando, según su criterio pedagógico,
 identifica una situación que requiere mediación (señales de impulsividad
 inminente, bloqueo en la planificación o necesidad de confirmación de una
 decisión tomada), selecciona en la pantalla la fase del ciclo
@@ -3288,7 +3468,7 @@ confirma con un toque o clic, y el cubo emite inmediatamente la señal
 multisensorial configurada. El docente puede interrumpir la activación en
 cualquier momento si el aprendiz ya respondió a la señal antes de que
 concluya el intervalo temporizado, garantizando que el estímulo no
-persista más allá de lo necesario.
+persista más allá de lo necesario. Cada señal se apaga sola a los cinco segundos. Al cerrar el intento, «Terminar» lo guarda como interrumpido, con su recorrido y sus tiempos, y «Reiniciar» lo descarta.
  
 Al finalizar la sesión, el sistema exporta el registro completo de la
 bitácora en formato CSV y JSON. Cada evento lleva marca de tiempo ISO 8601
@@ -3308,6 +3488,7 @@ que la produce.
 
 
 \subsection{La aplicación de registro y análisis}
+\label{sec:aplicacion}
 
 El instrumento con el que se administra la tarea y se registra lo que hace
 el participante es una aplicación web desarrollada en el marco de esta
@@ -3328,7 +3509,7 @@ niveles y descargar los informes sin montar nada. En esa versión, Control
 Mago de Oz aparece como desconectado, porque del otro lado no hay
 hardware.
 
-\subsubsection{Las cinco vistas}
+\subsubsection{Las seis vistas}
 
 \begin{itemize}
     \item \textbf{Control Mago de Oz.} El tablero físico. El docente ve el
@@ -3350,9 +3531,17 @@ hardware.
 
     \item \textbf{Informes.} El historial de todos los perfiles y sus
     sesiones guardadas, con acceso a los informes y a la exportación.
+
+    \item \textbf{Vista del jugador.} La pantalla que mira el participante
+    mientras juega con los cubos físicos: solo los cubos, el cronómetro (que
+    el operador puede ocultar, porque a algunos niños la cuenta del tiempo
+    les genera presión) y qué hacer tras una jugada inválida. No lleva
+    señales PPA, medidores, bitácoras ni casillas válidas resaltadas: en un
+    diseño Mago de Oz el participante no debe ver la consola del operador, o
+    la respuesta de los cubos dejaría de parecer del sistema.
 \end{itemize}
 
-Las cuatro primeras dibujan, junto al tablero, el grafo de estados del
+Control, el tutorial, la simulación y el observador dibujan, junto al tablero, el grafo de estados del
 nivel en curso, con el recorrido del intento superpuesto y las posiciones
 más transitadas resaltadas. Las dos rutas mínimas pueden mostrarse como
 referencia, pero permanecen ocultas mientras se juega: mostrarlas sería
@@ -3374,6 +3563,8 @@ estado alcanzado en el grafo del juego. Es ese campo el que permite
 reconstruir el paseo $W$ de cada intento sobre el grafo y, con él,
 calcular las métricas de la sección~\ref{sec:fundamento_ecuaciones}. Sin
 él, la bitácora sería una lista de jugadas; con él, es una trayectoria.
+
+En Control, cada jugada aceptada del tablero físico se registra como evento propio con la hora estimada de su apoyo, no la de su llegada a la pantalla: a la marca del backend se le restan el tiempo que el evento esperó en el maestro, la mitad de la duración del envío y los 25~ms del filtro antirrebote. De esos instantes salen el tiempo hasta el primer movimiento y la latencia por decisión de la ecuación~\eqref{eq:tiempos}, con el origen de tiempos en el instante en que el tablero queda disponible. Cada evento, decisión y marcador se guarda además al instante en un archivo del backend, de modo que el cierre accidental del navegador no pierde lo registrado, y los marcadores se alinean con el registro EEG mediante la hora del computador: la hora que el OpenBCI GUI graba en cada muestra procede del mismo reloj. El ajuste por mínimos cuadrados de esa hora a lo largo del registro, probado sobre una grabación real de 125~Hz, devuelve la frecuencia de muestreo con una desviación inferior al 0,1~\% y deja un error típico de 0,14~s (el peor tramo, 0,31~s), que es propio del programa de adquisición, que sella la hora por lotes. Eso basta para analizar ventanas de segundos (intentos, fases del ciclo) pero no para potenciales evocados; para esa escala haría falta un disparador por cable hacia una entrada digital de la placa de adquisición.
 
 \subsubsection{Los informes}
 
@@ -3434,7 +3625,7 @@ inadvertida.
 compilación, antes de publicar.}
 \label{tab:auditorias}
 \renewcommand{\arraystretch}{1.3}
-\begin{tabular}{|p{4.1cm}|p{10.4cm}|}
+\begin{tabular}{|p{3.2cm}|p{7.6cm}|}
 \hline
 \textbf{Comprobación} & \textbf{Qué garantiza} \\
 \hline
@@ -3624,8 +3815,7 @@ Video, registro EEG y bitácora del sistema se sincronizan mediante una marca de
 
 \subsection{Distinción entre cubo levantado y cubo no detectado}
 
-% [SUJETO A VERIFICACIÓN TÉCNICA]
-Para efectos del análisis, un cambio de estado de un cubo se evalúa en dos pasos. Primero se verifica si es compatible con las reglas de movimiento del juego: en cada instante puede haber como máximo un cubo levantado, y ese cubo debe pertenecer al conjunto de cubos que pueden moverse legalmente, es decir, desplazarse hacia la casilla vacía contigua en cualquiera de los dos sentidos, o saltar sobre un único cubo del equipo contrario hacia la casilla vacía, sin volver a la posición inmediatamente anterior. Si el cambio es compatible con un movimiento legal, se interpreta como cubo levantado. Si no lo es, no se asume de inmediato que el cubo se desconectó: se revisa, en segundo lugar, una señal independiente del canal de posición que confirme la desconexión, antes de excluir ese cambio de estado del análisis. Esta misma distinción determina cómo se representa cada cubo en la interfaz del docente.
+Para efectos del análisis, un cambio de estado de un cubo se evalúa en dos pasos. Primero se verifica si es compatible con las reglas de movimiento del juego: en cada instante puede haber como máximo un cubo levantado, y ese cubo debe pertenecer al conjunto de cubos que pueden moverse legalmente, es decir, desplazarse hacia la casilla vacía contigua en cualquiera de los dos sentidos, o saltar sobre un único cubo del equipo contrario hacia la casilla vacía, sin volver a la posición inmediatamente anterior. Si el cambio es compatible con un movimiento legal, se interpreta como cubo levantado. Si no lo es, no se asume de inmediato que el cubo se desconectó: se revisa, en segundo lugar, una señal independiente del canal de posición que confirme la desconexión, antes de excluir ese cambio de estado del análisis. En la versión 3 esa señal independiente es el estado del enlace de cada cubo (conexión TCP viva y ping) y la identificación por dirección IP (subsección~\ref{sec:identificacion-ip}). Esta misma distinción determina cómo se representa cada cubo en la interfaz del docente.
 
 \subsection{Objeto del análisis}
 
@@ -3637,6 +3827,137 @@ El análisis cruza los mapas topográficos de potencia relativa alfa, la codific
 
 
 \chapter{Trabajos futuros}
+\chapter{Anexo fotográfico del conexionado}
+\label{anexo:conexionado}
+\raggedbottom
+
+Este anexo documenta con fotografías el conexionado del prototipo y el flujo de las señales entre sus partes. Las imágenes muestran lo que se observa; la asignación de cada casilla a su pin se tomó del firmware, y se indica expresamente lo que no pudo comprobarse a simple vista.
+
+\section{Flujo de señales}
+
+\begin{table}[H]
+\centering
+\caption{Señales del sistema, de su origen a su destino.}
+\label{tab:flujo-senales}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{2.2cm}|p{8.6cm}|}
+\hline
+\textbf{Señal} & \textbf{Recorrido} \\
+\hline
+Presencia & Pin GPIO~6 del cubo, en nivel alto $\rightarrow$ contacto del conector magnético $\rightarrow$ conductor del haz $\rightarrow$ pin de la casilla en el maestro $\rightarrow$ filtro antirrebote de 25~ms $\rightarrow$ vector de presencia. \\
+\hline
+Posición & Vector de presencia y seguimiento de identidades en el maestro $\rightarrow$ petición HTTP al backend $\rightarrow$ Socket.IO $\rightarrow$ aplicación de Control (y Vista del jugador, por un canal local del navegador). \\
+\hline
+Actuación & Aplicación $\rightarrow$ Socket.IO $\rightarrow$ cola de comandos del backend $\rightarrow$ consulta HTTP del maestro (cada 120~ms) $\rightarrow$ TCP~3333 $\rightarrow$ cubo $\rightarrow$ PWM del LED RGB y del motor. \\
+\hline
+Identificación & Maestro $\rightarrow$ \texttt{ID=0} por TCP al cubo $n$ $\rightarrow$ el cubo baja su pin de presencia 250~ms $\rightarrow$ el maestro lee la casilla que se vació y se volvió a ocupar. \\
+\hline
+Enlace & Maestro $\rightarrow$ \texttt{PG} cada 2~s $\rightarrow$ cubo $\rightarrow$ \texttt{PO}; el cubo envía \texttt{EST} cada 5~s; el maestro lo resume y lo reporta al backend cada segundo. \\
+\hline
+Alimentación & Banco de energía $\rightarrow$ ESP32 maestro. Cada cubo lleva su batería Li-Po con módulo de carga; según el manual del proyecto, se carga apoyado en la base. \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Asignación de las casillas}
+
+\begin{table}[H]
+\centering
+\caption{Pin del maestro que lee cada casilla (de izquierda a derecha) y cambios de lectura registrados en la prueba de banco (Tabla~\ref{tab:prueba-banco}).}
+\label{tab:pines-base}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Casilla} & \textbf{GPIO} & \textbf{Resistencia interna} & \textbf{Cambios} \\
+\hline
+1 & 39 & no (solo entrada) & 0 \\
+\hline
+2 & 34 & no (solo entrada) & 2 \\
+\hline
+3 & 35 & no (solo entrada) & 49 \\
+\hline
+4 & 27 & a tierra & 103 \\
+\hline
+5 & 14 & a tierra & 871 \\
+\hline
+6 (central) & 17 & a tierra & 88 \\
+\hline
+7 & 18 & a tierra & 122 \\
+\hline
+8 & 19 & a tierra & 79 \\
+\hline
+9 & 21 & a tierra & 55 \\
+\hline
+10 & 22 & a tierra & 47 \\
+\hline
+11 & 23 & a tierra & 31 \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Fotografías}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.36\linewidth]{anexo-fotos/cubo_conector.jpg}
+    \caption{Cara inferior de un cubo: conector magnético con cuatro contactos metálicos centrales y un imán en cada extremo.}
+    \label{fig:anx-cubo-conector}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.36\linewidth]{anexo-fotos/base_casillas.jpg}
+    \caption{Vista superior de la base: dos casillas vacías, con su conector magnético visible, entre dos cubos apoyados (el superior, con la tapa levantada).}
+    \label{fig:anx-base-casillas}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{anexo-fotos/base_abierta.jpg}
+    \caption{Base abierta por debajo: los conectores de las casillas, el haz de cables que los reúne y lleva al ESP32 maestro, y dos cubos abiertos delante.}
+    \label{fig:anx-base-abierta}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{anexo-fotos/base_powerbank.jpg}
+    \caption{Interior de la base: haz de cables de los conectores, banco de energía de 120~W que alimenta al maestro y, a la derecha, los interruptores de alimentación.}
+    \label{fig:anx-base-powerbank}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.36\linewidth]{anexo-fotos/base_interruptores.jpg}
+    \caption{Interruptores de alimentación rotulados I, D y M (izquierdo, derecho y maestro).}
+    \label{fig:anx-base-interruptores}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{anexo-fotos/maestro_cableado.jpg}
+    \caption{ESP32 DevKit V1 (maestro) en el interior de la base, rodeado de los conductores de las casillas, rotulados con cinta de papel.}
+    \label{fig:anx-maestro-cableado}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.36\linewidth]{anexo-fotos/cubo_actuadores.jpg}
+    \caption{Módulos de actuación de un cubo: motor de vibración (rotulado «Vibration Motor») y módulo LED RGB (terminales R, G y B).}
+    \label{fig:anx-cubo-actuadores}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.36\linewidth]{anexo-fotos/cubo_interior.jpg}
+    \caption{Interior de un cubo: batería Li-Po de 3.7~V y 180~mAh, microcontrolador ESP32-C3 SuperMini, módulos de actuación y cableado.}
+    \label{fig:anx-cubo-interior}
+\end{figure}
+
+\section{Lo que las fotografías no permiten comprobar}
+
+Tres puntos quedan abiertos y no se afirman en el texto: la función de tres de los cuatro contactos del conector de cada cubo (solo el de presencia está identificado por el firmware); qué conductor del haz corresponde a cada contacto; y si algún pin de las casillas 1 a 3 lleva una resistencia externa. Sobre este último, la ausencia de resistencias no se aprecia en las imágenes y se confirma por el comportamiento medido (Tabla~\ref{tab:pines-base}); una medición con multímetro, sin cubos apoyados, lo cerraría.
+
+\flushbottom
 \chapter{Bibliografía}
 %\printbibliography[title={bibliografia}]
 \bibliographystyle{apacite}

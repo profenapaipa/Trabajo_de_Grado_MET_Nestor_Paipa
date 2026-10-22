@@ -23,16 +23,36 @@ aquí lo que se encuentre.
 - Cada casilla lee **ALTO = hay un cubo**. El cubo pone ese nivel con su
   pin `Pfcaja` a través del contacto de la casilla.
 - **Casillas 1, 2 y 3** (GPIO 39, 34, 35) son pines solo-entrada del ESP32
-  y no tienen resistencia interna: si la base no tiene una resistencia a
-  tierra en esas tres, con la casilla vacía el pin "flota" y la lectura
-  salta sola. La prueba de la base (abajo) lo delata: la casilla se pone
-  azul/blanca sin tocarla. Remedio: una resistencia de 10–100 kΩ de cada
-  uno de esos pines a GND en la base.
+  y no tienen resistencia interna. **Confirmado con la sesión del
+  2026-10-22** (1,9 h, 1748 reportes de posición): la casilla 1 no cambió
+  ni una vez, la 2 solo dos veces y la 3, 49; las demás entre 31 y 871. Las
+  fotos de la base no muestran resistencias externas. Al levantar el cubo,
+  el pin queda al aire y conserva el nivel ALTO: la base nunca ve que la
+  casilla se vació, y el seguimiento de identidades se descuadra (por eso la
+  pantalla pedía reordenar cubos que ya estaban en orden). Dos arreglos,
+  elegir UNO (ver `CASILLAS_1_A_3_EN_PINES_NUEVOS` en `Maestro_v3.ino`):
+  **A)** resistencia de 10 kΩ de cada pin 39, 34 y 35 a GND (no requiere
+  cambiar el programa); **B)** mover esos tres cables a los pines 32, 33 y
+  25 y poner la constante en 1. Mientras tanto, Control avisa con
+  «Casilla(s) N: no ha(n) cambiado ni una vez…» y el botón **Reidentificar
+  cubos (IP)** reconstruye el orden real.
 - Las otras 8 tienen activado el pulldown interno desde el 2026-10-16
   (inofensivo si ya hay resistencias externas).
 - Para que el nivel del cubo signifique algo, cubo y base deben **compartir
   tierra** por un contacto (el manual confirma que los cubos se cargan en la
   base, así que ya hay contactos de alimentación).
+
+### Cargar los cubos y el maestro (2026-10-22)
+
+- **Cargar el maestro y los 10 cubos juntos**: el maestro manda un ping
+  cada 2 s y el cubo cierra la conexión si pasan 9 s sin recibir nada.
+- En cada cubo se edita **una sola línea**: `const int NUMERO_CUBO = N;`
+  (N = el número de su etiqueta, 1 a 10). La IP sale sola: cubo 1 → .2,
+  cubo 2 → .3 … cubo 10 → .11. Al encender, el cubo parpadea en blanco N
+  veces: si no coincide con la etiqueta, se cargó mal.
+- Si dos cubos quedan con el mismo número, el panel lo detecta
+  (`cubo_distinto` en la bitácora: la MAC detrás de esa IP cambia).
+- Tras un cambio de router o de canal, reiniciar primero el maestro.
 
 ### Cubo (ESP32-C3 SuperMini — `Cubo_Esclavo_v3.ino`)
 
@@ -98,17 +118,31 @@ seguir.
       apoyar el cubo de cada casilla, una por una, hasta 11/11. Una casilla
       que no llega a ✓, o que cambia sola sin tocarla, apunta al cableado
       (ver §1).
-- [ ] **Identificar cubos** con dos cubos intercambiados a propósito: el
-      tablero de pantalla debe quedar igual al físico y marcar en blanco los
-      dos cubos fuera de lugar.
+- [ ] **Reidentificar cubos (IP)** con dos cubos intercambiados a propósito:
+      el tablero de pantalla debe quedar igual al físico y marcar en blanco
+      los dos cubos fuera de lugar. El botón también sirve tras Reiniciar o
+      Terminar, y la pantalla lo repite sola cuando cree que el tablero no
+      está en orden y la base lleva 2,5 s quieta.
+- [ ] Antes de iniciar, mover un cubo de sitio: **se pone blanco** (es el
+      código para ubicar los cubos) y recupera su color al devolverlo.
 
 ### Partida de prueba (5 pares)
 - [ ] Abrir la **Vista del jugador** en el segundo monitor.
 - [ ] **Iniciar intento**: cuenta regresiva con tonos en pantalla y destellos
       en los cubos.
-- [ ] Levantar un cubo: flota en pantalla (Control y Vista del jugador) en
-      menos de ~150 ms. Revisar la latencia en el panel lateral (mediana y
-      p95 en verde/amarillo).
+- [ ] Levantar un cubo: flota en pantalla (Control y Vista del jugador).
+      Revisar «Cubo → pantalla» en el panel lateral: en la sesión del
+      2026-10-22, con el firmware anterior, la mediana fue de 103 ms y el
+      percentil 95 de 218 ms; con el envío de posiciones en tarea propia se
+      espera menos. Anotar la nueva.
+- [ ] Panel «Cubos · estado del enlace»: los 10 en «Conectado», latencia
+      (ping) menor de 30 ms y ≈0,7 datos/s. «¿Qué significa?» explica cada
+      término.
+- [ ] Probar **Terminar** (guarda el intento como interrumpido) y
+      **Reiniciar** (lo descarta): solo el primero debe sumar un intento al
+      informe.
+- [ ] Enviar una señal a un cubo y otra a otro: cada una se apaga sola a los
+      5 s.
 - [ ] Jugada inválida a propósito: cubo naranja + vibración, los 10 en
       Pausar, cronómetro detenido, la pantalla muestra adónde volver.
       Devolverlo: el intento sigue solo.

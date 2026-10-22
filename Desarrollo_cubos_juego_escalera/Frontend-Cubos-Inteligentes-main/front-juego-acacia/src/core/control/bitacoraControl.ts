@@ -23,6 +23,10 @@ export type EventoCuboTipo =
   // Telemetría de los cubos (2026-10-16): batería por debajo del umbral y
   // reinicios de un cubo (con su motivo, p. ej. caída de tensión).
   | 'bateria_baja' | 'reinicio_cubo'
+  // Una jugada aceptada del tablero (con la hora física estimada), de donde
+  // salen las latencias de planificación; y un cambio de dispositivo tras la
+  // misma IP de un cubo (2026-10-22).
+  | 'movimiento' | 'cubo_distinto'
 
 export type EventoCubo = {
   timestamp: string
@@ -30,6 +34,9 @@ export type EventoCubo = {
   tipo: EventoCuboTipo
   detalle: string
   posiciones?: (number | null)[]
+  // Lo que lee cada casilla de la base (1 = algo apoyado). Solo para auditar
+  // el canal de posición; no se exporta en el CSV.
+  presencia?: number[]
   // Agrupa las filas de un mismo intento de partida (Iniciar -> victoria/
   // bloqueo/reinicio). Ausente en eventos que no pertenecen a un intento
   // en curso (p. ej. señales de conexión antes de iniciar).

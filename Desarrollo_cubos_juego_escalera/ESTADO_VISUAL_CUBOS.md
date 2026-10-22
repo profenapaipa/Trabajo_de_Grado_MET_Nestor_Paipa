@@ -323,6 +323,43 @@ Lo que faltaba para una sesión real (detalle operativo en
 comprobaciones, 2 corridas seguidas sin fallas. El script de
 sincronización se probó con `Sesión 1.txt` real (125,09 Hz medidos).
 
+## Prueba de banco con los cubos reales y correcciones (2026-10-22)
+
+Con la bitácora del backend de una sesión real (1,87 h, 12 intentos, 1433
+reportes de posición distintos) se encontró y corrigió lo siguiente. El
+detalle técnico y las cifras están en `main.tex` (subsección «Verificación del
+prototipo (versión 3)») y el conexionado, en el anexo fotográfico.
+
+| Hallazgo (evidencia) | Causa | Corrección |
+|---|---|---|
+| Cubos 1 y 2 no se detectan (casilla 1: 0 cambios; casilla 2: 2; las demás 31–871) | GPIO 39/34/35 son solo-entrada y sin pulldown; en las fotos no hay resistencias externas: el pin queda al aire en ALTO | Resistencia 10 kΩ a GND en 39, 34 y 35, **o** mover los cables a 32/33/25 y `CASILLAS_1_A_3_EN_PINES_NUEVOS = 1`. Control avisa de las casillas que nunca cambian |
+| Pantalla pide ordenar cubos que físicamente están en orden (captura) | La identidad se infiere siguiendo levantadas; con casillas ciegas se descuadra. La identificación por IP salió completa solo 20/35 veces y el parcial se descartaba | Fusión del resultado parcial con lo inferido + deducción por eliminación (`Maestro_v3`); repetición automática de la ronda; botón **Reidentificar cubos (IP)**, que ahora también está disponible tras Reiniciar/Terminar |
+| Reconexión lenta, había que reiniciar todo | Tras reiniciar el maestro, la conexión vieja seguía «viva» para el cubo y la nueva nunca se atendía; el arranque esperaba sin límite al router; AP y router en canales distintos | El cubo acepta siempre la conexión nueva, cierra tras 9 s sin datos; ping PG/PO cada 2 s; AP en el canal del router; arranque no bloqueante |
+| Señales PPA quedaban permanentes | Un solo temporizador de apagado para todos los cubos: la señal a otro cubo cancelaba el apagado del anterior | Un temporizador por cubo (5 s) |
+| Vibración de Pausar no se siente | PWM del 56 % no arranca un motor de moneda quieto | Arranque de 80 ms a plena potencia + piso del 55 % (`aplicarVibracion`) |
+| Reinicios por caída de tensión (5 de 11) | Picos de WiFi a plena potencia + motor sobre una batería de 180 mAh | Potencia WiFi 11 dBm |
+| Una «derrota» sin intento en curso (01:13:26) | El fin de partida se evaluaba también tras Reiniciar, al reordenar | Solo con intento en curso |
+| 8 intentos descartados con Reiniciar | Reiniciar no guarda | Botón **Terminar**: guarda el intento como interrumpido; Reiniciar lo descarta |
+| Control sin datos de planificación | No existía el evento `movimiento` en Control | Un evento por jugada con la hora física estimada; origen de tiempos `juego_listo` (ec. 3.17) |
+| 20 % de eventos repetidos en el archivo del backend | Dos ventanas de Control abiertas | Campo `instancia` en cada registro |
+| «No respeta la IP asignada» | Editar a mano el último octeto de la IP de cada cubo | Una sola constante `NUMERO_CUBO` (1–10, el de la etiqueta); el cubo parpadea en blanco ese número de veces; la MAC en la telemetría detecta dos cubos con la misma IP (`cubo_distinto`) |
+
+**Se mantiene** (confirmado por el autor): antes de iniciar el intento, un cubo
+fuera de su lugar se pone **blanco**; es el código para ubicar bien los cubos.
+
+**Latencia cubo → pantalla medida en esa sesión** (firmware anterior): mediana
+103 ms, p95 218 ms, máximo 488 ms (n = 208). Las posiciones ahora salen por una
+tarea propia del maestro, de mayor prioridad; hay que volver a medir.
+
+**Panel de enlace** (derecha): por cubo, Estado (Conectado / Lento / Sin
+respuesta / Sin conexión), Latencia (ping, ms), Datos/s y Señal, con un botón
+«¿Qué significa?».
+
+Las cifras se reproducen con `herramientas/analizar_prueba_banco.py`.
+
+Verificado sin hardware: maestro simulado + Playwright, 50+ comprobaciones.
+**Pendiente con hardware**: ver `PENDIENTES_TESIS.md`.
+
 ## Estado de verificación
 
 - ✅ **PPA confirmado en el backend (2026-09-18)**: el comando llega con el

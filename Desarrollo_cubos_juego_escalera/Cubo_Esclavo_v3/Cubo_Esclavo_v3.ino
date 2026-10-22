@@ -40,9 +40,10 @@
 //  playAscending).
 //
 //  Esta es la versión candidata a flashear en los cubos físicos. Antes
-//  de subirla a cada cubo, editar local_IP más abajo con el último
-//  octeto correspondiente a ese cubo (192.168.4.2 al .11 para los
-//  cubos 1 al 10, ver tabla en Maestro_v3.ino / ipEsclavos[]).
+//  de subirla a cada cubo, editar SOLO NUMERO_CUBO (más abajo) con el
+//  número de su etiqueta, de 1 a 10; la IP sale sola (192.168.4.2 para el
+//  cubo 1 ... 192.168.4.11 para el cubo 10, igual que ipEsclavos[] en
+//  Maestro_v3.ino).
 //
 //  ================================================================
 //  CONTROL DE PARTIDA Y CÓDIGO DE COLORES (Fase 2, 2026-09-17)
@@ -101,6 +102,22 @@
 //     restaura solo; el maestro mira qué casilla pasó a 0 para saber dónde
 //     está este cubo. "ID=1" lo restaura de inmediato. Ver
 //     ESTADO_VISUAL_CUBOS.md, "Identificación por IP".
+//
+//  ================================================================
+//  2026-10-22: correcciones tras la prueba de banco con los cubos reales
+//  ================================================================
+//   - Conexión: una conexión nueva del maestro SIEMPRE reemplaza a la vieja
+//     (antes, si el maestro se reiniciaba, la vieja seguía "viva" para el
+//     cubo, la nueva nunca se atendía y había que reiniciar todo). Sin
+//     retardo de Nagle, WiFi sin ahorro de energía, y la conexión se cierra
+//     tras 9 s sin datos del maestro.
+//   - Ping: contesta "PG=<n>" con "PO=<n>" (latencia real maestro<->cubo).
+//   - Vibración: arranque de 80 ms a plena potencia y piso de PWM del 55 %;
+//     con el 45 % de Pausar (PWM 142) el motor no arrancaba y no se sentía.
+//   - Potencia WiFi de 11 dBm: reduce los picos de corriente que hundían la
+//     batería de 180 mAh (reinicios por caída de tensión en la bitácora).
+//   - Telemetría con la MAC del chip: permite ver si dos cubos comparten IP.
+//   - Cargar junto con Maestro_v3 de la misma fecha.
 // ============================================================
 
 #include <WiFi.h>
@@ -122,7 +139,15 @@ bool conex = false;
 const char* ssid = "ESP32_Master_AP";
 const char* password = "12345678";
 
-IPAddress local_IP(192,168,4,10);     // Cambia el ultimo digito para que sean unicos e identificables
+// ÚNICA línea que se edita en cada cubo: su NÚMERO (1 a 10), el mismo que
+// lleva su etiqueta. Antes se editaba el último octeto de la IP a mano
+// (cubo 1 = .2 ... cubo 10 = .11), y un desfase de uno o un cubo repetido
+// dejaba cubos con la identidad cambiada. Al arrancar, el cubo parpadea en
+// blanco ese número de veces para comprobar que quedó bien cargado.
+const int NUMERO_CUBO = 10;
+static_assert(NUMERO_CUBO >= 1 && NUMERO_CUBO <= 10, "NUMERO_CUBO debe estar entre 1 y 10");
+const bool ANUNCIAR_NUMERO_AL_ARRANCAR = true;
+IPAddress local_IP(192, 168, 4, NUMERO_CUBO + 1);
 IPAddress gateway(192,168,4,1);
 IPAddress subnet(255,255,255,0);
 
@@ -189,6 +214,18 @@ const unsigned long TELEMETRIA_MS = 5000;
 unsigned long ultimaTelemetria = 0;
 int motivoReinicio = 0;
 
+// --- Enlace con el maestro (2026-10-22) ---
+// El maestro manda "PG=<n>" cada ~2 s a cada cubo y este contesta "PO=<n>":
+// así se mide la latencia real maestro<->cubo y se detecta una conexión
+// "zombi". Si pasan SILENCIO_MAESTRO_MS sin recibir NADA del maestro, la
+// conexión se da por muerta y se cierra para poder aceptar la siguiente.
+// (Sin esto, tras reiniciar el maestro la conexión vieja quedaba "viva" para
+// el cubo, que nunca atendía la nueva: había que reiniciar todo.)
+// IMPORTANTE: requiere el Maestro_v3 actualizado (es el que manda los PG);
+// con el maestro anterior este tiempo cortaría conexiones sanas. Cargar ambos.
+const unsigned long SILENCIO_MAESTRO_MS = 9000;
+unsigned long ultimoDatoMaestro = 0;
+
 // --- motor de efectos no bloqueante (EF=<n>): secuencias de color y
 // vibración de varios pasos que corren enteramente en el cubo, sin
 // depender de que el frontend mande varios comandos seguidos. r=-1 en un
@@ -231,8 +268,44 @@ void setColorSolid(int r, int g, int b) {
 // Aplica la vibración de un paso de efecto directamente desde un float
 // (0.0 = motor apagado), sin pasar por confi_vibromotor(String) para
 // evitar el redondeo de String(float) al comparar contra "0.0".
+// Un motor de vibración de moneda no arranca con un PWM bajo estando
+// quieto: con el 45 % de Pausar (PWM 142 de 255) solo zumbaba o no se sentía.
+// Dos cambios (2026-10-22, prueba con los cubos reales):
+//  - Arranque: 80 ms a plena potencia al pasar de apagado a encendido.
+//  - Piso: toda vibración encendida va entre VIB_PISO y 100 % del PWM, en
+//    proporción a la intensidad pedida (0,45 -> 75 %; 0,80 -> 91 %). Se
+//    conservan las diferencias entre Pausar/Pensar/Actuar, pero siempre por
+//    encima de lo que el motor necesita para sentirse.
+const float VIB_PISO = 0.55f;
+const unsigned long VIB_ARRANQUE_MS = 80;
+bool motorEncendido = false;
+unsigned long vibArranqueHasta = 0;
+int vibPwmObjetivo = 0;
+
 void aplicarVibracion(float v) {
-  analogWrite(motorpin, v > 0.0f ? (int)(v * 205 + 50) : 0);
+  if (v <= 0.0f) {
+    analogWrite(motorpin, 0);
+    motorEncendido = false;
+    vibArranqueHasta = 0;
+    return;
+  }
+  if (v > 1.0f) v = 1.0f;
+  vibPwmObjetivo = (int)((VIB_PISO + (1.0f - VIB_PISO) * v) * 255.0f);
+  if (!motorEncendido) {
+    analogWrite(motorpin, 255);                    // arranque a plena potencia
+    vibArranqueHasta = millis() + VIB_ARRANQUE_MS;
+  } else if (vibArranqueHasta == 0) {
+    analogWrite(motorpin, vibPwmObjetivo);
+  }
+  motorEncendido = true;
+}
+
+// Termina el arranque a plena potencia y deja el PWM de régimen. No bloquea.
+void actualizarVibracion() {
+  if (vibArranqueHasta != 0 && millis() >= vibArranqueHasta) {
+    analogWrite(motorpin, vibPwmObjetivo);
+    vibArranqueHasta = 0;
+  }
 }
 
 void aplicarPasoEfecto(int i) {
@@ -336,15 +409,7 @@ void actualizarParpadeo() {
 
 //Función para configurar la intensidad de vibración del motor
 void confi_vibromotor(String I_motor){
-
-if (I_motor!="0.0"){
-  int inte_motor=I_motor.toFloat()*205+50;
-  analogWrite(motorpin,inte_motor);
-}
-else{
-  analogWrite(motorpin,0);
-}
-
+  aplicarVibracion(I_motor.toFloat());
 }
 
 // Función genérica para extraer valores
@@ -373,8 +438,13 @@ void enviarTelemetria() {
   if (!cliente.connected()) return;
   if (ultimaTelemetria != 0 && millis() - ultimaTelemetria < TELEMETRIA_MS) return;
   ultimaTelemetria = millis();
-  char linea[64];
-  snprintf(linea, sizeof(linea), "EST=%d,%d,%d,%lu\n", leerBateriaMv(), (int)WiFi.RSSI(), motivoReinicio, millis() / 1000);
+  char linea[80];
+  // Último campo: los 3 últimos bytes de la MAC del chip. Identifica de forma
+  // única el dispositivo físico detrás de cada IP: si dos cubos se cargaron
+  // con la misma IP, o se cambió un cubo, el maestro lo ve.
+  uint64_t mac = ESP.getEfuseMac();
+  snprintf(linea, sizeof(linea), "EST=%d,%d,%d,%lu,%06lX\n", leerBateriaMv(), (int)WiFi.RSSI(), motivoReinicio,
+           millis() / 1000, (unsigned long)((mac >> 24) & 0xFFFFFF));
   cliente.print(linea);
 }
 
@@ -392,7 +462,13 @@ void actualizarPulsoIdentificacion() {
 }
 
 void procesarLinea(const String &cadena) {
-  Serial.println("Linea recibida: [" + cadena + "]");
+  // Los PG llegan cada 2 s por cubo: no se imprimen para no llenar el Monitor.
+  if (!cadena.startsWith("PG=")) Serial.println("Linea recibida: [" + cadena + "]");
+  if (cadena.startsWith("PG=")) {
+    // Ping del maestro: se contesta de inmediato con el mismo número.
+    cliente.print("PO=" + cadena.substring(3) + "\n");
+    return;
+  }
   if (cadena == "ID=0") {
     iniciarPulsoIdentificacion();
     return;
@@ -440,15 +516,33 @@ void procesarLinea(const String &cadena) {
 // Acepta/mantiene la conexión persistente del maestro y arma las
 // líneas recibidas byte a byte, sin ninguna llamada bloqueante.
 void procesarRed() {
-  if (!cliente.connected()) {
-    WiFiClient nuevo = server.available();
-    if (!nuevo) return;
+  // Una conexión nueva SIEMPRE reemplaza a la anterior (2026-10-22). Antes
+  // solo se atendía una nueva cuando la vieja ya figuraba cerrada; si el
+  // maestro se reiniciaba o perdía la red, la vieja seguía "viva" para el
+  // cubo (TCP no avisa), la nueva quedaba esperando sin que nadie la
+  // atendiera y el cubo parecía desconectado hasta reiniciar todo.
+  WiFiClient nuevo = server.available();
+  if (nuevo) {
+    cliente.stop();
     cliente = nuevo;
+    cliente.setNoDelay(true); // sin retardo de Nagle: cada línea sale al instante
     bufferEntrada = "";
+    ultimoDatoMaestro = millis();
+    ultimaTelemetria = 0;     // el maestro nuevo recibe la telemetría enseguida
     Serial.println("Maestro conectado (nueva conexion aceptada en :3333)");
+  }
+  if (!cliente.connected()) return;
+
+  // Silencio prolongado = maestro caído sin avisar: se cierra para que la
+  // próxima conexión se acepte limpia.
+  if (millis() - ultimoDatoMaestro > SILENCIO_MAESTRO_MS) {
+    Serial.println("Sin datos del maestro: conexion zombi, se cierra");
+    cliente.stop();
+    return;
   }
 
   while (cliente.available()) {
+    ultimoDatoMaestro = millis();
     char c = cliente.read();
     if (c == '\n') {
       procesarLinea(bufferEntrada);
@@ -482,8 +576,30 @@ void setup() {
   else                 { colorEquipoR = 255; colorEquipoG = 0; colorEquipoB = 0;   }
   Serial.printf("miIdFisico=%d  colorEquipo=(%d,%d,%d)\n", miIdFisico, colorEquipoR, colorEquipoG, colorEquipoB);
 
+  // Radio (2026-10-22):
+  //  - Sin ahorro de energía (setSleep(false)): con el modo por defecto el
+  //    chip duerme entre balizas y cada comando puede esperar 100-300 ms.
+  //  - Potencia de 11 dBm en vez de la máxima: el cubo está a menos de un
+  //    metro del maestro, y los picos de corriente del WiFi a plena potencia,
+  //    sumados al motor, hunden la batería de 180 mAh (caídas de tensión
+  //    registradas en la sesión del 2026-10-22).
+  WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
+  WiFi.setAutoReconnect(true);
+  WiFi.setTxPower(WIFI_POWER_11dBm);
+
   // Configurar IP estática antes de conectarse
   WiFi.config(local_IP, gateway, subnet);
+  Serial.printf("Cubo numero %d, IP %s\n", NUMERO_CUBO, local_IP.toString().c_str());
+  if (ANUNCIAR_NUMERO_AL_ARRANCAR) {
+    // N destellos blancos = soy el cubo N (compruébese contra la etiqueta).
+    for (int i = 0; i < NUMERO_CUBO; i++) {
+      analogWrite(Rpin, 255); analogWrite(Gpin, 255); analogWrite(Bpin, 255);
+      delay(180);
+      analogWrite(Rpin, 0); analogWrite(Gpin, 0); analogWrite(Bpin, 0);
+      delay(180);
+    }
+  }
 
   conectarWifi();
   server.begin();
@@ -508,6 +624,7 @@ void loop() {
   actualizarPulsoIdentificacion();
   actualizarEfecto();
   actualizarParpadeo();
+  actualizarVibracion();
 }
 
 void conectarWifi() {

@@ -1,14 +1,20 @@
-// Telemetría de los cubos (batería, señal WiFi, reinicios) y latencia de
-// la cadena base → pantalla. Los datos los manda cada cubo cada 5 s
-// ("EST=mv,rssi,reinicio,segundos", Cubo_Esclavo_v3.ino), el maestro los
+// Telemetría de los cubos (señal WiFi, reinicios, batería) y latencia de
+// la cadena base → pantalla. Los datos los manda cada cubo ("EST=…", cada
+// 5 s) y responde a los "PG" del maestro (ping, cada 2 s); el maestro los
 // junta en su reporte de esclavos y el backend los reenvía tal cual.
 
 export type TelemetriaCubo = {
   id: number
-  mv: number    // batería en mV; -1 = medición desactivada, -2 = sin divisor (lectura al aire)
-  rssi: number  // dBm
-  rst: number   // esp_reset_reason() del último arranque
-  up: number    // segundos encendido
+  // Medidos por el maestro en cada cubo conectado:
+  ping?: number   // ida y vuelta maestro↔cubo, ms (-1 = aún sin medir)
+  dato?: number   // ms desde la última línea recibida del cubo
+  rx?: number     // líneas recibidas del cubo desde que arrancó el maestro
+  // Telemetría del propio cubo (puede faltar si aún no llegó):
+  mv?: number     // batería en mV; -1 = medición desactivada, -2 = sin divisor
+  rssi?: number   // señal WiFi, dBm
+  rst?: number    // esp_reset_reason() del último arranque
+  up?: number     // segundos encendido
+  mac?: string    // últimos 3 bytes de la MAC del chip (identifica el dispositivo)
 }
 
 // Curva aproximada de una LiPo de una celda en reposo (mV → %). No es una
@@ -58,6 +64,20 @@ export function reinicioAnomalo(rst: number): boolean {
 
 export function calidadSenal(rssi: number): 'buena' | 'regular' | 'mala' {
   return rssi >= -60 ? 'buena' : rssi >= -72 ? 'regular' : 'mala'
+}
+
+// ── Estado del enlace de un cubo, en una palabra ───────────────────────────
+// Se deduce de lo que el maestro mide: si el cubo contesta a los ping (cada
+// 2 s) y cuánto hace de su último dato.
+export type EstadoEnlace = 'ok' | 'lento' | 'sin_respuesta' | 'sin_conexion'
+export const SIN_RESPUESTA_MS = 5000 // más de esto sin ningún dato = «Sin respuesta»
+export const PING_LENTO_MS = 100
+
+export function estadoEnlace(conectado: boolean, t: TelemetriaCubo | undefined): EstadoEnlace {
+  if (!conectado) return 'sin_conexion'
+  if (t?.dato !== undefined && t.dato > SIN_RESPUESTA_MS) return 'sin_respuesta'
+  if (t?.ping !== undefined && t.ping > PING_LENTO_MS) return 'lento'
+  return 'ok'
 }
 
 // ── Latencia ───────────────────────────────────────────────────────────────
