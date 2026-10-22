@@ -32,6 +32,13 @@ export type EventoSesion = {
   detalle: string
   // Qué regla se infringió, cuando el evento es una falla (ver tutor.ts).
   errorTipo?: string
+  // Fase del ciclo, cuando el evento es una activación de la mediación. Sin
+  // esto el informe sabe que hubo señal pero no cuál, y la pregunta de esta
+  // investigación es precisamente si Pausar hace algo distinto de Actuar.
+  fase?: 'pausar' | 'pensar' | 'actuar'
+  // Qué hizo el operador con la sugerencia. Una descartada no es una
+  // activación: el cubo nunca se encendió.
+  decision?: 'confirmada' | 'descartada'
   pares?: number
   nivel?: number
   intentoNum?: number

@@ -74,6 +74,36 @@ export type MetricasIntento = {
   latenciaForzada: number | null // ms medios antes de una jugada sin elección
 }
 
+// Juzga UN movimiento sobre el grafo: cuántas opciones había y qué calidad
+// tuvo la elegida (ec. 3.7), o null si en esa posición no había nada que
+// decidir —una sola jugada, o todas dejando la misma distancia—.
+//
+// Está aparte porque no solo la usa el cálculo de las métricas del intento:
+// el análisis de la mediación (core/session/mediacion.ts) necesita juzgar
+// jugadas sueltas, las que siguen a una señal del ciclo.
+export function juzgarMovimiento(
+  g: StateGraph, estado: number, anterior: number, elegido: number,
+): { opciones: number; calidad: number | null } {
+  // Grados de libertad: los vecinos, menos el estado anterior (Regla 2).
+  const opciones = g.vecinos(estado).filter(w => w !== anterior)
+  const dists = opciones.map(w => g.distFinDesde(w, estado))
+  // Un callejón sin salida (distancia -1) es el peor resultado posible, no
+  // un valor menor: se normaliza por encima del máximo alcanzable.
+  const finitas = dists.filter(d => d >= 0)
+  if (finitas.length === 0) return { opciones: opciones.length, calidad: null }
+  const peorFinita = Math.max(...finitas)
+  const valor = (d: number) => (d < 0 ? peorFinita + 1 : d)
+  const vals = dists.map(valor)
+  const dMin = Math.min(...vals)
+  const dMax = Math.max(...vals)
+  // Punto de decisión: más de una opción y no todas equivalentes (ec. 3.4).
+  if (opciones.length < 2 || dMax === dMin) return { opciones: opciones.length, calidad: null }
+  return {
+    opciones: opciones.length,
+    calidad: (valor(g.distFinDesde(elegido, estado)) - dMin) / (dMax - dMin),
+  }
+}
+
 const vacias = (pares: number): MetricasIntento => ({
   pares, movimientos: 0, optimo: pares * pares + 2 * pares, circuidad: 0, eficiencia: 0,
   ramificacion: 0, tasaAcierto: 1, gradoLibertadMedio: 0, puntosDecision: 0,
@@ -102,33 +132,12 @@ export function metricasDeIntento(pares: number, recorrido: number[], tiempos?: 
   let sumaGrados = 0
 
   for (let k = 1; k <= L; k++) {
-    const s = recorrido[k - 1]
-    const anterior = k >= 2 ? recorrido[k - 2] : 0
-    const elegido = recorrido[k]
-
-    // Grados de libertad: los vecinos, menos el estado anterior (Regla 2).
-    const opciones = g.vecinos(s).filter(w => w !== anterior)
-    sumaGrados += opciones.length
-
-    // Distancia a la meta que dejaría cada opción.
-    const dists = opciones.map(w => g.distFinDesde(w, s))
-    // Un callejón sin salida (distancia -1) es el peor resultado posible, no
-    // un valor menor: se normaliza por encima del máximo alcanzable.
-    const finitas = dists.filter(d => d >= 0)
-    if (finitas.length === 0) continue
-    const peorFinita = Math.max(...finitas)
-    const valor = (d: number) => (d < 0 ? peorFinita + 1 : d)
-    const vals = dists.map(valor)
-    const dMin = Math.min(...vals)
-    const dMax = Math.max(...vals)
-
-    // Punto de decisión: más de una opción y no todas equivalentes (ec. 3.4).
-    if (opciones.length < 2 || dMax === dMin) continue
+    const r = juzgarMovimiento(g, recorrido[k - 1], k >= 2 ? recorrido[k - 2] : 0, recorrido[k])
+    sumaGrados += r.opciones
+    if (r.calidad === null) continue
     decision[k] = true
-
-    const C = (valor(g.distFinDesde(elegido, s)) - dMin) / (dMax - dMin)
-    calidades.push(C)
-    perfil.push({ movimiento: k, calidad: C })
+    calidades.push(r.calidad)
+    perfil.push({ movimiento: k, calidad: r.calidad })
   }
 
   // Buclicidad sobre el paseo.

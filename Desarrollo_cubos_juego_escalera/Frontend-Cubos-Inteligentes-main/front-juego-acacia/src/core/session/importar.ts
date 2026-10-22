@@ -111,9 +111,13 @@ export function leerBitacora(archivo: string, contenido: string): Lectura {
     if (quien && quien !== '(sin nombre)' && !participante) participante = quien
     if (nodo && nodo > 0) conNodo++
 
+    const fase = texto(f.fase)
+    const decision = texto(f.decision)
     eventos.push({
       ts, seccion, tipo, detalle: texto(f.detalle),
       errorTipo: texto(f.errorTipo) || undefined,
+      fase: fase === 'pausar' || fase === 'pensar' || fase === 'actuar' ? fase : undefined,
+      decision: decision === 'confirmada' || decision === 'descartada' ? decision : undefined,
       pares: pares || undefined, nivel: numero(f.nivel),
       intentoNum: numero(f.intentoNum), nodoGrafo: nodo,
     })

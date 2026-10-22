@@ -14,6 +14,8 @@ import ModalInforme, {
   AYUDA, BalanceGeneral, Bloque, Sintesis, Dato, Datos, Tabla, ThM, td, tdIzq, btnDoc, btnDocPrincipal,
 } from './ModalInforme'
 import BloqueFuentes from './BloqueFuentes'
+import BloqueMediacion from './BloqueMediacion'
+import { efectoMediacion } from '../../core/session/mediacion'
 import { BarrasConReferencia, BarrasHorizontales, Evolucion, Figura, Leyenda, type GrupoEje } from './graficos'
 import {
   balanceDe, leerTendencia, n2, n3, nivelLabel, plural, reloj, tendencia,
@@ -84,6 +86,10 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
   const intentos: IntentoSesion[] = useMemo(() => sesiones.flatMap(s => s.intentos), [sesiones])
   const eventos: EventoSesion[] = useMemo(() => sesiones.flatMap(s => s.eventos), [sesiones])
   const faltas = useMemo(() => faltasPorRegla(eventos), [eventos])
+  // Efecto acumulado de la mediación: es entre sesiones donde esta
+  // pregunta empieza a tener respuesta, porque las activaciones de una
+  // sola sesión son demasiado pocas.
+  const mediacion = useMemo(() => efectoMediacion(eventos), [eventos])
   const totalFaltas = Object.values(faltas).reduce((a, b) => a + b, 0)
   const recortadas = sesiones.filter(s => s.eventosRecortados).length
 
@@ -495,6 +501,8 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
           )}
         </>
       )}
+
+      <BloqueMediacion efecto={mediacion} />
 
       <BloqueFuentes />
     </ModalInforme>

@@ -12,6 +12,8 @@ import ModalInforme, {
   AYUDA, BalanceGeneral, Bloque, Sintesis, Dato, Datos, Tabla, ThM, th, thIzq, td, tdIzq, btnDoc, btnDocPrincipal,
 } from './ModalInforme'
 import BloqueFuentes from './BloqueFuentes'
+import BloqueMediacion from './BloqueMediacion'
+import { efectoMediacion } from '../../core/session/mediacion'
 import { BarraResultados, BarrasConReferencia, BarrasHorizontales, Evolucion, Figura, Leyenda, type GrupoEje } from './graficos'
 import {
   balanceDe, n2, n3, nivelLabel, pct, plural, reloj, sintesisSesion, leerTendencia, tendencia,
@@ -83,6 +85,8 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
   const conDecisiones = intentos.some(i => i.metricas.puntosDecision > 0)
   const faltas = useMemo(() => faltasPorRegla(eventos), [eventos])
   const totalFaltas = Object.values(faltas).reduce((a, b) => a + b, 0)
+  // Efecto de la mediación: la pregunta de la investigación.
+  const mediacion = useMemo(() => efectoMediacion(eventos), [eventos])
   // Tiempos medios de la sesión, ponderados igual que las demás magnitudes:
   // se promedian los intentos que sí traen marcas de tiempo.
   const tiempos = useMemo(() => {
@@ -576,6 +580,8 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
           )}
         </Bloque>
       )}
+
+      <BloqueMediacion efecto={mediacion} />
 
       <BloqueFuentes />
 

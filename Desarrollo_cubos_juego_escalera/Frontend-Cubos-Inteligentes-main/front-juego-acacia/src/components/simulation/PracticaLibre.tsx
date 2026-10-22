@@ -113,7 +113,7 @@ function PracticaLibre({ pares, operatorId, participante }: { pares: number; ope
     setEvents(prev => [...prev, ev])
     sesion.registrarEvento({
       seccion: 'libre', ts: ev.timestamp, tipo: ev.tipo, detalle: ev.detalle,
-      errorTipo: ev.errorTipo, pares, intentoNum: ev.intentoNum, nodoGrafo: ev.nodoGrafo,
+      errorTipo: ev.errorTipo, fase: ev.fase, decision: ev.decision, pares, intentoNum: ev.intentoNum, nodoGrafo: ev.nodoGrafo,
     })
   }
 
