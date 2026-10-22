@@ -195,7 +195,7 @@ export function resumenDePerfil(perfilId: string): ResumenPerfil {
 // formato que sirve para analizar la evolución fuera de la aplicación.
 export function historialCsv(perfilId: string): string {
   const cols = ['sesion', 'inicio', 'fin', 'participante', 'operador', 'seccion', 'intento', 'pares',
-    'resultado', 'segundos', 'movimientos', 'optimo', 'circuidad', 'ramificacion', 'tasaAcierto',
+    'resultado', 'segundos', 'movimientos', 'optimo', 'circuidad', 'eficiencia', 'ramificacion', 'tasaAcierto',
     'puntosDecision', 'retornos', 'buclicidad', 'ciclosIndependientes', 'errores', 'recorrido']
   const esc = (v: unknown) => '"' + String(v ?? '').replace(/"/g, '""') + '"'
   const filas: string[] = []
@@ -205,6 +205,7 @@ export function historialCsv(perfilId: string): string {
         s.sesionId, s.inicio, s.fin, s.participante, s.operador, i.seccion, i.numero, i.pares,
         i.resultado, i.segundos, i.metricas.movimientos, i.metricas.optimo,
         i.resultado === 'victoria' ? i.metricas.circuidad.toFixed(4) : '',
+        i.resultado === 'victoria' ? i.metricas.eficiencia.toFixed(4) : '',
         i.metricas.puntosDecision ? i.metricas.ramificacion.toFixed(4) : '',
         i.metricas.puntosDecision ? i.metricas.tasaAcierto.toFixed(4) : '',
         i.metricas.puntosDecision, i.metricas.retornos, i.metricas.buclicidad.toFixed(4),

@@ -301,10 +301,10 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
       <Datos>
         <Dato etiqueta="Intentos" valor={`${global.intentos}`} nota={`${global.victorias} ganados · ${global.bloqueos} bloqueos`} />
         <Dato etiqueta="Movimientos" valor={`${global.movimientosTotales}`} nota="en toda la sesión" />
-        <Dato etiqueta="Circuidad media" valor={global.victorias ? n2(global.circuidadMedia) : '—'} nota="1 = ruta mínima · solo ganados" />
-        <Dato etiqueta="Ramificación media" valor={conDecisiones ? n3(global.ramificacionMedia) : '—'} nota={conDecisiones ? 'R · 0 = óptimo' : 'sin decisiones reales'} />
-        <Dato etiqueta="Buclicidad media" valor={n3(global.buclicidadMedia)} nota="β · retornos / movimientos" />
-        <Dato etiqueta="Acierto medio" valor={conDecisiones ? pct(global.tasaAciertoMedia) : '—'} nota="en puntos de decisión" />
+        <Dato etiqueta="Eficiencia media (E)" valor={global.victorias ? n2(global.eficienciaMedia) : '—'} nota={global.victorias ? `1 = ruta mínima · Q = ${n2(global.circuidadMedia)}` : 'sin intentos ganados'} />
+        <Dato etiqueta="Ramificación (R)" valor={conDecisiones ? n3(global.ramificacionPonderada) : '—'} nota={conDecisiones ? `ponderada · media por intento ${n3(global.ramificacionMedia)}` : 'sin decisiones reales'} />
+        <Dato etiqueta="Buclicidad (β)" valor={n3(global.buclicidadAgregada)} nota={`agregada · media por intento ${n3(global.buclicidadMedia)}`} />
+        <Dato etiqueta="Acierto (α)" valor={conDecisiones ? pct(global.tasaAciertoPonderada) : '—'} nota={conDecisiones ? `en ${global.puntosDecisionTotales} decisiones reales` : 'en puntos de decisión'} />
         <Dato etiqueta="Faltas" valor={`${totalFaltas}`} nota="jugadas rechazadas" color={totalFaltas ? 'var(--color-offline)' : 'var(--color-online)'} />
         <Dato etiqueta="Tiempo jugado" valor={reloj(global.segundosTotales)} nota={`de ${reloj(duracionSeg)} de sesión`} />
       </Datos>

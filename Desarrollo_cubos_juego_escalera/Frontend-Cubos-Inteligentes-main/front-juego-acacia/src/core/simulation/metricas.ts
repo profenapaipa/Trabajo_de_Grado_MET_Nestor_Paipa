@@ -28,6 +28,13 @@ export type MetricasIntento = {
   // Solo tiene sentido en un intento que alcanzó la meta: en uno bloqueado o
   // abandonado el recorrido no llegó a destino y el cociente no es comparable.
   circuidad: number
+  // Eficiencia E_i = D*(n) / L_i, la recíproca de la circuidad (ec. 3.6). Es la
+  // forma en que esta magnitud se reporta en la literatura de tareas de torre
+  // —Faber, Kühnpast, Sürer, Hinz y Danek (2009) la llaman «efficiency»— y
+  // tiene una ventaja práctica sobre Q: está acotada en (0, 1], así que puede
+  // dibujarse en el mismo eje que la ramificación, la tasa de acierto y la
+  // buclicidad. 1 = partida mínima.
+  eficiencia: number
   // Ramificación R_i: calidad media de las decisiones, en [0,1]. 0 = siempre
   // eligió lo mejor disponible (ec. 3.7).
   ramificacion: number
@@ -51,7 +58,7 @@ export type MetricasIntento = {
 }
 
 const vacias = (pares: number): MetricasIntento => ({
-  pares, movimientos: 0, optimo: pares * pares + 2 * pares, circuidad: 0,
+  pares, movimientos: 0, optimo: pares * pares + 2 * pares, circuidad: 0, eficiencia: 0,
   ramificacion: 0, tasaAcierto: 1, gradoLibertadMedio: 0, puntosDecision: 0,
   aciertos: 0, perfil: [], retornos: 0, buclicidad: 0, ciclosIndependientes: 0,
   tamanosBucle: [], estadosDistintos: 0,
@@ -122,6 +129,7 @@ export function metricasDeIntento(pares: number, recorrido: number[]): MetricasI
     movimientos: L,
     optimo,
     circuidad: L / optimo,
+    eficiencia: optimo / L,
     ramificacion: calidades.length ? calidades.reduce((a, b) => a + b, 0) / calidades.length : 0,
     tasaAcierto: calidades.length ? aciertos / calidades.length : 1,
     gradoLibertadMedio: sumaGrados / L,
@@ -149,12 +157,35 @@ export type MetricasSesion = {
   intentos: number
   victorias: number
   bloqueos: number
-  // Promedios por experiencia (ec. 3.13): la tendencia de estos valores a lo
-  // largo de los intentos es la evidencia de aprendizaje que se busca observar.
+  // ── Agregación entre intentos ────────────────────────────────────────────
+  //
+  // Hay dos formas de resumir un conjunto de intentos, y NO dan lo mismo.
+  //
+  //   · La media por intento (ec. 3.14): promedia los valores ya promediados
+  //     de cada intento. Un intento con un solo punto de decisión pesa igual
+  //     que uno con cuarenta. Describe «cómo le fue en un intento típico».
+  //   · La agregada o ponderada (ec. 3.15): junta primero y divide después.
+  //     Equivale a promediar TODAS las decisiones de la sesión, no las medias.
+  //     Describe «cómo decidió en la sesión».
+  //
+  // La diferencia es grande con datos reales: en la sesión piloto de Jerónimo
+  // la ramificación pasa de 0,249 a 0,133 (un 47 % menos) porque sus intentos
+  // cortos arrastraban la media; en la de Joel la buclicidad pasa de 0,0033 a
+  // 0,0104 (el triple) porque sus retornos se concentran en los intentos
+  // largos. Como la cifra puede cambiar de categoría en el informe, se
+  // calculan y se muestran las dos, y la ponderada es la que titula.
   circuidadMedia: number // solo sobre los intentos ganados (ver `circuidad`)
-  ramificacionMedia: number // R_e
-  buclicidadMedia: number // B_e
+  eficienciaMedia: number // E media, solo sobre los ganados
+  ramificacionMedia: number // media por intento de R (ec. 3.14)
+  buclicidadMedia: number // media por intento de β (ec. 3.14)
+  // Ponderadas (ec. 3.15): Σ(|K_j|·R_j)/Σ|K_j| y Σν_j/ΣL_j.
+  ramificacionPonderada: number
+  buclicidadAgregada: number
+  // Cuántas decisiones reales sostienen la cifra ponderada. Sin esto no se
+  // puede juzgar si un valor es sólido o viene de tres jugadas.
+  puntosDecisionTotales: number
   tasaAciertoMedia: number
+  tasaAciertoPonderada: number
   retornosTotales: number
   movimientosTotales: number
   erroresTotales: number
@@ -162,17 +193,33 @@ export type MetricasSesion = {
 }
 
 const promedio = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0)
+const suma = (xs: number[]) => xs.reduce((a, b) => a + b, 0)
+// Media ponderada: Σ(p_j·x_j)/Σp_j. Si no hay peso, devuelve 0 en vez de NaN.
+const ponderada = (xs: number[], ps: number[]) => {
+  const t = suma(ps)
+  return t > 0 ? suma(xs.map((x, k) => x * ps[k])) / t : 0
+}
 
 export function metricasDeSesion(intentos: IntentoRegistrado[]): MetricasSesion {
   const jugados = intentos.filter(i => i.metricas.movimientos > 0)
+  const ganados = jugados.filter(i => i.resultado === 'victoria')
+  const conDecisiones = jugados.filter(i => i.metricas.puntosDecision > 0)
+  const pesos = conDecisiones.map(i => i.metricas.puntosDecision)
   return {
     intentos: intentos.length,
-    victorias: intentos.filter(i => i.resultado === 'victoria').length,
+    victorias: ganados.length,
     bloqueos: intentos.filter(i => i.resultado === 'bloqueo').length,
-    circuidadMedia: promedio(jugados.filter(i => i.resultado === 'victoria').map(i => i.metricas.circuidad)),
-    ramificacionMedia: promedio(jugados.filter(i => i.metricas.puntosDecision > 0).map(i => i.metricas.ramificacion)),
+    circuidadMedia: promedio(ganados.map(i => i.metricas.circuidad)),
+    eficienciaMedia: promedio(ganados.map(i => i.metricas.eficiencia)),
+    ramificacionMedia: promedio(conDecisiones.map(i => i.metricas.ramificacion)),
     buclicidadMedia: promedio(jugados.map(i => i.metricas.buclicidad)),
-    tasaAciertoMedia: promedio(jugados.filter(i => i.metricas.puntosDecision > 0).map(i => i.metricas.tasaAcierto)),
+    ramificacionPonderada: ponderada(conDecisiones.map(i => i.metricas.ramificacion), pesos),
+    buclicidadAgregada: suma(jugados.map(i => i.metricas.movimientos)) > 0
+      ? suma(jugados.map(i => i.metricas.retornos)) / suma(jugados.map(i => i.metricas.movimientos))
+      : 0,
+    puntosDecisionTotales: suma(pesos),
+    tasaAciertoMedia: promedio(conDecisiones.map(i => i.metricas.tasaAcierto)),
+    tasaAciertoPonderada: ponderada(conDecisiones.map(i => i.metricas.tasaAcierto), pesos),
     retornosTotales: jugados.reduce((a, i) => a + i.metricas.retornos, 0),
     movimientosTotales: jugados.reduce((a, i) => a + i.metricas.movimientos, 0),
     erroresTotales: intentos.reduce((a, i) => a + i.errores, 0),
@@ -180,11 +227,73 @@ export function metricasDeSesion(intentos: IntentoRegistrado[]): MetricasSesion 
   }
 }
 
+// Agregación estratificada por nivel (ec. 3.16).
+//
+// Promediar entre niveles mezcla cosas que no son comparables: el grado de
+// libertad medio y el número de puntos de decisión cambian con el tamaño del
+// tablero, de modo que una ramificación de 0,20 en dos pares y otra de 0,20 en
+// cinco no describen la misma conducta. El estudio del iso-efecto en la Torre
+// de Londres (Faber, Kühnpast, Sürer, Hinz y Danek, 2009) compara por esa
+// razón dentro de problemas de la misma longitud, nunca entre longitudes
+// distintas.
+export type ResumenNivel = {
+  pares: number
+  optimo: number
+  intentos: number
+  ganados: number
+  mejorMovimientos: number | null // la mejor partida ganada
+  eficienciaMejor: number | null // D* / mejor
+  ramificacionPonderada: number
+  buclicidadAgregada: number
+  puntosDecision: number
+}
+
+export function metricasPorNivel(intentos: IntentoRegistrado[]): ResumenNivel[] {
+  const jugados = intentos.filter(i => i.metricas.movimientos > 0)
+  const niveles = [...new Set(jugados.map(i => i.pares))].sort((a, b) => a - b)
+  return niveles.map(pares => {
+    const del = jugados.filter(i => i.pares === pares)
+    const ganados = del.filter(i => i.resultado === 'victoria')
+    const optimo = pares * pares + 2 * pares
+    const mejor = ganados.length ? Math.min(...ganados.map(i => i.metricas.movimientos)) : null
+    const conK = del.filter(i => i.metricas.puntosDecision > 0)
+    const pesos = conK.map(i => i.metricas.puntosDecision)
+    const total = pesos.reduce((a, b) => a + b, 0)
+    const movs = del.reduce((a, i) => a + i.metricas.movimientos, 0)
+    return {
+      pares, optimo, intentos: del.length, ganados: ganados.length,
+      mejorMovimientos: mejor,
+      eficienciaMejor: mejor ? optimo / mejor : null,
+      ramificacionPonderada: total > 0
+        ? conK.reduce((a, i) => a + i.metricas.ramificacion * i.metricas.puntosDecision, 0) / total
+        : 0,
+      buclicidadAgregada: movs > 0 ? del.reduce((a, i) => a + i.metricas.retornos, 0) / movs : 0,
+      puntosDecision: total,
+    }
+  })
+}
+
+// Pendiente de la recta de mínimos cuadrados de `ys` contra su orden (1, 2, …).
+//
+// La tendencia dejada en un gráfico es una impresión; esto es el número. Dice
+// cuánto cambia el indicador por cada intento (o cada sesión) que pasa, y su
+// signo es lo que sostiene la afirmación de que hubo aprendizaje. Devuelve
+// null con menos de tres puntos, porque con dos cualquier recta pasa exacta.
+export function pendiente(ys: number[]): number | null {
+  const n = ys.length
+  if (n < 3) return null
+  const mx = (n + 1) / 2
+  const my = ys.reduce((a, b) => a + b, 0) / n
+  let num = 0, den = 0
+  ys.forEach((y, k) => { const dx = (k + 1) - mx; num += dx * (y - my); den += dx * dx })
+  return den === 0 ? null : num / den
+}
+
 // Filas planas para exportar a CSV, una por intento.
 export function intentosACsv(intentos: IntentoRegistrado[], participante: string, operador: string): string {
   const cols = [
     'intento', 'participante', 'operador', 'pares', 'resultado', 'segundos', 'movimientos',
-    'optimo', 'circuidad', 'ramificacion', 'tasaAcierto', 'puntosDecision', 'gradoLibertadMedio',
+    'optimo', 'circuidad', 'eficiencia', 'ramificacion', 'tasaAcierto', 'puntosDecision', 'gradoLibertadMedio',
     'retornos', 'buclicidad', 'ciclosIndependientes', 'estadosDistintos', 'tamanosBucle', 'errores',
   ]
   const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
@@ -193,6 +302,7 @@ export function intentosACsv(intentos: IntentoRegistrado[], participante: string
     i.numero, participante || '(sin nombre)', operador || '(sin asignar)', i.pares, i.resultado,
     i.segundos, i.metricas.movimientos, i.metricas.optimo,
     i.resultado === 'victoria' ? num(i.metricas.circuidad) : '',
+    i.resultado === 'victoria' ? num(i.metricas.eficiencia) : '',
     num(i.metricas.ramificacion), num(i.metricas.tasaAcierto), i.metricas.puntosDecision,
     num(i.metricas.gradoLibertadMedio, 2), i.metricas.retornos, num(i.metricas.buclicidad),
     i.metricas.ciclosIndependientes, i.metricas.estadosDistintos,

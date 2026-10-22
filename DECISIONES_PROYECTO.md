@@ -122,6 +122,15 @@ Este archivo contiene **únicamente decisiones ya tomadas** por el autor y confi
 
 ---
 
+## Agregación entre intentos y entre sesiones (2026-10-21)
+
+- **La cifra que titula el informe es la ponderada, no la media de medias.** Promediar los valores ya promediados de cada intento da el mismo peso a uno con un punto de decisión y a otro con cincuenta y ocho. Con las bitácoras piloto la diferencia llega al 47 % en la ramificación de Jerónimo (0,249 → 0,133) y al triple en la buclicidad de Joel (0,0033 → 0,0104), suficiente para cambiar la categoría con que el informe describe al aprendiz. Se muestran las dos; la media por intento queda como lectura auxiliar.
+- **Se reporta la eficiencia E = D*/L junto a la circuidad Q.** Son recíprocas y contienen lo mismo, pero E está acotada en (0,1] y Q no. Eso permite leer E en el mismo eje que R, α y β, y hace los resultados comparables con la literatura de Torre de Londres, que usa E (Faber et al., 2009, la llaman *efficiency*).
+- **Los indicadores agregados se reportan por nivel.** El grado de libertad y los puntos de decisión crecen con el tamaño del tablero: una ramificación de 0,20 en dos pares y otra de 0,20 en cinco no son el mismo desempeño. El estudio del iso-efecto compara por eso dentro de la misma longitud. El valor global de la sesión se conserva como descriptor, no como término de comparación.
+- **La tendencia se calcula, no se insinúa.** Pendiente de mínimos cuadrados sobre los intentos de cada nivel, con un mínimo de tres puntos. Calculada por separado en el nivel repetido y en los nuevos, cumple la función de control que Faber et al. consideran indispensable: en su estudio, el mismo análisis sobre problemas no isomorfos dio una curva de signo contrario.
+- **Repetir un nivel no es un iso-problema.** En la Torre de Londres el experimentador elige inicio y meta, y de ahí salen clases de equivalencia de seis tareas de aspecto distinto. En La Escalera la tarea viene fija por el juego: un inicio y una meta por nivel. El informe entre sesiones mide, por tanto, **aprendizaje por repetición idéntica**, no el iso-efecto. Citar a Faber et al. para «comparar intentos equivalentes» sigue siendo correcto, pero el documento debe decir que aquí la equivalencia es identidad y no isomorfismo. *(Construir iso-problemas reales exigiría definir tareas nuevas sobre el mismo grafo: decisión metodológica pendiente del director.)*
+
+---
 ## Regla editorial
 
 - La tesis debe presentarse como un documento académico consolidado de la propuesta y el desarrollo tecnológico, no como un diario de depuración.

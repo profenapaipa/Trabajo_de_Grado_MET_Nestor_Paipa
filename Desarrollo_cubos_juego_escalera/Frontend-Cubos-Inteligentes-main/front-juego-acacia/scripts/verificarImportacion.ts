@@ -3,6 +3,7 @@
 // que se reconstruyen coincidan con lo que dice la propia bitácora.
 import { readFileSync } from 'node:fs'
 import { leerBitacora } from '../src/core/session/importar'
+import { metricasDeSesion } from '../src/core/simulation/metricas'
 
 // Las mismas bitácoras que la aplicación incluye como sesiones de ejemplo
 // (src/assets/sesiones), para que esta comprobación funcione en cualquier
@@ -15,6 +16,12 @@ const ARCHIVOS = [
 
 let fallos = 0
 const chk = (c: boolean, m: string) => { console.log((c ? '  OK   ' : '  FALLO') + ' · ' + m); if (!c) fallos++ }
+
+// Los intentos reconstruidos, agrupados por participante: una sesión de Joel
+// son dos bitácoras (tutorial y práctica libre).
+type IntentoRec = ReturnType<typeof leerBitacora> extends { ok: true; datos: infer D }
+  ? D extends { intentos: (infer I)[] } ? I : never : never
+const PORQUIEN: Record<string, IntentoRec[][]> = { Joel: [], 'Jerónimo': [] }
 
 for (const ruta of ARCHIVOS) {
   const nombre = ruta.split('/').pop()!
@@ -43,8 +50,43 @@ for (const ruta of ARCHIVOS) {
   const ganados = d.intentos.filter(i => i.resultado === 'victoria')
   chk(ganados.every(i => i.metricas.movimientos >= i.metricas.optimo),
     `${nombre}: ninguna victoria usa menos movimientos que el mínimo teórico`)
+  const quien = nombre.startsWith('joel') ? 'Joel' : 'Jerónimo'
+  PORQUIEN[quien].push(d.intentos)
+}
+
+// ── Agregación ponderada frente a media por intento ──────────────────────
+//
+// La sección «Agregación e interpretación» de main.tex publica cuatro cifras
+// concretas de estas mismas bitácoras para mostrar que las dos formas de
+// agregar no son equivalentes. Si el motor cambiara, esas cifras dejarían de
+// ser ciertas en el documento sin que nadie se enterara.
+const PUBLICADO: Record<string, { ramMedia: string; ramPond: string; bucMedia: string; bucAgreg: string }> = {
+  Joel: { ramMedia: '0.3304', ramPond: '0.3374', bucMedia: '0.0033', bucAgreg: '0.0104' },
+  'Jerónimo': { ramMedia: '0.2492', ramPond: '0.1329', bucMedia: '0.0000', bucAgreg: '0.0000' },
+}
+
+console.log('')
+console.log('Participante | R media por intento | R ponderada | β media por intento | β agregada')
+console.log('-------------|---------------------|-------------|---------------------|-----------')
+for (const [quien, partes] of Object.entries(PORQUIEN)) {
+  const todos = partes.flat()
+  if (!todos.length) continue
+  const m = metricasDeSesion(todos.map((i, k) => ({
+    numero: k + 1, pares: i.pares, resultado: i.resultado, segundos: i.segundos,
+    errores: i.errores, metricas: i.metricas,
+  })))
+  const e = PUBLICADO[quien]
+  const v = [m.ramificacionMedia, m.ramificacionPonderada, m.buclicidadMedia, m.buclicidadAgregada]
+    .map(x => x.toFixed(4))
+  console.log(` ${quien.padEnd(11)} |       ${v[0]}        |   ${v[1]}    |       ${v[2]}        |  ${v[3]}`)
+  if (!e) continue
+  chk(v[0] === e.ramMedia, `${quien}: R media por intento = ${v[0]}, el documento publica ${e.ramMedia}`)
+  chk(v[1] === e.ramPond, `${quien}: R ponderada = ${v[1]}, el documento publica ${e.ramPond}`)
+  chk(v[2] === e.bucMedia, `${quien}: β media por intento = ${v[2]}, el documento publica ${e.bucMedia}`)
+  chk(v[3] === e.bucAgreg, `${quien}: β agregada = ${v[3]}, el documento publica ${e.bucAgreg}`)
 }
 
 console.log('')
 if (fallos) { console.log(`>>> ${fallos} FALLOS en la importación`); process.exit(1) }
-console.log('IMPORTACIÓN OK: las bitácoras exportadas se reconstruyen con sus intentos, recorridos y métricas.')
+console.log('IMPORTACIÓN OK: las bitácoras se reconstruyen con sus intentos, recorridos y métricas,')
+console.log('y las cifras de agregación que publica main.tex coinciden con el cálculo.')

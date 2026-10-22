@@ -64,6 +64,15 @@ export const METRICAS: MetricaDocumentada[] = [
     fuente: 'Barthélemy (2011): índice de circuidad o factor de rodeo en redes espaciales.',
   },
   {
+    simbolo: 'E',
+    nombre: 'Eficiencia de la ruta',
+    queMide: 'Lo mismo que la circuidad, pero al revés y acotado: qué fracción de su recorrido fue estrictamente necesaria. 1 significa que ganó por el camino más corto posible.',
+    ejemplo: 'E = 1,00 → ruta mínima. E = 0,75 → tres de cada cuatro movimientos fueron necesarios. E = 0,25 → recorrió cuatro veces lo imprescindible.',
+    ecuacion: 'E = D*(n) / L = 1 / Q, con valores en (0, 1]',
+    numero: 'ec. 3.6',
+    fuente: 'Es la forma en que esta magnitud se reporta en la literatura de tareas de torre: Faber, Kühnpast, Sürer, Hinz y Danek (2009) la llaman «efficiency». Al estar acotada en (0, 1] puede leerse en el mismo eje que R, α y β, y hace los resultados comparables con los estudios de Torre de Londres.',
+  },
+  {
     simbolo: 'δ',
     nombre: 'Grados de libertad',
     queMide: 'Cuántas jugadas distintas tenía disponibles en ese momento. Si solo había una, no eligió: ejecutó.',
@@ -78,7 +87,7 @@ export const METRICAS: MetricaDocumentada[] = [
     queMide: 'En una jugada donde sí había que elegir, qué tan buena fue la elección frente a las que tenía disponibles.',
     ejemplo: 'C = 0 → eligió la mejor jugada posible; C = 1 → eligió la peor de las que tenía; C = 0,5 → quedó a mitad de camino.',
     ecuacion: 'C_k = (d(s_k) − d_mín) / (d_máx − d_mín), definida solo si δ_k ≥ 2 y d_máx > d_mín',
-    numero: 'ec. 3.4 y 3.6',
+    numero: 'ec. 3.4 y 3.7',
     fuente: 'Construida sobre las dos cantidades que Hinz (2012) señala para analizar el desempeño sobre un grafo de estados: el grado del vértice y la distancia. Mide con distancias y no contra una ruta de referencia, y es justamente lo que obliga a hacer Hinz et al. (2005): en estas tareas la solución más corta puede no ser única.',
   },
   {
@@ -87,7 +96,7 @@ export const METRICAS: MetricaDocumentada[] = [
     queMide: 'El promedio de la calidad de todas las decisiones reales del intento. Resume si, cuando tuvo que elegir, eligió bien.',
     ejemplo: 'R = 0,00 → acertó siempre. R = 0,20 → en promedio se desvió un 20 % de la mejor opción. Cuanto más bajo, mejor.',
     ecuacion: 'R_i = (1/|K|) · Σ_{k∈K} C_k, con K el conjunto de puntos de decisión',
-    numero: 'ec. 3.7',
+    numero: 'ec. 3.8',
     fuente: 'Promedio (y no suma) para que no crezca con la duración del intento y sea comparable entre niveles.',
   },
   {
@@ -96,7 +105,7 @@ export const METRICAS: MetricaDocumentada[] = [
     queMide: 'De todas las veces que tuvo que elegir, en qué proporción eligió la mejor jugada.',
     ejemplo: 'α = 100 % → acertó en todas. α = 60 % → acertó en 3 de cada 5 decisiones.',
     ecuacion: 'α_i = |{k ∈ K : C_k = 0}| / |K|',
-    numero: 'ec. 3.8',
+    numero: 'ec. 3.9',
     fuente: 'Complemento de R: R mide cuánto se desvió; α, cuántas veces no se desvió nada.',
   },
   {
@@ -105,7 +114,7 @@ export const METRICAS: MetricaDocumentada[] = [
     queMide: 'En promedio, cuántas jugadas podía hacer en cada turno. Indica cuánto margen de elección ofrecía el nivel.',
     ejemplo: 'δ̄ = 2,4 → en promedio tenía algo más de dos jugadas posibles por turno.',
     ecuacion: 'δ̄_i = (1/L_i) · Σ_k δ_k',
-    numero: 'ec. 3.9',
+    numero: 'ec. 3.10',
     fuente: 'Factor de ramificación del trayecto, en el sentido de la búsqueda en espacios de estados: Russell y Norvig (2021).',
   },
   {
@@ -114,7 +123,7 @@ export const METRICAS: MetricaDocumentada[] = [
     queMide: 'Cuántas veces volvió a una posición del tablero en la que ya había estado antes dentro del mismo intento.',
     ejemplo: 'ν = 0 → nunca repitió posición. ν = 3 → tres veces se encontró donde ya había estado.',
     ecuacion: 'ν_i = (L_i + 1) − |V(W_i)|',
-    numero: 'ec. 3.10',
+    numero: 'ec. 3.11',
     fuente: 'Se mide sobre el paseo, no sobre el grafo: es conducta, no una propiedad del tablero.',
   },
   {
@@ -123,7 +132,7 @@ export const METRICAS: MetricaDocumentada[] = [
     queMide: 'Qué proporción de sus jugadas terminó en una posición repetida. Permite comparar intentos de distinta duración.',
     ejemplo: 'β = 0,00 → avanzó sin repetir. β = 0,20 → una de cada cinco jugadas lo devolvió a una posición conocida.',
     ecuacion: 'β_i = ν_i / L_i',
-    numero: 'ec. 3.11',
+    numero: 'ec. 3.12',
     fuente: 'Versión normalizada de ν, para que un intento largo no parezca peor solo por ser largo.',
   },
   {
@@ -132,7 +141,7 @@ export const METRICAS: MetricaDocumentada[] = [
     queMide: 'Cuántos bucles distintos describió, que no es lo mismo que cuántas veces los repitió: distingue el estancamiento de la exploración.',
     ejemplo: 'ν = 10 con μ = 1 → repitió diez veces el mismo bucle. ν = 10 con μ = 5 → exploró cinco bucles distintos.',
     ecuacion: 'μ_i = |E(W_i)| − |V(W_i)| + 1 (número ciclomático del subgrafo recorrido)',
-    numero: 'ec. 3.12',
+    numero: 'ec. 3.13',
     fuente: 'Kirchhoff (1847) en el análisis de redes eléctricas; reintroducido por McCabe (1976) como medida de complejidad.',
   },
   {

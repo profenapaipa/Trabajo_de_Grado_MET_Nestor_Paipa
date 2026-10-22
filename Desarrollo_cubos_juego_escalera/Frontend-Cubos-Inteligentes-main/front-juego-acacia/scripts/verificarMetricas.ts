@@ -73,7 +73,7 @@ chk(v.movimientos === 0 && v.ramificacion === 0, 'intento vacío')
 const TESIS = '../../../Trabajo_de_Grado_MET_Nestor_Paipa/main.tex'
 // Qué ecuación corresponde a cada métrica de los informes.
 const ETIQUETA: Record<string, string[]> = {
-  'D*': ['eq:optimo'], 'δ': ['eq:grados_libertad'], 'Q': ['eq:circuidad'],
+  'D*': ['eq:optimo'], 'δ': ['eq:grados_libertad'], 'Q': ['eq:circuidad'], 'E': ['eq:eficiencia'],
   'C': ['eq:punto_decision', 'eq:calidad_movimiento'], 'R': ['eq:ramif_intento'],
   'α': ['eq:tasa_acierto'], 'δ media': ['eq:grado_medio'], 'ν': ['eq:retornos'],
   'β': ['eq:buclicidad_norm'], 'μ': ['eq:ciclomatico'],

@@ -8,7 +8,7 @@ import {
 import {
   cargarArchivo, historialCsv, type PerfilGuardado, type SesionArchivada,
 } from '../../core/session/perfiles'
-import { metricasDeSesion } from '../../core/simulation/metricas'
+import { metricasDeSesion, pendiente } from '../../core/simulation/metricas'
 import GrafoEstados from '../simulation/GrafoEstados'
 import ModalInforme, {
   AYUDA, BalanceGeneral, Bloque, Sintesis, Dato, Datos, Tabla, ThM, td, tdIzq, btnDoc, btnDocPrincipal,
@@ -100,9 +100,17 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
     const m = metricasDeSesion(del)
     const mejor = ganados.length ? Math.min(...ganados.map(i => i.metricas.movimientos)) : 0
     const masCorto = del.length ? Math.min(...del.filter(i => i.metricas.movimientos > 0).map(i => i.metricas.movimientos)) : 0
+    const optimo = pares * pares + 2 * pares
     return {
-      pares, optimo: pares * pares + 2 * pares, intentos: del.length, ganados: ganados.length,
+      pares, optimo, intentos: del.length, ganados: ganados.length,
       mejor, masCorto, resumen: m,
+      // Eficiencia de la mejor marca: D* / movimientos, en (0, 1].
+      eficienciaMejor: mejor ? optimo / mejor : 0,
+      // Tendencia de la ramificación DENTRO de este nivel, en el orden en que
+      // se jugaron los intentos. Separarla por nivel es lo que permite
+      // distinguir el aprendizaje específico de la práctica general: si mejora
+      // el nivel repetido y no los demás, la mejora es del esquema de solución.
+      pendienteR: pendiente(del.filter(i => i.metricas.puntosDecision > 0).map(i => i.metricas.ramificacion)),
       conDecisiones: del.some(i => i.metricas.puntosDecision > 0),
       sesionesConEseNivel: sesiones.filter(s => s.intentos.some(i => i.pares === pares)).length,
     }
@@ -283,11 +291,12 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
               perfilesPorId.get(s.perfilId) ?? s.perfilId, `S${i + 1}`, s.inicio, NOMBRE_SECCION[x.seccion], x.numero, x.pares,
               x.resultado, x.segundos, x.metricas.movimientos, x.metricas.optimo,
               x.resultado === 'victoria' ? x.metricas.circuidad.toFixed(4) : '',
+              x.resultado === 'victoria' ? x.metricas.eficiencia.toFixed(4) : '',
               x.metricas.puntosDecision ? x.metricas.ramificacion.toFixed(4) : '',
               x.metricas.retornos, x.metricas.buclicidad.toFixed(4), x.errores, x.recorrido.join(' '),
             ])),
             ['perfil', 'sesion', 'inicio', 'seccion', 'intento', 'pares', 'resultado', 'segundos', 'movimientos',
-              'optimo', 'circuidad', 'ramificacion', 'retornos', 'buclicidad', 'errores', 'recorrido']))}
+              'optimo', 'circuidad', 'eficiencia', 'ramificacion', 'retornos', 'buclicidad', 'errores', 'recorrido']))}
         style={btnDoc}>CSV</button>
       <button onClick={() => descargarJson(base, {
         informe: 'macro', perfil: quien, generado: new Date().toISOString(),
@@ -323,9 +332,9 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
             <Dato etiqueta="Intentos" valor={`${intentos.length}`} nota={`${global.victorias} ganados · ${global.bloqueos} bloqueos`} />
             <Dato etiqueta="Movimientos" valor={`${global.movimientosTotales}`} nota="en todas las sesiones" />
             <Dato etiqueta="Niveles" valor={`${niveles.length}`} nota={niveles.map(nivelLabel).join(', ')} />
-            <Dato etiqueta="Circuidad media" valor={global.victorias ? n2(global.circuidadMedia) : '—'} nota="solo intentos ganados" />
-            <Dato etiqueta="Ramificación media" valor={conDecisiones ? n3(global.ramificacionMedia) : '—'} nota="R · 0 = óptimo" />
-            <Dato etiqueta="Buclicidad media" valor={n3(global.buclicidadMedia)} nota="β · retornos / movimientos" />
+            <Dato etiqueta="Eficiencia media (E)" valor={global.victorias ? n2(global.eficienciaMedia) : '—'} nota={global.victorias ? `1 = ruta mínima · Q = ${n2(global.circuidadMedia)}` : 'sin intentos ganados'} />
+            <Dato etiqueta="Ramificación (R)" valor={conDecisiones ? n3(global.ramificacionPonderada) : '—'} nota={conDecisiones ? `ponderada sobre ${global.puntosDecisionTotales} decisiones · media por intento ${n3(global.ramificacionMedia)}` : 'sin decisiones reales'} />
+            <Dato etiqueta="Buclicidad (β)" valor={n3(global.buclicidadAgregada)} nota={`agregada · media por intento ${n3(global.buclicidadMedia)}`} />
             <Dato etiqueta="Faltas" valor={`${totalFaltas}`} nota="jugadas rechazadas"
               color={totalFaltas ? 'var(--color-offline)' : 'var(--color-online)'} />
           </Datos>
@@ -404,14 +413,16 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
           </Bloque>
 
           <Bloque titulo="Nivel por nivel, acumulado">
-            <Tabla nota="«Mejor marca» es la partida ganada más corta de todas las sesiones; el mínimo de cada nivel es D* = n² + 2n.">
+            <Tabla nota="«Mejor marca» es la partida ganada más corta de todas las sesiones y el mínimo de cada nivel es D* = n² + 2n. R y β van ponderadas: se juntan todas las decisiones (o todos los movimientos) del nivel y se divide una sola vez, de modo que un intento corto no pesa igual que uno largo. La tendencia es la pendiente dentro del nivel: si baja en el nivel que se repite y no en los demás, la mejora es del esquema de solución y no práctica general.">
               <thead><tr>
                 <ThM izq titulo="Nivel" /><ThM titulo="Mínimo" ayuda={AYUDA.minimo} />
                 <ThM titulo="Sesiones" ayuda="En cuántas sesiones distintas apareció este nivel." />
                 <ThM titulo="Intentos" /><ThM titulo="Ganados" />
                 <ThM titulo="Mejor marca" ayuda="La partida ganada más corta de todas las sesiones." />
+                <ThM titulo="Eficiencia" simbolo="E" ayuda="Mínimo del nivel dividido entre la mejor marca. 1 significa que llegó a resolverlo por la ruta más corta." />
                 <ThM titulo="Decisiones" simbolo="R" ayuda={AYUDA.r} />
-                <ThM titulo="Bucles" simbolo="β" ayuda="Buclicidad media del nivel." />
+                <ThM titulo="Bucles" simbolo="β" ayuda="Buclicidad agregada del nivel: todos los retornos divididos entre todos los movimientos." />
+                <ThM titulo="Tendencia" ayuda="Pendiente de la recta de mínimos cuadrados de la ramificación a lo largo de los intentos de este nivel. Negativa = mejora. Hacen falta al menos tres intentos." />
               </tr></thead>
               <tbody>
                 {porNivel.map(n => (
@@ -422,8 +433,12 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
                     <td style={td}>{n.intentos}</td>
                     <td style={{ ...td, color: n.ganados ? 'var(--color-online)' : 'var(--color-paper-faint)', fontWeight: 700 }}>{n.ganados}</td>
                     <td style={td}>{n.ganados ? `${n.mejor}` : '—'}</td>
-                    <td style={td}>{n.conDecisiones ? n3(n.resumen.ramificacionMedia) : '—'}</td>
-                    <td style={td}>{n3(n.resumen.buclicidadMedia)}</td>
+                    <td style={td}>{n.ganados ? n2(n.eficienciaMejor) : '—'}</td>
+                    <td style={td}>{n.conDecisiones ? n3(n.resumen.ramificacionPonderada) : '—'}</td>
+                    <td style={td}>{n3(n.resumen.buclicidadAgregada)}</td>
+                    <td style={{ ...td, color: n.pendienteR === null ? 'var(--color-paper-faint)' : n.pendienteR < 0 ? 'var(--color-online)' : n.pendienteR > 0 ? 'var(--color-caution)' : 'var(--color-paper-dim)' }}>
+                      {n.pendienteR === null ? '—' : (n.pendienteR < 0 ? '↓ ' : n.pendienteR > 0 ? '↑ ' : '') + n3(Math.abs(n.pendienteR))}
+                    </td>
                   </tr>
                 ))}
               </tbody>

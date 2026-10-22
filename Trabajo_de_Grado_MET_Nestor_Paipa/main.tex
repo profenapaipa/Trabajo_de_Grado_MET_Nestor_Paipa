@@ -2094,6 +2094,28 @@ Vale exactamente $1$ en una partida óptima y crece con el rodeo. Al
 ser un cociente adimensional resulta comparable entre ejercicios de
 uno a cinco pares, a diferencia del exceso absoluto de movimientos.
 
+La misma magnitud se reporta en la literatura de tareas de torre en
+su forma recíproca. \citet{HinzFaber2009}, en el estudio del
+iso-efecto sobre la Torre de Londres, la denominan
+\textit{efficiency} y la definen como el número mínimo de
+movimientos dividido entre el número de movimientos realizados:
+
+\begin{equation}
+    E_i \;=\; \frac{D^{*}(n)}{L_i} \;=\; \frac{1}{Q_i}
+    \label{eq:eficiencia}
+\end{equation}
+
+Ambas expresiones contienen exactamente la misma información, pero
+no son intercambiables en la práctica. $Q_i$ no está acotada por
+arriba, mientras que $E_i$ toma valores en $(0,1]$ y vale $1$ en la
+partida mínima. Esa acotación tiene dos consecuencias para el
+análisis: permite representar la eficiencia en el mismo eje que la
+ramificación, la tasa de acierto y la buclicidad —que también viven
+en $[0,1]$—, y hace que los resultados de esta investigación sean
+directamente comparables con los de la literatura de la Torre de
+Londres, que trabaja con $E$. Por eso los informes reportan ambas,
+con $E$ como valor de encabezado y $Q$ como lectura auxiliar.
+
 Esta magnitud da forma cuantitativa a la figura del
 \textit{WAZE cognitivo} con que la fuente describe el uso analítico
 del grafo \cite{LievanoMolina2022}: es la misma razón que un sistema
@@ -2285,22 +2307,89 @@ conducta del aprendiz.}
 % -------------------------------------------------------
 \subsection*{Agregación e interpretación}
 
-Todas las magnitudes se promedian sobre los $m$ intentos del nivel o
-de la sesión. Para la ramificación y la buclicidad:
+Resumir un conjunto de intentos en un solo número admite dos
+procedimientos que no son equivalentes, y la diferencia entre ambos
+no es despreciable. El primero promedia los valores ya promediados
+de cada intento:
 
 \begin{equation}
-    R_e \;=\; \frac{1}{m}\sum_{j=1}^{m} R_{i,j}
+    R_e \;=\; \frac{1}{m}\sum_{j=1}^{m} R_{j}
     \qquad
-    B_e \;=\; \frac{1}{m}\sum_{j=1}^{m} \beta_{i,j}
+    B_e \;=\; \frac{1}{m}\sum_{j=1}^{m} \beta_{j}
     \label{eq:agregacion}
 \end{equation}
 
-y de manera análoga para los demás indicadores. La tendencia de
-estos promedios a lo largo de los intentos constituye la evidencia
-de aprendizaje que el diseño busca observar: una circuidad que se
-aproxima a uno, una ramificación que desciende hacia cero y una
-buclicidad decreciente describen a un aprendiz que consolida su
-esquema de solución.
+El segundo reúne primero los términos y divide una sola vez, de
+modo que cada intento pesa según cuánto aportó —sus puntos de
+decisión en el caso de la ramificación, sus movimientos en el de la
+buclicidad—:
+
+\begin{equation}
+    \bar{R} \;=\; \frac{\sum_{j=1}^{m} |K_j| \, R_{j}}{\sum_{j=1}^{m} |K_j|}
+    \qquad
+    \bar{\beta} \;=\; \frac{\sum_{j=1}^{m} \nu_{j}}{\sum_{j=1}^{m} L_{j}}
+    \label{eq:agregacion_ponderada}
+\end{equation}
+
+La ecuación~\ref{eq:agregacion_ponderada} equivale a promediar
+directamente todas las decisiones de la sesión, y no las medias de
+cada intento. La diferencia entre las dos crece con la dispersión
+de las longitudes, y en este juego esa dispersión es grande: en las
+sesiones piloto registradas los intentos van de uno a ochenta y
+siete movimientos, y de uno a cincuenta y ocho puntos de decisión.
+Aplicadas a esas bitácoras, la ramificación de un participante pasa
+de $0{,}249$ con la ecuación~\ref{eq:agregacion} a $0{,}133$ con la
+ecuación~\ref{eq:agregacion_ponderada} —un $47\,\%$ menos, porque
+sus intentos de un solo punto de decisión pesaban tanto como los de
+treinta y siete—, y la buclicidad del otro pasa de $0{,}0033$ a
+$0{,}0104$, el triple, porque sus retornos se concentran en los
+intentos largos. Como esa diferencia puede cambiar la categoría con
+que el informe describe al aprendiz, se calculan y se muestran las
+dos: la ponderada encabeza el informe y la media por intento queda
+como lectura auxiliar.
+
+\subsubsection*{Estratificación por nivel}
+
+Un promedio que mezcla niveles distintos resume conductas que no
+son comparables. El grado de libertad medio y el número de puntos
+de decisión crecen con el tamaño del tablero, de modo que una
+ramificación de $0{,}20$ en el ejercicio de dos pares y otra de
+$0{,}20$ en el de cinco no describen el mismo desempeño: en las
+sesiones piloto el mismo participante pasa de $0{,}20$ en dos pares
+a $0{,}43$ en cuatro. El estudio del iso-efecto procede por eso
+comparando siempre dentro de problemas de la misma longitud y nunca
+entre longitudes distintas \citep{HinzFaber2009}. Los indicadores
+agregados se reportan, en consecuencia, por nivel; el valor global
+de la sesión se conserva como descriptor general y no como término
+de comparación.
+
+\subsubsection*{La tendencia como número}
+
+Afirmar que un indicador mejora exige calcular la tendencia y no
+solo dibujarla. Para una serie $x_1, \ldots, x_m$ de un mismo
+indicador sobre intentos sucesivos del mismo nivel, se calcula la
+pendiente de la recta de mínimos cuadrados respecto del orden:
+
+\begin{equation}
+    b \;=\; \frac{\sum_{j=1}^{m}(j - \bar{\jmath})(x_j - \bar{x})}
+                 {\sum_{j=1}^{m}(j - \bar{\jmath})^{2}}
+    \label{eq:pendiente}
+\end{equation}
+
+Su signo es lo que sostiene la afirmación: una pendiente negativa
+en la ramificación y en la buclicidad, o positiva en la eficiencia
+y en la tasa de acierto, describen a un aprendiz que consolida su
+esquema de solución. Se calcula solo con tres intentos o más, pues
+por dos puntos pasa una recta exacta.
+
+Esa pendiente, calculada por separado en el nivel que se repite y
+en los niveles nuevos, cumple además la función de control que el
+estudio del iso-efecto considera indispensable: allí, el mismo
+análisis aplicado a problemas no isomorfos de igual longitud
+produjo una curva de signo contrario, de modo que sin esa
+comparación una mejora podría atribuirse a práctica general —o un
+empeoramiento, a la fatiga— en lugar de al aprendizaje específico
+de la tarea \citep{HinzFaber2009}.
 
 En el marco de esta investigación, los indicadores se interpretan en
 clave de control inhibitorio. Cada punto de decisión con $C_k > 0$

@@ -239,3 +239,49 @@ Cinco hechos, todos verificados:
 - La **distancia media** del grafo (14,44 en el nivel de cinco pares) permitiría contextualizar la circuidad: hoy Q se compara solo contra 1, sin decir qué es un valor típico.
 - La **excentricidad** daría un indicador de «lo lejos que llegó a estar», hoy no reportado.
 - Klahr (1978), citado por Hinz et al. (2005), es literatura psicológica sobre planificación infantil con tareas de torre: línea de lectura pertinente para el marco teórico, **todavía sin leer en el original**.
+
+---
+
+## 9. Hinz (2012) y el iso-efecto (auditoría 2026-10-21)
+
+Dos artículos más aportados por el director, leídos íntegros. Los dos se citaban ya en el documento **sin haber leído el texto completo**; ahora están verificados.
+
+### 9.1 Hinz (2012), *Graph theory of tower tasks*
+
+Confirma §3.3 casi literalmente. Del resumen: *«Graph theoretical quantities like distance, eccentricities or degrees of vertices and symmetries of graphs support the choice of problems, the selection of tasks and the analysis of performance of subjects whose solution paths can be projected onto the graph»*. Del §4: el grado del vértice *«represents the number of alternatives a subject has to make a move»* — exactamente δ.
+
+Tres cosas que no estaban en el documento:
+
+- **§6:** la herramienta computarizada dibuja el paseo del sujeto y *«This picture also contains the optimal path(s) for comparison»*, **en plural**. Las dos rutas mínimas superpuestas que se implementaron el 2026-10-08 son lo que la fuente describe, no una licencia.
+- *«the difficulty of a task can not just be deduced from the number of steps necessary to solve it»* — respaldo directo para no usar D\* como medida de dificultad.
+- Hinz usa la **distancia media** y la **excentricidad del vértice inicial** como parámetros de diseño de series de tareas. Precedente metodológico para la Tabla 3.2.
+
+**Un contraste propio.** Hinz observa que en los grafos de torre *«the average distance is always a little larger than one half of the diameter»*, e interpreta que hay **pocos problemas anidados**. En Hanói: 4,043 sobre diámetro 7 (0,58) y 8,204 sobre 15 (0,55). En La Escalera los valores calculados dan lo contrario: 0,60 · 0,41 · 0,37 · 0,35 · **0,34** para n = 1…5, muy por debajo de la mitad y decreciendo. Siguiendo la interpretación de Hinz, La Escalera abunda en problemas anidados: muchas soluciones óptimas son trozos de otras. Es un resultado estructural comparable y publicable.
+
+### 9.2 Faber, Kühnpast, Sürer, Hinz y Danek (2009), *The iso-effect*
+
+81 adultos sanos, 22 tareas de Torre de Londres con seis iso-problemas intercalados. Mejora significativa en todas las medidas a lo largo de los seis; el efecto se mantuvo al excluir a los 27 participantes conscientes de la repetición; dos tercios no advirtieron nada → memoria implícita.
+
+Sus medidas: *solution time*, ***initiation time*** (desde la presentación hasta el primer movimiento, «the time needed for planning»), *completion time*, *moves*, ***efficiency*** (mínimo / movimientos reales, en (0,1]) y *awareness*.
+
+Dos consecuencias y una corrección de fondo:
+
+1. **Su «efficiency» es la recíproca de la circuidad.** Implementada como E (ec. 3.6), acotada y comparable con la literatura del dominio.
+2. **«Initiation time» es la medida estándar de planificación.** La bitácora ya guarda marcas ISO con milisegundos y no se usan. Pendiente de alto valor.
+3. **El informe entre sesiones no mide el iso-efecto, y hay que decirlo.** Un iso-problema parece distinto y es matemáticamente equivalente. En la Torre de Londres el experimentador elige inicio y meta, y de ahí salen 210 clases de seis tareas. En La Escalera **la tarea viene fija por el juego**: un inicio y una meta por nivel. Repetir un nivel es repetir la misma tarea, no una variante. El informe macro mide aprendizaje por repetición idéntica.
+
+### 9.3 Qué se cambió en las ecuaciones
+
+| | Antes | Ahora |
+|---|---|---|
+| Circuidad | solo Q = L/D\*, no acotada | Q **y** E = D\*/L ∈ (0,1] (ec. 3.6) |
+| Agregación de R | media de medias (ec. 3.14) | ponderada por \|K\| (ec. 3.15), con la media por intento como lectura auxiliar |
+| Agregación de β | media de medias | agregada Σν/ΣL (ec. 3.15) |
+| Comparación | promedio global entre niveles | estratificada por nivel |
+| Tendencia | dibujada | pendiente de mínimos cuadrados (ec. 3.16), por nivel |
+
+Efecto medido sobre las bitácoras piloto: la ramificación de Jerónimo pasa de 0,249 a **0,133** (−47 %) y la buclicidad de Joel de 0,0033 a **0,0104** (×3). Las cuatro cifras quedan comprobadas en cada compilación por `importacion:verificar`.
+
+### 9.4 Pendiente metodológico
+
+Construir iso-problemas reales en La Escalera exigiría **definir tareas nuevas sobre el mismo grafo** (pares inicio–meta distintos del que fija el juego). La simetría verificada —invertir el tablero y cambiar de equipo— generaría clases de equivalencia de tamaño 2, frente a las de tamaño 6 de Hanói y la Torre de Londres. Es una decisión metodológica del director, no técnica.
