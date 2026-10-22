@@ -150,6 +150,26 @@ Este archivo contiene **únicamente decisiones ya tomadas** por el autor y confi
 - **Hallazgo de hardware por resolver (autor):** casillas 1-3 sin pulldown. Dos arreglos equivalentes; con la resistencia no hay que tocar el firmware.
 
 ---
+## De la ecuación a la figura (2026-10-22)
+
+Auditoría del paso de las fórmulas a los gráficos, que era lo único del capítulo 3 sin estandarizar. Siete reglas, documentadas en §3.3 junto a la Tabla 3.4 que ata cada ecuación con su figura:
+
+1. **Un eje, una escala comparable.** Solo comparten eje las magnitudes acotadas en [0,1]. Q no tiene cota superior: en las figuras va E = 1/Q.
+2. **La figura y la cifra son la misma cosa.** Si el informe titula con la agregación ponderada, la curva traza la ponderada.
+3. **La orientación va escrita** en el nombre de cada serie (si lo bueno es 0 o 1).
+4. **El color indica dirección, no categoría, y nunca va solo.**
+5. **Toda figura declara cuántas observaciones la sostienen.**
+6. **Un hueco no se rellena con un cero**: punteado, porque un cero afirmaría que acertó siempre.
+7. **No se traza una línea continua entre tramos no comparables**: franjas rotuladas.
+
+Hallazgos de la auditoría, corregidos en la misma sesión:
+
+- **La regla 2 estaba rota.** El informe entre sesiones encabezaba con la ramificación ponderada y trazaba la curva con la media por intento: escribía 0,133 y dibujaba 0,249 en la misma página. La curva usa ahora `ramificacionPonderada`, `buclicidadAgregada` y `tasaAciertoPonderada`.
+- **Faltaba la familia de longitud en las curvas.** Ninguna serie representaba la eficiencia, porque Q no cabe en el eje 0–1. Añadida E en las tres curvas de evolución (nivel, sesión y entre sesiones).
+- **El efecto de la mediación no tenía figura.** Añadidos dos medidores enfrentados, con el número de decisiones de cada grupo escrito en su etiqueta.
+- **La tendencia se dibujaba pero no se calculaba.** La pendiente (ec. 3.16) va escrita junto a la serie.
+
+---
 ## Regla editorial
 
 - La tesis debe presentarse como un documento académico consolidado de la propuesta y el desarrollo tecnológico, no como un diario de depuración.

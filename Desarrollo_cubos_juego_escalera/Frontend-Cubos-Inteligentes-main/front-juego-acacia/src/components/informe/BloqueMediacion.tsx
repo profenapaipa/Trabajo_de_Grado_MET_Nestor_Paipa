@@ -1,4 +1,5 @@
 import { Bloque, Tabla, ThM, td, tdIzq } from './ModalInforme'
+import { Medidor } from './graficos'
 import type { EfectoMediacion } from '../../core/session/mediacion'
 
 // Efecto de la mediación Pausar–Pensar–Actuar sobre la decisión siguiente.
@@ -74,6 +75,21 @@ export default function BloqueMediacion({ efecto }: { efecto: EfectoMediacion })
         </p>
       )}
 
+      {comparable && conSenal.calidad !== null && sinSenal.calidad !== null && (
+        <div style={{ display: 'flex', gap: '16px', margin: '14px 0 0' }}>
+          <div style={{ flex: 1 }}>
+            <Medidor etiqueta={`Tras una señal · ${conSenal.n} ${conSenal.n === 1 ? 'decisión' : 'decisiones'}`}
+              valor={conSenal.calidad} optimoEn={0}
+              texto="calidad media de las decisiones que siguieron a una señal del ciclo" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <Medidor etiqueta={`Sin señal · ${sinSenal.n} decisiones`}
+              valor={sinSenal.calidad} optimoEn={0}
+              texto="calidad media del resto de decisiones del mismo aprendiz" />
+          </div>
+        </div>
+      )}
+
       {comparable && (
         <div style={{ margin: '12px 0 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <p style={{ fontSize: '13.5px', lineHeight: 1.6, color: 'var(--color-paper)', margin: 0 }}>
@@ -88,7 +104,7 @@ export default function BloqueMediacion({ efecto }: { efecto: EfectoMediacion })
           </p>
           {pocas && (
             <p style={{ fontSize: '13px', lineHeight: 1.6, color: 'var(--color-caution)', margin: 0 }}>
-              Atención: son solo {conSenal.n} {conSenal.n === 1 ? 'decisión' : 'decisiones'} tras señal.
+              Atención: {conSenal.n === 1 ? 'es solo 1 decisión' : `son solo ${conSenal.n} decisiones`} tras señal.
               Esto es una observación del caso, no una medida del efecto: con tan pocas, la diferencia
               puede deberse por completo al azar.
             </p>

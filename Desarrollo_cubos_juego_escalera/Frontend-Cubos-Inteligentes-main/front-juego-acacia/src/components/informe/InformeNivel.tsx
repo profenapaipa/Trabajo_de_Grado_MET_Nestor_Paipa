@@ -257,6 +257,9 @@ export default function InformeNivel({ seccion, pares, onCerrar }: { seccion: Se
               { nombre: 'Ramificación R (0 es mejor)', color: 'var(--color-blue)', puntos: delNivel.map(i => (i.metricas.puntosDecision ? i.metricas.ramificacion : null)) },
               { nombre: 'Buclicidad β (0 es mejor)', color: 'var(--color-caution)', puntos: delNivel.map(i => (i.metricas.movimientos ? i.metricas.buclicidad : null)) },
               { nombre: 'Acierto α (1 es mejor)', color: 'var(--color-online)', puntos: delNivel.map(i => (i.metricas.puntosDecision ? i.metricas.tasaAcierto : null)) },
+              // Eficiencia y no circuidad: Q no está acotada y no comparte el eje
+              // 0–1 (ec. 3.6). Solo tiene sentido en los intentos ganados.
+              { nombre: 'Eficiencia E (1 es mejor)', color: 'var(--color-paper-dim)', puntos: delNivel.map(i => (i.resultado === 'victoria' ? i.metricas.eficiencia : null)) },
             ]} />
         </Figura>
       )}

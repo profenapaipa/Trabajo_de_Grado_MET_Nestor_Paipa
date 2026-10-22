@@ -138,11 +138,18 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
   const porSesion = useMemo(() => sesiones.map(s => {
     const m = metricasDeSesion(s.intentos)
     const hayDecisiones = s.intentos.some(i => i.metricas.puntosDecision > 0)
+    // Las MISMAS cifras que titulan el informe: las ponderadas (ec. 3.15).
+    // Antes la gráfica trazaba las medias por intento mientras el cuadro de
+    // arriba mostraba las ponderadas, de modo que el informe se contradecía
+    // consigo mismo —en las bitácoras piloto, 0,249 en la curva frente a
+    // 0,133 en el titular—. La figura y la cifra tienen que ser la misma cosa.
     return {
-      ramificacion: hayDecisiones ? m.ramificacionMedia : null,
-      buclicidad: s.intentos.length ? m.buclicidadMedia : null,
-      acierto: hayDecisiones ? m.tasaAciertoMedia : null,
-      circuidad: m.victorias ? m.circuidadMedia : null,
+      ramificacion: hayDecisiones ? m.ramificacionPonderada : null,
+      buclicidad: s.intentos.length ? m.buclicidadAgregada : null,
+      acierto: hayDecisiones ? m.tasaAciertoPonderada : null,
+      // Eficiencia y no circuidad: Q no está acotada y no puede compartir el
+      // eje 0–1 con las demás; E = 1/Q sí (ec. 3.6).
+      eficiencia: m.victorias ? m.eficienciaMedia : null,
     }
   }), [sesiones])
 
@@ -361,6 +368,7 @@ export default function InformeMacro({ perfilId, onCerrar }: { perfilId?: string
                   { nombre: 'Ramificación R (0 es mejor)', color: 'var(--color-blue)', puntos: porSesion.map(x => x.ramificacion) },
                   { nombre: 'Buclicidad β (0 es mejor)', color: 'var(--color-caution)', puntos: porSesion.map(x => x.buclicidad) },
                   { nombre: 'Acierto α (1 es mejor)', color: 'var(--color-online)', puntos: porSesion.map(x => x.acierto) },
+                  { nombre: 'Eficiencia E (1 es mejor)', color: 'var(--color-paper-dim)', puntos: porSesion.map(x => x.eficiencia) },
                 ]} />
             </Figura>
           )}
