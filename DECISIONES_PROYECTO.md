@@ -131,6 +131,14 @@ Este archivo contiene **únicamente decisiones ya tomadas** por el autor y confi
 - **Repetir un nivel no es un iso-problema.** En la Torre de Londres el experimentador elige inicio y meta, y de ahí salen clases de equivalencia de seis tareas de aspecto distinto. En La Escalera la tarea viene fija por el juego: un inicio y una meta por nivel. El informe entre sesiones mide, por tanto, **aprendizaje por repetición idéntica**, no el iso-efecto. Citar a Faber et al. para «comparar intentos equivalentes» sigue siendo correcto, pero el documento debe decir que aquí la equivalencia es identidad y no isomorfismo. *(Construir iso-problemas reales exigiría definir tareas nuevas sobre el mismo grafo: decisión metodológica pendiente del director.)*
 
 ---
+## El tiempo como medida (2026-10-21)
+
+- **El origen de tiempos es `juego_listo`, no «Iniciar intento».** Entre uno y otro corren 3 s de cuenta regresiva en Simulación libre y en Control, que no son tiempo de planificación de nadie. Se instrumentó el evento en las tres vistas. Las bitácoras anteriores a esta versión miden desde el inicio del intento y sobreestiman la latencia inicial en esa cantidad; el informe lo advierte en vez de restar una constante a ciegas.
+- **El primer movimiento se excluye de las medias de decisión y de jugada forzada.** Su intervalo es la latencia inicial, que ya se reporta aparte. Y hay una razón estructural: en el estado inicial las dos jugadas posibles son imagen especular y dejan la misma distancia a la meta, así que nunca es punto de decisión y el intervalo caería siempre del lado de las forzadas, inflándolas de forma sistemática. Se detectó porque el cociente decisión/forzada salía por debajo de 1 en casi todos los intentos piloto.
+- **Se separan tiempo con decisión y tiempo sin decisión.** Un total no distingue a quien es lento en todo —velocidad motriz— de quien es lento solo donde hay que elegir —deliberación—. La separación es propia de esta investigación; el tiempo hasta la primera jugada sí es la medida estándar de la literatura.
+- **Si los tiempos no cuadran con el recorrido, no se reportan.** Ocurre cuando el intento usó «deshacer»: el recorrido pierde un paso pero su evento queda. Unas latencias desplazadas serían peor que ninguna.
+
+---
 ## Regla editorial
 
 - La tesis debe presentarse como un documento académico consolidado de la propuesta y el desarrollo tecnológico, no como un diario de depuración.

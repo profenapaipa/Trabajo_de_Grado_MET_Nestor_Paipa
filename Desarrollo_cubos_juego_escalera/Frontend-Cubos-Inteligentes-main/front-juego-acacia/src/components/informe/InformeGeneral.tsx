@@ -83,6 +83,18 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
   const conDecisiones = intentos.some(i => i.metricas.puntosDecision > 0)
   const faltas = useMemo(() => faltasPorRegla(eventos), [eventos])
   const totalFaltas = Object.values(faltas).reduce((a, b) => a + b, 0)
+  // Tiempos medios de la sesión, ponderados igual que las demás magnitudes:
+  // se promedian los intentos que sí traen marcas de tiempo.
+  const tiempos = useMemo(() => {
+    const media = (xs: (number | null)[]) => {
+      const v = xs.filter((x): x is number => x !== null)
+      return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null
+    }
+    return {
+      decision: media(intentos.map(i => i.metricas.latenciaDecision)),
+      forzada: media(intentos.map(i => i.metricas.latenciaForzada)),
+    }
+  }, [intentos])
   const reiniciados = intentos.filter(i => i.resultado === 'reiniciado').length
   const frases = sintesisSesion(intentos, faltas, seccionesTrabajadas, duracionSeg)
   const balance = balanceDe(intentos, faltas)
@@ -307,6 +319,8 @@ export function InformeSesion({ datos, onCerrar, onCerrarSesion }: {
         <Dato etiqueta="Acierto (α)" valor={conDecisiones ? pct(global.tasaAciertoPonderada) : '—'} nota={conDecisiones ? `en ${global.puntosDecisionTotales} decisiones reales` : 'en puntos de decisión'} />
         <Dato etiqueta="Faltas" valor={`${totalFaltas}`} nota="jugadas rechazadas" color={totalFaltas ? 'var(--color-offline)' : 'var(--color-online)'} />
         <Dato etiqueta="Tiempo jugado" valor={reloj(global.segundosTotales)} nota={`de ${reloj(duracionSeg)} de sesión`} />
+        <Dato etiqueta="Antes de decidir" valor={tiempos.decision === null ? '—' : `${(tiempos.decision / 1000).toFixed(1)} s`}
+          nota={tiempos.forzada === null ? 'sin tiempos en la bitácora' : `frente a ${(tiempos.forzada / 1000).toFixed(1)} s en jugadas forzadas`} />
       </Datos>
 
       {figResultados > 0 && (

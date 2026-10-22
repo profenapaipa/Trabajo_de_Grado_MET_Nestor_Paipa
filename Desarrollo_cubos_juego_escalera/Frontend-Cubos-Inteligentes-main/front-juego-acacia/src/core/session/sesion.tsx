@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import type { MetricasIntento } from '../simulation/metricas'
+import { metricasDeIntento, type MetricasIntento } from '../simulation/metricas'
 import { archivarSesion, idDeNombre, registrarPerfil, type RolPerfil } from './perfiles'
 
 // Sesión de trabajo: un participante, un operador y todo lo que ocurre en las
@@ -48,6 +48,10 @@ export type IntentoSesion = {
   errores: number
   // Recorrido sobre el grafo de estados, para poder redibujarlo en el informe.
   recorrido: number[]
+  // Milisegundos desde el inicio del intento hasta cada movimiento, uno por
+  // movimiento. Es lo que permite medir el tiempo de planificación. Opcional:
+  // una bitácora antigua puede no traerlo.
+  tiempos?: number[]
   metricas: MetricasIntento
   fin: string
 }
@@ -159,11 +163,46 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     setEstado(s => ({ ...s, eventos: [...s.eventos, { ...e, ts: e.ts ?? new Date().toISOString() }] }))
   }, [])
 
+  // Los instantes de cada jugada no los lleva la pestaña: los tiene esta
+  // bitácora, que ya registró cada movimiento con su marca de tiempo. Así las
+  // latencias salen sin tocar las cuatro vistas.
+  //
+  // Si las cuentas no cuadran —típicamente porque el intento usó «deshacer»,
+  // que quita un paso del recorrido pero deja su evento— se devuelve
+  // undefined. Unas latencias desplazadas serían peor que ninguna.
   const registrarIntento = useCallback((i: Omit<IntentoSesion, 'id' | 'fin'>) => {
-    setEstado(s => ({
-      ...s,
-      intentos: [...s.intentos, { ...i, id: `${i.seccion}-${i.numero}-${Date.now()}`, fin: new Date().toISOString() }],
-    }))
+    setEstado(s => {
+      let tiempos = i.tiempos
+      if (!tiempos) {
+        const movimientos = i.recorrido.length - 1
+        const marcas: string[] = []
+        let inicio: string | null = null
+        let listo: string | null = null
+        for (let k = s.eventos.length - 1; k >= 0; k--) {
+          const e = s.eventos[k]
+          if (e.seccion !== i.seccion) continue
+          if (e.tipo === 'intento_iniciado') { inicio = e.ts; break }
+          // El origen de tiempos es el instante en que el tablero queda
+          // jugable, no el de pulsar «Iniciar»: entre uno y otro corre la
+          // cuenta regresiva, que no es tiempo de planificación de nadie.
+          if (e.tipo === 'juego_listo') listo = e.ts
+          if (e.tipo === 'movimiento') marcas.unshift(e.ts)
+        }
+        inicio = listo ?? inicio
+        if (inicio && marcas.length === movimientos && movimientos > 0) {
+          const t0 = Date.parse(inicio)
+          tiempos = marcas.map(m => Math.max(0, Date.parse(m) - t0))
+        }
+      }
+      const metricas = tiempos ? metricasDeIntento(i.pares, i.recorrido, tiempos) : i.metricas
+      return {
+        ...s,
+        intentos: [...s.intentos, {
+          ...i, tiempos, metricas,
+          id: `${i.seccion}-${i.numero}-${Date.now()}`, fin: new Date().toISOString(),
+        }],
+      }
+    })
   }, [])
 
   const seccionesTrabajadas = useMemo(() => {

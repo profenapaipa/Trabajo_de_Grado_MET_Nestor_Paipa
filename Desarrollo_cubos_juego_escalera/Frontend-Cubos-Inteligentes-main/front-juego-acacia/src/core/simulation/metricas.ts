@@ -55,6 +55,23 @@ export type MetricasIntento = {
   // Tamaño de cada bucle observado. Por el cuello del grafo, nunca menor que 6.
   tamanosBucle: number[]
   estadosDistintos: number
+  // ── Tiempos (ec. 3.17) ───────────────────────────────────────────────────
+  //
+  // Solo se calculan si la bitácora guarda el instante de cada jugada; si no,
+  // quedan en null y el informe lo dice en vez de inventar un cero.
+  //
+  // `latenciaInicial` es el «initiation time» de la literatura de tareas de
+  // torre: el tiempo desde que se presenta el problema hasta el primer
+  // movimiento, que Faber, Kühnpast, Sürer, Hinz y Danek (2009) describen
+  // como «the time needed for planning».
+  //
+  // Las otras dos separan lo que ningún total de tiempo distingue: cuánto
+  // tardó donde había algo que decidir y cuánto donde la jugada estaba
+  // forzada. Un participante puede ser lento en todo —y eso es velocidad
+  // motriz— o lento solo donde había que elegir, que es deliberación.
+  latenciaInicial: number | null // ms hasta el primer movimiento
+  latenciaDecision: number | null // ms medios antes de un punto de decisión
+  latenciaForzada: number | null // ms medios antes de una jugada sin elección
 }
 
 const vacias = (pares: number): MetricasIntento => ({
@@ -62,18 +79,26 @@ const vacias = (pares: number): MetricasIntento => ({
   ramificacion: 0, tasaAcierto: 1, gradoLibertadMedio: 0, puntosDecision: 0,
   aciertos: 0, perfil: [], retornos: 0, buclicidad: 0, ciclosIndependientes: 0,
   tamanosBucle: [], estadosDistintos: 0,
+  latenciaInicial: null, latenciaDecision: null, latenciaForzada: null,
 })
 
 // `recorrido` es la lista de IDs de nodo del grafo, en orden, empezando por el
 // estado inicial. Es exactamente lo que ya guardan las pestañas de simulación.
-export function metricasDeIntento(pares: number, recorrido: number[]): MetricasIntento {
+// `tiempos` son los milisegundos transcurridos desde el inicio del intento
+// hasta cada movimiento: uno por movimiento, de modo que su longitud es la del
+// recorrido menos uno. Es opcional porque no todas las bitácoras lo guardan.
+export function metricasDeIntento(pares: number, recorrido: number[], tiempos?: number[]): MetricasIntento {
   const g: StateGraph = buildStateGraph(pares)
   const L = recorrido.length - 1
   if (L <= 0) return vacias(pares)
+  // Solo se usan si cuadran con el recorrido: una bitácora a medias daría
+  // latencias desplazadas, que es peor que no darlas.
+  const ts = tiempos && tiempos.length === L ? tiempos : null
 
   const optimo = pares * pares + 2 * pares
   const calidades: number[] = []
   const perfil: MetricasIntento['perfil'] = []
+  const decision: boolean[] = [] // decision[k] = el movimiento k fue punto de decisión
   let sumaGrados = 0
 
   for (let k = 1; k <= L; k++) {
@@ -99,6 +124,7 @@ export function metricasDeIntento(pares: number, recorrido: number[]): MetricasI
 
     // Punto de decisión: más de una opción y no todas equivalentes (ec. 3.4).
     if (opciones.length < 2 || dMax === dMin) continue
+    decision[k] = true
 
     const C = (valor(g.distFinDesde(elegido, s)) - dMin) / (dMax - dMin)
     calidades.push(C)
@@ -123,6 +149,32 @@ export function metricasDeIntento(pares: number, recorrido: number[]): MetricasI
     ultimaVisita.set(id, i)
   })
 
+  // Latencias: el intervalo que precede a cada movimiento, separado según si
+  // en esa posición había algo que decidir.
+  let latenciaInicial: number | null = null
+  let latenciaDecision: number | null = null
+  let latenciaForzada: number | null = null
+  if (ts) {
+    latenciaInicial = ts[0]
+    const conEleccion: number[] = []
+    const forzadas: number[] = []
+    // Desde el SEGUNDO movimiento. El intervalo que precede al primero es la
+    // latencia inicial, que ya se reporta aparte y además arrastra el tiempo
+    // que la interfaz tarda en dejar jugar; mezclarlo en estas dos medias las
+    // falsea. Y lo falsea siempre en el mismo sentido: en el estado inicial
+    // las dos jugadas posibles son imagen especular y dejan la misma
+    // distancia, así que nunca es punto de decisión y el primer intervalo
+    // caería entero del lado de las jugadas forzadas.
+    for (let k = 2; k <= L; k++) {
+      const intervalo = ts[k - 1] - ts[k - 2]
+      if (intervalo < 0) continue // marcas de tiempo desordenadas: se descarta
+      ;(decision[k] ? conEleccion : forzadas).push(intervalo)
+    }
+    const media = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null)
+    latenciaDecision = media(conEleccion)
+    latenciaForzada = media(forzadas)
+  }
+
   const aciertos = calidades.filter(c => c === 0).length
   return {
     pares,
@@ -141,6 +193,9 @@ export function metricasDeIntento(pares: number, recorrido: number[]): MetricasI
     ciclosIndependientes: Math.max(0, aristas.size - estados.size + 1),
     tamanosBucle,
     estadosDistintos: estados.size,
+    latenciaInicial,
+    latenciaDecision,
+    latenciaForzada,
   }
 }
 
@@ -295,6 +350,7 @@ export function intentosACsv(intentos: IntentoRegistrado[], participante: string
     'intento', 'participante', 'operador', 'pares', 'resultado', 'segundos', 'movimientos',
     'optimo', 'circuidad', 'eficiencia', 'ramificacion', 'tasaAcierto', 'puntosDecision', 'gradoLibertadMedio',
     'retornos', 'buclicidad', 'ciclosIndependientes', 'estadosDistintos', 'tamanosBucle', 'errores',
+    'latenciaInicialMs', 'latenciaDecisionMs', 'latenciaForzadaMs',
   ]
   const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
   const num = (x: number, d = 4) => x.toFixed(d)
@@ -307,6 +363,8 @@ export function intentosACsv(intentos: IntentoRegistrado[], participante: string
     num(i.metricas.gradoLibertadMedio, 2), i.metricas.retornos, num(i.metricas.buclicidad),
     i.metricas.ciclosIndependientes, i.metricas.estadosDistintos,
     i.metricas.tamanosBucle.join(' '), i.errores,
+    i.metricas.latenciaInicial ?? '', i.metricas.latenciaDecision?.toFixed(0) ?? '',
+    i.metricas.latenciaForzada?.toFixed(0) ?? '',
   ].map(esc).join(','))
   return [cols.join(','), ...filas].join('\n')
 }

@@ -76,16 +76,19 @@ export function leerBitacora(archivo: string, contenido: string): Lectura {
   let conNodo = 0
 
   // Intento en curso mientras se recorre la bitácora.
-  let abierto: { pares: number; recorrido: number[]; errores: number; inicio: string; ultimo: string } | null = null
+  // `tiempos` acompaña a `recorrido` paso a paso —se empuja y se saca a la
+  // vez— para que las latencias queden alineadas con los movimientos por
+  // construcción y no por un emparejamiento posterior.
+  let abierto: { pares: number; recorrido: number[]; tiempos: number[]; errores: number; inicio: string; listo: string | null; ultimo: string } | null = null
   const cerrar = (resultado: IntentoSesion['resultado'], fin: string) => {
     if (!abierto) return
-    const { pares, recorrido, errores, inicio } = abierto
+    const { pares, recorrido, tiempos, errores, inicio } = abierto
     abierto = null
     if (recorrido.length < 2) return // no llegó a moverse: no hay intento que medir
     intentos.push({
       seccion, pares, resultado,
       segundos: Math.max(0, Math.round((Date.parse(fin) - Date.parse(inicio)) / 1000)),
-      errores, recorrido, metricas: metricasDeIntento(pares, recorrido),
+      errores, recorrido, tiempos, metricas: metricasDeIntento(pares, recorrido, tiempos),
     })
   }
 
@@ -121,15 +124,21 @@ export function leerBitacora(archivo: string, contenido: string): Lectura {
     switch (tipo) {
       case 'intento_iniciado':
         cerrar('reiniciado', ts)
-        abierto = { pares, recorrido: nodo && nodo > 0 ? [nodo] : [], errores: 0, inicio: ts, ultimo: ts }
+        abierto = { pares, recorrido: nodo && nodo > 0 ? [nodo] : [], tiempos: [], errores: 0, inicio: ts, listo: null, ultimo: ts }
+        break
+      case 'juego_listo':
+        // El origen de tiempos para medir la planificación: entre el inicio
+        // del intento y este instante puede haber una cuenta regresiva.
+        if (abierto) abierto.listo = ts
         break
       case 'movimiento':
         if (abierto && nodo && nodo > 0 && abierto.recorrido[abierto.recorrido.length - 1] !== nodo) {
           abierto.recorrido.push(nodo)
+          abierto.tiempos.push(Math.max(0, Date.parse(ts) - Date.parse(abierto.listo ?? abierto.inicio)))
         }
         break
       case 'deshacer':
-        if (abierto && abierto.recorrido.length > 1) abierto.recorrido.pop()
+        if (abierto && abierto.recorrido.length > 1) { abierto.recorrido.pop(); abierto.tiempos.pop() }
         break
       case 'falla':
       case 'falla_movimiento':

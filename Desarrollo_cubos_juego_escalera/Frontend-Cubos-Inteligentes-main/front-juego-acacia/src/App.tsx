@@ -878,6 +878,9 @@ function App({ onSnapshot, operatorId, setOperatorId }: {
         playCountdownBeep(t)
         if (t === 0) {
           registrarMarcador('inicio_juego', `Intento #${nextIntento}: ¡YA! — el participante puede mover`, 'sistema')
+          // La misma marca, en la bitácora de la sesión: es el origen de
+          // tiempos desde el que se mide la planificación (ec. 3.17).
+          logCuboEvent({ tipo: 'juego_listo', detalle: 'El tablero queda disponible para jugar' })
           sessionStartRef.current = Date.now()
           setSessionState('jugando')
           ponerTemporizador(() => setCountdownTick(null), 600)

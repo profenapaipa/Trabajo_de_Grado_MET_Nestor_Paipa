@@ -118,6 +118,15 @@ export const METRICAS: MetricaDocumentada[] = [
     fuente: 'Factor de ramificación del trayecto, en el sentido de la búsqueda en espacios de estados: Russell y Norvig (2021).',
   },
   {
+    simbolo: 't',
+    nombre: 'Tiempos de decisión',
+    queMide: 'Cuánto tardó antes de mover. Se reportan tres: el tiempo hasta la primera jugada, el que precede a las jugadas donde había que elegir y el que precede a las forzadas.',
+    ejemplo: 'Decisión 3,2 s frente a forzada 1,1 s → se detiene donde hay algo que decidir. Si los dos valores son parecidos, el ritmo no distingue: puede ser velocidad motriz, no deliberación.',
+    ecuacion: 't_ini = instante del primer movimiento desde que el tablero queda jugable; t_dec y t_for = intervalos medios antes de los movimientos con y sin decisión, desde el segundo',
+    numero: 'ec. 3.17',
+    fuente: 'El tiempo hasta el primer movimiento es el «initiation time» de Faber, Kühnpast, Sürer, Hinz y Danek (2009), que lo describen como el tiempo necesario para planificar. La separación entre jugadas con y sin decisión es propia de esta investigación: distingue deliberación de velocidad motriz.',
+  },
+  {
     simbolo: 'ν',
     nombre: 'Retornos',
     queMide: 'Cuántas veces volvió a una posición del tablero en la que ya había estado antes dentro del mismo intento.',

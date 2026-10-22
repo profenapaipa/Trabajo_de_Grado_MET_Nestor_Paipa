@@ -2405,6 +2405,59 @@ participante.
 
 La Tabla~\ref{tab:resumen_metricas} resume el conjunto.
 
+
+\subsubsection*{El tiempo como medida de planificación}
+
+Las magnitudes anteriores describen qué eligió el aprendiz, pero no
+cuánto tardó en elegirlo. La literatura de tareas de torre registra
+ese tiempo de forma sistemática: \citet{HinzFaber2009} miden el
+\textit{initiation time}, el intervalo entre la presentación del
+problema y el primer movimiento, y lo describen como el tiempo que
+el sujeto necesita para planificar.
+
+La bitácora de la aplicación guarda el instante de cada jugada con
+precisión de milisegundos, lo que permite calcular ese intervalo y
+dos más. Sea $t_k$ el instante del movimiento $k$ medido desde que
+el tablero queda disponible para jugar, y $K$ el conjunto de puntos
+de decisión definido en la ecuación~\ref{eq:punto_decision}:
+
+\begin{equation}
+    t_{\mathrm{ini}} = t_1
+    \qquad
+    t_{\mathrm{dec}} = \frac{1}{|K'|}\sum_{k \in K'} (t_k - t_{k-1})
+    \qquad
+    t_{\mathrm{for}} = \frac{1}{|F|}\sum_{k \in F} (t_k - t_{k-1})
+    \label{eq:tiempos}
+\end{equation}
+
+donde $K' = K \setminus \{1\}$ y $F$ son los movimientos restantes a
+partir del segundo. La exclusión del primer movimiento no es un
+detalle de implementación: el intervalo que lo precede es
+$t_{\mathrm{ini}}$, que ya se reporta aparte, y además en el estado
+inicial las dos jugadas posibles son imagen especular y dejan la
+misma distancia a la meta, de modo que nunca constituye un punto de
+decisión. Incluirlo cargaría sistemáticamente el promedio de las
+jugadas forzadas.
+
+La separación entre $t_{\mathrm{dec}}$ y $t_{\mathrm{for}}$ es propia
+de esta investigación y responde a una distinción que un tiempo
+total no permite hacer. Un aprendiz puede ser lento en todas sus
+jugadas —y entonces lo que se mide es velocidad motriz— o lento
+solo allí donde había algo que decidir, que es deliberación. El
+cociente $t_{\mathrm{dec}} / t_{\mathrm{for}}$ expresa esa diferencia
+en una sola cifra: por encima de uno, el aprendiz se detiene donde
+hay que elegir; próximo a uno, su ritmo no distingue entre decidir y
+ejecutar.
+
+Conviene registrar una precaución metodológica. El origen de
+tiempos es el instante en que el tablero queda disponible, no aquel
+en que se pulsa «iniciar»: entre ambos corre una cuenta regresiva
+de tres segundos en las vistas que la tienen, que no es tiempo de
+planificación de nadie. Las bitácoras registradas antes de que la
+aplicación marcara ese instante miden $t_{\mathrm{ini}}$ desde el
+inicio del intento y, en consecuencia, lo sobreestiman en esa
+cantidad; los informes lo advierten.
+
 \begin{table}[H]
 \centering
 \caption{Resumen de métricas para el análisis de trayectorias.}

@@ -50,6 +50,17 @@ for (const ruta of ARCHIVOS) {
   const ganados = d.intentos.filter(i => i.resultado === 'victoria')
   chk(ganados.every(i => i.metricas.movimientos >= i.metricas.optimo),
     `${nombre}: ninguna victoria usa menos movimientos que el mínimo teórico`)
+  // Tiempos: la bitácora guarda el instante de cada jugada, así que todo
+  // intento con movimientos debe producir latencias, y ninguna puede ser
+  // negativa ni preceder al primer movimiento.
+  const conTiempos = d.intentos.filter(i => i.metricas.latenciaInicial !== null)
+  chk(conTiempos.length === d.intentos.length,
+    `${nombre}: todos los intentos reconstruyen sus tiempos (${conTiempos.length}/${d.intentos.length})`)
+  chk(conTiempos.every(i => (i.metricas.latenciaInicial ?? 0) >= 0
+    && (i.metricas.latenciaDecision ?? 0) >= 0 && (i.metricas.latenciaForzada ?? 0) >= 0),
+    `${nombre}: ninguna latencia es negativa`)
+  chk(d.intentos.every(i => !i.tiempos || i.tiempos.length === i.metricas.movimientos),
+    `${nombre}: hay un instante por movimiento`)
   const quien = nombre.startsWith('joel') ? 'Joel' : 'Jerónimo'
   PORQUIEN[quien].push(d.intentos)
 }

@@ -131,7 +131,13 @@ function Tutorial({ level, operatorId, participante, onComplete, onGoToLevel, on
     setFeedback(introFeedback())
     inicioRef.current = Date.now()
     setPhase(toPhase)
-    if (toPhase === 'jugando') log({ tipo: 'intento_iniciado', detalle: `Nivel ${level} (${level} par${level > 1 ? 'es' : ''}) iniciado` }, initial)
+    if (toPhase === 'jugando') {
+      log({ tipo: 'intento_iniciado', detalle: `Nivel ${level} (${level} par${level > 1 ? 'es' : ''}) iniciado` }, initial)
+      // El tutorial no tiene cuenta regresiva: el tablero queda jugable en el
+      // mismo instante. La marca se emite igual para que todas las vistas
+      // midan el tiempo de planificación desde el mismo punto.
+      log({ tipo: 'juego_listo', detalle: 'El tablero queda disponible para jugar' }, initial)
+    }
   }
 
   // Cambio de nivel desde la barra lateral: se reinicia sin useEffect para

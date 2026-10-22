@@ -76,7 +76,7 @@ const ETIQUETA: Record<string, string[]> = {
   'D*': ['eq:optimo'], 'δ': ['eq:grados_libertad'], 'Q': ['eq:circuidad'], 'E': ['eq:eficiencia'],
   'C': ['eq:punto_decision', 'eq:calidad_movimiento'], 'R': ['eq:ramif_intento'],
   'α': ['eq:tasa_acierto'], 'δ media': ['eq:grado_medio'], 'ν': ['eq:retornos'],
-  'β': ['eq:buclicidad_norm'], 'μ': ['eq:ciclomatico'],
+  'β': ['eq:buclicidad_norm'], 'μ': ['eq:ciclomatico'], 't': ['eq:tiempos'],
 }
 if (!existsSync(TESIS)) {
   console.log('\n(no se encontró main.tex: se omite la comprobación de la numeración de ecuaciones)')

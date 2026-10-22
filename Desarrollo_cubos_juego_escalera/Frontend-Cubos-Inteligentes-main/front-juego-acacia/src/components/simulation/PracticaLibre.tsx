@@ -158,6 +158,10 @@ function PracticaLibre({ pares, operatorId, participante }: { pares: number; ope
       if (t === 0) {
         startRef.current = Date.now()
         turnStartRef.current = Date.now()
+        // El tablero queda jugable AQUÍ, tres segundos después de iniciar el
+        // intento. Sin esta marca, el tiempo hasta la primera jugada incluiría
+        // la cuenta regresiva y no mediría la planificación sino la interfaz.
+        log({ tipo: 'juego_listo', detalle: 'El tablero queda disponible para jugar' }, board)
         setSession('jugando')
         timers.current.push(setTimeout(() => setCountdown(null), 600))
       }

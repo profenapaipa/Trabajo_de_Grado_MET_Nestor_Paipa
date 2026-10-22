@@ -13,6 +13,9 @@ export type EventoCuboTipo =
   | 'victoria' | 'derrota' | 'cubo_no_detectado'
   // Control de partida ("intentos"): agrupados por intentoId, ver App.tsx.
   | 'intento_iniciado' | 'intento_finalizado' | 'reinicio_manual' | 'tablero_reordenado'
+  // El tablero queda jugable, tras la cuenta regresiva: origen de tiempos
+  // para medir la planificación (ec. 3.17).
+  | 'juego_listo'
   // Sincronización con la base al cargar/reconectar, ronda de
   // identificación por IP, y pausa automática hasta corregir una jugada
   // inválida (2026-10-15).

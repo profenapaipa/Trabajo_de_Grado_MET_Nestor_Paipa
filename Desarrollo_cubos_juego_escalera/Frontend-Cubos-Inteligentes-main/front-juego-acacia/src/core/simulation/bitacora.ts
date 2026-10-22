@@ -27,6 +27,10 @@ export type BitacoraEventType =
   | 'callejon_sin_salida'
   | 'nivel_superado'
   | 'intento_iniciado'
+  // El tablero queda jugable. Va aparte de `intento_iniciado` porque entre
+  // los dos puede haber una cuenta regresiva: es este instante, y no el
+  // otro, el origen de tiempos para medir la planificación.
+  | 'juego_listo'
 
 export type BitacoraEvent = {
   timestamp: string
